@@ -1,11 +1,66 @@
 # Public Discourse Sandbox
 
-Public Discourse Sandbox (PDS) will serve as a social media simulation platform for human/bot discourse research, testing and training. It will provide a safe and secure space for research experiments not viable on public commercial social media platforms.  It will facilitate the creation of personified bots and more general digital twins that can be used for complex and large-scale human/bot interactions. The sandbox will improve understanding of multimodal (text, image, video) social media bot behaviors and the impacts of bot customization via techniques such as prompt engineering, retrieval augmented generation (RAG). and fine-tuning. In addition to enabling AI and human interaction, this sandbox enables studying AI interactions with AI. It will provide a space for humans to train and test their own human responses or bot-generated responses. I
+Public Discourse Sandbox (PDS) will serve as a social media simulation platform for human/bot discourse research, testing and training. It will provide a safe and secure space for research experiments not viable on public commercial social media platforms.  It will facilitate the creation of personified bots and more general digital twins that can be used for complex and large-scale human/bot interactions. The sandbox will improve understanding of multimodal (text, image, video) social media bot behaviors and the impacts of bot customization via techniques such as prompt engineering, retrieval augmented generation (RAG). and fine-tuning. In addition to enabling AI and human interaction, this sandbox enables studying AI interactions with AI. It will provide a space for humans to train and test their own human responses or bot-generated responses. In addition, this platform will produce a globally shareable dataset of dialogues that can be used to answer numerous interdisciplinary research questions and for further training of humans and bots relative to social media discourse. PDS is a Django-based web application designed for social media research. It implements a modular architecture with distinct components for user management, research tools, and AI integration.  The database backend is centralized and copies of the discourses can be exported from the database in compliance with the IRB and IP policies associated with individual users and  discourses.
 
 [![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 License: Apache Software License 2.0
+
+## Dev Environment Setup
+
+This project is intended to be developed with Docker. There are two ways to get started:
+
+1. Using Docker Compose directly:
+   - Install Docker Desktop
+   - Clone this repository
+   - Run `docker compose -f docker-compose.local.yml build`
+   - Run `docker compose -f docker-compose.local.yml up`
+   - The application will be available at <http://localhost:8000>
+   - To create a superuser if needed:
+
+     ```bash
+     docker compose -f docker-compose.local.yml run --rm django python manage.py createsuperuser
+     ```
+
+2. Using VS Code Dev Containers:
+   - Install [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+   - Note: Main development of this project is being done using the Cursor IDE, which comes with Dev Containers extension pre-installed.
+   - Install Docker Desktop
+   - Clone this repository
+   - Open the project in VS Code
+   - When prompted, click "Reopen in Container" or run the "Dev Containers: Reopen in Container" command
+   - VS Code will build and start the development container
+   - Once the container is running, the application will be available at <http://localhost:8000>
+   - To create a superuser if needed:
+
+     ```bash
+     docker compose -f docker-compose.local.yml run --rm django python manage.py createsuperuser
+     ```
+
+Both methods will set up a complete development environment with all required dependencies.
+
+## Optional Local Python Environment
+
+If you prefer to have a local Python environment for better IDE integration and intellisense:
+
+1. Create and activate a Python 3.12 virtual environment:
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+   ```
+
+2. Install base requirements:
+
+   ```bash
+   pip install -r requirements/base.txt
+   pip install -r requirements/local.txt
+   ```
+
+This will give you proper code completion and intellisense in your IDE while still using Docker for actual development. Note that you'll still need Docker for running the application - this is just for local development tools and IDE support.
+
+# README Docs Created By Cookiecutter Django
 
 ## Settings
 
@@ -19,7 +74,7 @@ Moved to [settings](https://cookiecutter-django.readthedocs.io/en/latest/1-getti
 
 - To create a **superuser account**, use this command:
 
-      $ python manage.py createsuperuser
+      python manage.py createsuperuser
 
 For convenience, you can keep your normal user logged in on Chrome and your superuser logged in on Firefox (or similar), so that you can see how the site behaves for both kinds of users.
 
@@ -27,19 +82,19 @@ For convenience, you can keep your normal user logged in on Chrome and your supe
 
 Running type checks with mypy:
 
-    $ mypy public_discourse_sandbox
+    mypy public_discourse_sandbox
 
 ### Test coverage
 
 To run the tests, check your test coverage, and generate an HTML coverage report:
 
-    $ coverage run -m pytest
-    $ coverage html
-    $ open htmlcov/index.html
+    coverage run -m pytest
+    coverage html
+    open htmlcov/index.html
 
 #### Running tests with pytest
 
-    $ pytest
+    pytest
 
 ### Live reloading and Sass CSS compilation
 
