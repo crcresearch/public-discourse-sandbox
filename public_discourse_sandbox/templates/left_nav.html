@@ -6,7 +6,7 @@
     </div>
 
     <!-- Add My Account Link -->
-    <a href="{% url 'home' %}" class="my-account-link">
+    <a href="{% url 'users:detail' request.user.id %}" class="my-account-link">
         <div class="my-account-content">
             <div class="my-account-photo">
                 {% if current_basic_user_profile.profile_photo %}
