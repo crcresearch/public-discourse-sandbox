@@ -1,0 +1,986 @@
+:root {
+    /* Official Notre Dame Colors */
+    --nd-blue: #0C2340;      /* Primary blue */
+    --nd-metallic-gold: #C99700;  /* Metallic gold */
+    --nd-gold: #AE9142;      /* Athletic gold */
+    --background-color: #FFFFFF;
+    --text-color: #0C2340;
+    --secondary-text: #536471;
+    --border-color: #E8E8E8;
+    --hover-color: rgba(12, 35, 64, 0.1);
+    --gold-hover: rgba(201, 151, 0, 0.1);
+    --search-bg: #F7F9F9;
+    --background-gray: #EDF3F3;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Libre Franklin", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+/* Layout */
+.container {
+    display: flex;
+    justify-content: center;
+    max-width: 1500px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* Left Sidebar */
+.left-sidebar {
+    position: fixed;
+    width: 275px;
+    height: 100vh;
+    overflow-y: auto;
+    left: max(20px, calc((100% - 1500px) / 2 + 20px));
+    padding: 0 16px;
+    background-color: var(--background-color);
+    z-index: 1000;
+}
+
+/* Logo and Title */
+.logo {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 32px;
+}
+
+.platform-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--text-color);
+    width: 100%;
+}
+
+.logo-icon {
+    width: 48px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--nd-blue);
+    color: white;
+    font-size: 24px;
+}
+
+.logo-icon i {
+    font-size: 22px;
+}
+
+.platform-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-primary);
+    line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+}
+
+.platform-name .sandbox {
+    color: var(--text-secondary);
+    font-weight: normal;
+    font-size: 14px;
+}
+
+/* Navigation Menu */
+.nav-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-menu li {
+    margin: 8px 0;
+}
+
+.nav-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    text-decoration: none;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--nd-blue);
+    border-radius: 9999px;
+    transition: background-color 0.2s ease;
+}
+
+.nav-menu li a:hover {
+    background-color: #F7F9F9;
+}
+
+/* Active menu item */
+.nav-menu li a.active {
+    color: var(--nd-metallic-gold);
+}
+
+.nav-menu li a.active i {
+    color: var(--nd-metallic-gold);
+}
+
+/* Remove the specific home styling and replace with general active class */
+.nav-menu li a[href*="home"] {
+    color: inherit;
+}
+
+.nav-menu li a[href*="home"] i {
+    color: inherit;
+}
+
+/* Icons in navigation */
+.nav-menu li a i {
+    margin-right: 16px;
+    font-size: 24px;
+}
+
+.logout-button {
+    width: 25%;
+    padding: 16px;
+    background-color: lightslategray;
+    color: white;
+    border: 0.5px solid var(--nd-metallic-gold);
+    border-radius: 35px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+/* Post Button */
+.post-button {
+    width: 100%;
+    padding: 16px;
+    background-color: var(--nd-blue);
+    color: white;
+    border: 2px solid var(--nd-metallic-gold);
+    border-radius: 35px;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.post-button:hover {
+    background-color: var(--nd-blue-dark);
+}
+
+/* Main Content */
+.main-content {
+    width: 600px;
+    margin-left: 300px;
+    margin-right: 350px;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    height: 100vh;
+    background-color: var(--background-color);
+}
+
+/* Main Header */
+.main-header {
+    padding: 16px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.main-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--nd-blue);
+}
+
+/* Compose Area */
+.compose-area {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--nd-metallic-gold);
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.default-avatar {
+    width: 100%;
+    height: 100%;
+    background-color: #E4E6E9;
+}
+
+.compose-input textarea {
+    width: 100%;
+    border: none;
+    font-size: 20px;
+    color: var(--secondary-text);
+    resize: none;
+    outline: none;
+    margin-bottom: 16px;
+    padding: 0;
+    min-height: 100px;
+}
+
+/* Post Button */
+.post-tweet-btn {
+    background-color: var(--nd-blue);
+    color: white;
+    border: 2px solid var(--nd-metallic-gold);
+    border-radius: 30px;
+    padding: 8px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Tweet Feed */
+.tweet {
+    display: flex;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-avatar {
+    margin-right: 12px;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.tweet-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.tweet-header {
+    margin-bottom: 2px;
+}
+
+.tweet-header .user-name {
+    color: var(--nd-blue);
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.tweet-header .user-name:hover {
+    text-decoration: underline;
+}
+
+.tweet-header .user-handle,
+.tweet-header .dot,
+.tweet-header .time {
+    color: var(--secondary-text);
+    font-size: 15px;
+}
+
+.tweet-header > * + * {
+    margin-left: 4px;
+}
+
+.tweet-text {
+    color: rgb(15, 20, 25);
+    font-size: 15px;
+    line-height: 20px;
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+}
+
+.tweet-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 80px;
+    margin-top: 12px;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--secondary-text);
+    cursor: pointer;
+}
+
+.action-button i {
+    font-size: 18px;
+}
+
+.action-button span {
+    font-size: 13px;
+}
+
+/* Hashtag styling */
+.hashtag {
+    color: rgb(29, 155, 240);
+    text-decoration: none;
+}
+
+.hashtag:hover {
+    text-decoration: underline;
+}
+
+/* Right Sidebar */
+.right-sidebar {
+    position: fixed;
+    right: max(20px, calc((100% - 1500px) / 2 + 20px));
+    width: 350px;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 20px;
+    background-color: var(--background-color);
+}
+
+/* Search Box */
+.search-box {
+    position: sticky;
+    top: 12px;
+    margin-bottom: 16px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    background-color: var(--search-bg);
+    border-radius: 9999px;
+    border: 1px solid var(--border-color);
+    padding: 0 16px;
+}
+
+.search-box i {
+    color: var(--secondary-text);
+    font-size: 16px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background-color: transparent;
+    font-size: 15px;
+    color: var(--text-color);
+    outline: none;
+}
+
+.search-box input::placeholder {
+    color: var(--secondary-text);
+}
+
+/* Trending Section */
+.trending-section {
+    background-color: rgb(247, 249, 249);
+    border-radius: 16px;
+    margin: 16px 0;
+    padding: 16px;
+}
+
+.trending-section h1 {
+    font-size: 20px;
+    font-weight: 800;
+    color: rgb(15, 20, 25);
+    margin-bottom: 16px;
+}
+
+.trending-topic {
+    display: block;
+    padding: 12px 0;
+    text-decoration: none;
+    color: inherit;
+}
+
+.trending-topic:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.topic-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.category {
+    font-size: 13px;
+    color: var(--secondary-text);
+}
+
+.topic-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgb(15, 20, 25);
+}
+
+.topic-count {
+    font-size: 13px;
+    color: var(--secondary-text);
+}
+
+.no-trends {
+    color: var(--secondary-text);
+    text-align: center;
+    padding: 12px;
+    font-size: 15px;
+}
+
+/* Compose Tweet Panel */
+.compose-tweet-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+    width: 600px;
+    z-index: 1100;
+}
+
+.compose-tweet-panel textarea {
+    width: 100%;
+    min-height: 120px;
+    border: none;
+    font-size: 20px;
+    margin: 16px 0;
+    resize: none;
+    outline: none;
+}
+
+.compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.compose-actions .post-tweet-btn {
+    background-color: var(--nd-blue);
+    color: white;
+    border: 2px solid var(--nd-metallic-gold);
+    border-radius: 9999px;
+    padding: 8px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.compose-actions .post-tweet-btn:hover {
+    background-color: #0A1C32;
+    border-color: var(--nd-gold);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Notification Styles */
+.notification {
+    display: flex;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.notification:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.notification-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--nd-blue);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+}
+
+/* Profile Styles */
+.profile-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.profile-banner {
+    height: 200px;
+    background-color: var(--nd-blue);
+    margin: -16px -16px 0;
+}
+
+.profile-info {
+    margin-top: -40px;
+    padding: 0 16px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid white;
+    background-color: #E4E6E9;
+}
+
+.profile-edit-button {
+    float: right;
+    margin-top: 16px;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    padding: 8px 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Add padding to account for fixed header */
+.tweet-feed {
+    padding-top: 60px;
+}
+
+/* When logo is in the active/home state */
+.nav-menu li a[href*="home"] .logo img {
+    filter: brightness(0) saturate(100%) invert(71%) sepia(28%) saturate(6015%) hue-rotate(358deg) brightness(89%) contrast(84%);
+}
+
+/* No Tweets Message */
+.no-tweets {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--secondary-text);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.no-tweets p {
+    margin: 0;
+    font-size: 15px;
+}
+
+/* Tweet Popup */
+.tweet-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 56px;
+    z-index: 1000;
+}
+
+.tweet-popup {
+    background: white;
+    width: 600px;
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+}
+
+.popup-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+
+.popup-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.close-button {
+    border: none;
+    background: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    color: var(--text-color);
+}
+
+.close-button:hover {
+    background-color: var(--hover-color);
+}
+
+.popup-form {
+    padding: 16px;
+}
+
+/* Reuse existing compose styles but scope them to popup */
+.tweet-popup .compose-content {
+    display: flex;
+    gap: 12px;
+}
+
+.tweet-popup .compose-input textarea {
+    width: 100%;
+    min-height: 24px;
+    padding: 12px 0;
+    border: none;
+    font-size: 20px;
+    line-height: 24px;
+    color: var(--text-color);
+    resize: none;
+}
+
+.tweet-popup .compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+/* Compose Popup */
+.compose-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 20, 25, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.compose-popup {
+    background: var(--background-color);
+    width: 600px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.popup-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+
+.popup-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.close-button {
+    border: none;
+    background: none;
+    font-size: 20px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+}
+
+.close-button:hover {
+    background-color: var(--hover-color);
+}
+
+.popup-form {
+    padding: 16px;
+}
+
+.compose-popup .compose-content {
+    display: flex;
+    gap: 12px;
+}
+
+.compose-popup .compose-input {
+    flex-grow: 1;
+}
+
+.compose-popup textarea {
+    width: 100%;
+    height: 120px;
+    border: none;
+    resize: none;
+    font-size: 20px;
+    line-height: 24px;
+    font-family: inherit;
+    padding: 12px 0;
+    color: var(--text-color);
+}
+
+.compose-popup textarea:focus {
+    outline: none;
+}
+
+.compose-popup .compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* My Account Link */
+.my-account-link {
+    display: block;
+    margin: 20px 12px;
+    text-decoration: none;
+}
+
+.my-account-content {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background-color: #F7F9F9;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    transition: all 0.2s ease;
+}
+
+.my-account-link:hover .my-account-content {
+    background-color: #EDF3F3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(12, 35, 64, 0.1);
+}
+
+.my-account-photo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin-right: 12px;
+    background-color: var(--background-gray);
+    background-size: cover;
+    background-position: center;
+    border: 2px solid var(--nd-metallic-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.my-account-photo img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.my-account-photo i {
+    font-size: 24px;
+    color: var(--secondary-text);
+}
+
+.my-account-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.my-account-name {
+    display: block;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--nd-blue);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.my-account-username {
+    display: block;
+    font-size: 14px;
+    color: var(--secondary-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.account-arrow {
+    font-size: 24px;
+    color: var(--secondary-text);
+    margin-left: 12px;
+    transition: transform 0.2s ease;
+}
+
+.my-account-link:hover .account-arrow {
+    transform: translateX(4px);
+    color: var(--nd-blue);
+}
+
+/* Navigation Actions */
+.nav-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 16px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 16px;
+    background-color: var(--nd-blue);
+    color: white !important;
+    border: 2px solid var(--nd-metallic-gold);
+    border-radius: 35px;
+    font-size: 20px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: var(--nd-blue-dark);
+}
+
+.logout-btn i {
+    font-size: 24px;
+    margin-right: 8px;
+}
+
+.left-sidebar .namecard {
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 16px;
+    transition: background-color 0.2s;
+}
+
+.left-sidebar .namecard:hover {
+    background-color: var(--hover-color);
+}
+
+.left-sidebar .namecard .profile-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.left-sidebar .namecard .profile-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+    overflow: hidden;
+}
+
+.left-sidebar .namecard .profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.left-sidebar .namecard .default-avatar {
+    width: 100%;
+    height: 100%;
+    background-color: var(--nd-blue);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.left-sidebar .namecard .user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.left-sidebar .namecard .full-name {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.left-sidebar .namecard .username {
+    color: var(--secondary-text);
+    font-size: 14px;
+}
+
+/* Feedback Section */
+.feedback-section {
+    background-color: rgb(247, 249, 249);
+    border-radius: 16px;
+    margin: 16px 0;
+    padding: 16px;
+}
+
+.feedback-section h1 {
+    font-size: 20px;
+    font-weight: 800;
+    color: rgb(15, 20, 25);
+    margin-bottom: 12px;
+}
+
+.feedback-section p {
+    color: var(--secondary-text);
+    font-size: 15px;
+    line-height: 1.4;
+    margin-bottom: 16px;
+}
+
+.feedback-button {
+    display: inline-block;
+    background-color: var(--nd-blue);
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.feedback-button:hover {
+    background-color: var(--nd-metallic-gold);
+}
+
+.user-handle {
+    color: var(--secondary-text);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.user-handle:hover {
+    color: var(--nd-blue);
+    text-decoration: underline;
+}
+
+.user-name {
+    color: var(--nd-blue);
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.user-name:hover {
+    text-decoration: underline;
+} 

@@ -1,0 +1,56 @@
+<!-- Bot Section -->
+<div class="bot-section">
+    <h2>Active Bots</h2>
+    <div class="bot-list">
+        {% if active_bots %}
+            <div class="bot-item">
+                <span class="bot-count">{{ active_bots|length }} bot{% if active_bots|length != 1 %}s{% endif %} currently active</span>
+            </div>
+        {% else %}
+            <div class="bot-item">
+                <span class="bot-count">No active bots</span>
+            </div>
+        {% endif %}
+    </div>
+    <p class="bot-info">Our AI bots are here to engage with your posts!</p>
+</div>
+
+<style>
+.bot-section {
+    background-color: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bot-section h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #1a1a1a;
+}
+
+.bot-list {
+    margin-bottom: 15px;
+}
+
+.bot-item {
+    padding: 10px;
+    text-align: center;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.bot-count {
+    font-size: 16px;
+    font-weight: 500;
+    color: #14171a;
+}
+
+.bot-info {
+    font-size: 14px;
+    color: #657786;
+    margin-top: 10px;
+    text-align: center;
+}
+</style> 

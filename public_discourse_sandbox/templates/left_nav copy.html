@@ -1,0 +1,59 @@
+<div class="left-sidebar">
+    <div class="logo">
+        {% include 'partials/_logo.html' %}
+    </div>
+
+    <!-- Add My Account Link -->
+    <a href="{% url 'my_account' %}" class="my-account-link">
+        <div class="my-account-content">
+            <div class="my-account-photo">
+                {% if current_basic_user_profile.profile_photo %}
+                    <img src="{{ current_basic_user_profile.profile_photo.url }}" alt="Profile">
+                {% else %}
+                    <i class="ri-user-3-line"></i>
+                {% endif %}
+            </div>
+            <div class="my-account-info">
+                <span class="my-account-name">{{ current_basic_user_profile.full_name }}</span>
+                <span class="my-account-username">@{{ current_basic_user.username }}</span>
+            </div>
+            <i class="ri-arrow-right-s-line account-arrow"></i>
+        </div>
+    </a>
+
+    <ul class="nav-menu">
+        <li>
+            <a href="{% url 'home' 0 %}" class="{% if request.path == '/home/0/' %}active{% endif %}">
+                <i class="ri-home-fill"></i>
+                Home
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'explore' %}" class="{% if '/explore/' in request.path %}active{% endif %}">
+                <i class="ri-compass-3-line"></i>
+                Explore
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'my_account' %}" class="{% if '/my-account/' in request.path %}active{% endif %}">
+                <i class="ri-user-3-line"></i>
+                My Account
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'about' %}" class="{% if '/about/' in request.path %}active{% endif %}">
+                <i class="ri-information-line"></i>
+                About
+            </a>
+        </li>
+    </ul>
+    <div class="nav-actions">
+        <!-- Commenting out post button
+        <button class="post-button" onclick="openComposePopup()">Post</button>
+        -->
+        <a href="{% url 'logout' %}" class="logout-button">
+          <i class="ri-logout-box-line"></i>
+          <span>Log out</span>
+      </a>
+    </div>
+</div>
