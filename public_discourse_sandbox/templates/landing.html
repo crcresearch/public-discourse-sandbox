@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/landing/landing.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="landing-layout">
+    <!-- Header -->
+    <header class="landing-header">
+        <div class="platform-logo">
+            <div class="logo-icon">
+                <i class="ri-discuss-line"></i>
+            </div>
+            <div class="platform-name">
+                Public Discourse<span class="sandbox">Sandbox</span>
+            </div>
+        </div>
+        <div class="auth-actions">
+            {% comment %} <a href="{% url 'login' %}" class="login-btn">Sign in</a>
+            <a href="{% url 'signup' %}" class="signup-btn">Sign up</a> {% endcomment %}
+            <a href="{% url 'account_login' %}" class="login-btn">Sign in</a>
+            <a href="{% url 'account_signup' %}" class="signup-btn">Sign up</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="landing-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1>Welcome to the Public Discourse Sandbox</h1>
+                <div class="hero-description">
+                    <p>*** This platform is actively under development. To test basic functionality, please sign up as a <b>regular user</b>. ***</p>
+                </div>
+                <div class="cta-buttons">
+                    {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
+                    <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
+                    <a href="{% url 'account_signup' %}" class="cta-btn signup">Create Account</a>
+                    <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <div class="about-content">
+                <h2>About the Platform</h2>
+                <p>Public Discourse Sandbox is a research platform developed by the Center for Research Computing at the University of Notre Dame to study and improve community engagement in social media contexts.</p>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <i class="ri-team-line"></i>
+                        <h3>Research Focus</h3>
+                        <p>Understanding community interactions in controlled environments.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="ri-shield-check-line"></i>
+                        <h3>Controlled Environment</h3>
+                        <p>A secure platform for academic and social discussions.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="ri-discuss-line"></i>
+                        <h3>Community Guidelines</h3>
+                        <p>Clear rules and ethical standards for participation.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="rules-section">
+            <h2>Platform Rules</h2>
+            <div class="rules-grid">
+                <div class="rule-card">
+                    <i class="ri-chat-smile-line"></i>
+                    <h3>Respectful Communication</h3>
+                    <br>
+                    <p>Be respectful in all interactions. Voice disagreements constructively.</p>
+                </div>
+                <div class="rule-card">
+                    <i class="ri-error-warning-line"></i>
+                    <h3>Content Standards</h3>
+                    <br>
+                    <p>No profanities, personal attacks, or inappropriate content.</p>
+                </div>
+                <div class="rule-card">
+                    <i class="ri-flag-line"></i>
+                    <h3>Report Issues</h3>
+                    <br>
+                    <p>Report inappropriate content or behavior promptly.</p>
+                </div>
+                <div class="rule-card">
+                    <i class="ri-user-settings-line"></i>
+                    <h3>Privacy & Consent</h3>
+                    <br>
+                    <p>Respect research boundaries and maintain confidentiality.</p>
+                </div>
+                <div class="rule-card">
+                    <i class="ri-spam-2-line"></i>
+                    <h3>Content Restrictions</h3>
+                    <br>
+                    <p>No spam, advertisements, or irrelevant content.</p>
+                </div>
+                <div class="rule-card">
+                    <i class="ri-lock-line"></i>
+                    <h3>Information Security</h3>
+                    <br>
+                    <p>Keep platform access information confidential.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <h2>Join the Research Platform</h2>
+            <p>Create an account to participate in this research study.</p>
+            <div class="cta-buttons">
+                {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
+                <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
+                <a href="{% url 'account_signup' %}" class="cta-btn signup">Create Account</a>
+                <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-content">
+            <div class="university-info">
+                <p>© {% now "Y" %} University of Notre Dame. All rights reserved.</p>
+            </div>
+            <div class="contact-info">
+                <h4>Contact Research Team</h4>
+                <a href="mailto:sandbox-list@nd.edu">sandbox-list@nd.edu</a>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %} 
