@@ -6,7 +6,7 @@
     </div>
 
     <!-- Add My Account Link -->
-    <a href="{% url 'users:detail' request.user.pk %}" class="my-account-link">
+    <a href="{% url 'home' %}" class="my-account-link">
         <div class="my-account-content">
             <div class="my-account-photo">
                 {% if current_basic_user_profile.profile_photo %}
@@ -33,7 +33,7 @@
 
         <li class="nav-item">
             <a class="nav-link"
-            href="{% url 'users:detail' request.user.pk %}">{% translate "My Profile" %}</a>
+            href="{% url 'home' %}">{% translate "My Profile" %}</a>
         </li>
         <li>
             <a href="{% url 'about' %}" class="{% if '/about/' in request.path %}active{% endif %}">
