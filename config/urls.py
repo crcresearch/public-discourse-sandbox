@@ -12,7 +12,6 @@ from rest_framework.authtoken.views import obtain_auth_token
 from public_discourse_sandbox.pds_app import views
 
 urlpatterns = [
-    # path("", views.landing, name="home"),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),
