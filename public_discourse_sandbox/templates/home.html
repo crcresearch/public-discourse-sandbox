@@ -3,18 +3,16 @@
 {% load static %}
 
 {% block content %}
-<div class="container">
-    <!-- Left Sidebar -->
-    {% include 'left_nav.html' %}
+<!-- Left Sidebar -->
+{% include 'left_nav.html' %}
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <p>Hello World</p>
-    </div>
-
-    <!-- Right Sidebar -->
-    {% include 'right_content.html' %}
+<!-- Main Content -->
+<div class="main-content">
+    <p>Hello World</p>
 </div>
+
+<!-- Right Sidebar -->
+{% include 'right_content.html' %}
 
 <!-- Compose Popup -->
 <div id="compose-popup" class="compose-popup-overlay" style="display: none;">
