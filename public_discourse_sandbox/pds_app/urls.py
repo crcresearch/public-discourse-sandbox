@@ -4,5 +4,5 @@ from django.views.generic import TemplateView
 from . import views
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="landing.htmll"), name="landing"),
+    path("", TemplateView.as_view(template_name="landing.html"), name="landing"),
 ]
