@@ -21,6 +21,8 @@
         <div class="auth-actions">
             {% comment %} <a href="{% url 'login' %}" class="login-btn">Sign in</a>
             <a href="{% url 'signup' %}" class="signup-btn">Sign up</a> {% endcomment %}
+            <a href="{% url 'account_login' %}" class="login-btn">Sign in</a>
+            <a href="{% url 'account_signup' %}" class="signup-btn">Sign up</a>
         </div>
     </header>
 
@@ -32,10 +34,12 @@
                 <div class="hero-description">
                     <p>*** This platform is actively under development. To test basic functionality, please sign up as a <b>regular user</b>. ***</p>
                 </div>
-                {% comment %} <div class="cta-buttons">
-                    <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
-                    <a href="{% url 'login' %}" class="cta-btn login">Sign In</a>
-                </div> {% endcomment %}
+                <div class="cta-buttons">
+                    {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
+                    <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
+                    <a href="{% url 'account_signup' %}" class="cta-btn signup">Create Account</a>
+                    <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
+                </div>
             </div>
         </section>
 
@@ -112,6 +116,8 @@
             <div class="cta-buttons">
                 {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
                 <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
+                <a href="{% url 'account_signup' %}" class="cta-btn signup">Create Account</a>
+                <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
             </div>
         </section>
     </main>

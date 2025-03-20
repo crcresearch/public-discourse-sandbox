@@ -68,7 +68,7 @@
                 aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="{% url 'home' %}">Public Discourse Sandbox</a>
+        {% comment %} <a class="navbar-brand" href="{% url 'home' %}">Public Discourse Sandbox</a>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
@@ -99,7 +99,7 @@
               </li>
             {% endif %}
           </ul>
-        </div>
+        </div> {% endcomment %}
       </div>
     </nav>
   </div>
