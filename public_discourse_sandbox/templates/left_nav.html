@@ -1,45 +1,54 @@
 {% load i18n %}
-
-<nav class="navbar navbar-expand-md navbar-light bg-light">
-    <button class="navbar-toggler navbar-toggler-right"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent"
-            aria-expanded="false"
-            aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <a class="navbar-brand" href="{% url 'home' %}">Public Discourse Sandbox</a>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item active">
-          <a class="nav-link" href="{% url 'home' %}">Home <span class="visually-hidden">(current)</span></a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'about' %}">About</a>
-        </li>
-        {% if request.user.is_authenticated %}
-          <li class="nav-item">
-            <a class="nav-link"
-               href="{% url 'users:detail' request.user.pk %}">{% translate "My Profile" %}</a>
-          </li>
-          <li class="nav-item">
-            {# URL provided by django-allauth/account/urls.py #}
-            <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
-          </li>
-        {% else %}
-          {% if ACCOUNT_ALLOW_REGISTRATION %}
-            <li class="nav-item">
-              {# URL provided by django-allauth/account/urls.py #}
-              <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
-            </li>
-          {% endif %}
-          <li class="nav-item">
-            {# URL provided by django-allauth/account/urls.py #}
-            <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
-          </li>
-        {% endif %}
-      </ul>
+<!-- Left Sidebar -->
+<div class="left-sidebar">
+    <div class="logo">
+        {% include 'partials/_logo.html' %}
     </div>
-</nav>
+
+    <!-- Add My Account Link -->
+    <a href="{% url 'users:detail' request.user.pk %}" class="my-account-link">
+        <div class="my-account-content">
+            <div class="my-account-photo">
+                {% if current_basic_user_profile.profile_photo %}
+                    <img src="{{ current_basic_user_profile.profile_photo.url }}" alt="Profile">
+                {% else %}
+                    <i class="ri-user-3-line"></i>
+                {% endif %}
+            </div>
+            <div class="my-account-info">
+                <span class="my-account-name">{{ current_basic_user_profile.full_name }}</span>
+                <span class="my-account-username">@{{ current_basic_user.username }}</span>
+            </div>
+            <i class="ri-arrow-right-s-line account-arrow"></i>
+        </div>
+    </a>
+
+    <ul class="nav-menu">
+        <li>
+            <a href="{% url 'home' %}" class="{% if request.path == '/home/' %}active{% endif %}">
+                <i class="ri-home-fill"></i>
+                Home
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link"
+            href="{% url 'users:detail' request.user.pk %}">{% translate "My Profile" %}</a>
+        </li>
+        <li>
+            <a href="{% url 'about' %}" class="{% if '/about/' in request.path %}active{% endif %}">
+                <i class="ri-information-line"></i>
+                About
+            </a>
+        </li>
+    </ul>
+    <div class="nav-actions">
+        <!-- Commenting out post button
+        <button class="post-button" onclick="openComposePopup()">Post</button>
+        -->
+        <a href="{% url 'account_logout' %}" class="logout-button">
+            <i class="ri-logout-box-line"></i>
+            <span>Log out</span>
+        </a>
+    </div>
+</div>

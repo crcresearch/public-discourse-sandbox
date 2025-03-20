@@ -3,32 +3,32 @@
 {% load static %}
 
 {% block content %}
-<!-- Left Sidebar -->
-{% include 'left_nav.html' %}
+    <!-- Left Sidebar -->
+    {% include 'left_nav.html' %}
 
-<!-- Main Content -->
-<div class="main-content">
-    <p>Hello World</p>
-</div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1 style="color: black;">Home</h1>
+    </div>
 
-<!-- Right Sidebar -->
-{% include 'right_content.html' %}
+    <!-- Right Sidebar -->
+    {% include 'right_content.html' %}
 
-<!-- Compose Popup -->
-<div id="compose-popup" class="compose-popup-overlay" style="display: none;">
-    <div class="compose-popup">
-        <div class="popup-header">
-            <button class="close-button" onclick="closeComposePopup()">×</button>
-            <h2>New Post</h2>
+    <!-- Compose Popup -->
+    <div id="compose-popup" class="compose-popup-overlay" style="display: none;">
+        <div class="compose-popup">
+            <div class="popup-header">
+                <button class="close-button" onclick="closeComposePopup()">×</button>
+                <h2>New Post</h2>
+            </div>
         </div>
     </div>
-</div>
-{% endblock %}
+    {% endblock %}
 
-{% block inline_javascript %}
-<script>
-function closeComposePopup() {
-    document.getElementById('compose-popup').style.display = 'none';
-}
-</script>
+    {% block inline_javascript %}
+    <script>
+    function closeComposePopup() {
+        document.getElementById('compose-popup').style.display = 'none';
+    }
+    </script>
 {% endblock %} 
