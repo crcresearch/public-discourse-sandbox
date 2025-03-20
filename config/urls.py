@@ -9,9 +9,10 @@ from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
+from public_discourse_sandbox.pds_app import views
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
+    path("", views.landing, name="home"),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),
