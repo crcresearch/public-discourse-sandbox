@@ -232,7 +232,7 @@ body {
 }
 
 /* Buttons */
-.feedback-button, .post-button, .logout-btn {
+.feedback-button, .post-button, .logout-button {
     display: inline-block;
     padding: 8px 16px;
     background-color: var(--nd-blue);
@@ -246,7 +246,7 @@ body {
     text-align: center;
 }
 
-.feedback-button:hover, .post-button:hover, .logout-btn:hover {
+.feedback-button:hover, .post-button:hover, .logout-button:hover {
     background-color: var(--nd-metallic-gold);
     text-decoration: none;
     color: white;
