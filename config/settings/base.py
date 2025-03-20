@@ -328,7 +328,7 @@ ACCOUNT_FORMS = {"signup": "public_discourse_sandbox.users.forms.UserSignupForm"
 SOCIALACCOUNT_ADAPTER = "public_discourse_sandbox.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {
-    "signup": "public_discourse_sandbox.users.forms.UserSocialSignupForm"
+    "signup": "public_discourse_sandbox.users.forms.UserSocialSignupForm",
 }
 
 # django-rest-framework
