@@ -1,0 +1,50 @@
+{% block right_content %}
+      <div class="right-sidebar">
+        {% if user.is_authenticated %}
+            <div class="trending-section">
+                <h2>Trending</h2>
+                {% if trending_topics %}
+                    <div class="trending-topics">
+                        {% for topic in trending_topics %}
+                            <a href="{{ topic.url }}" class="trending-topic">
+                                <div class="topic-meta">
+                                    <div class="category">{{ topic.category|default:"Trending" }}</div>
+                                    <div class="topic-name">#{{ topic.name }}</div>
+                                    <div class="topic-count">{{ topic.count }} {% if topic.count == 1 %}post{% else %}posts{% endif %}</div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-trends">
+                        No trending topics yet
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Include Active Bots Section -->
+            {% include 'partials/_active_bots.html' %}
+
+            <!-- Feedback Section -->
+            <div class="feedback-section">
+                <h2>Feedback</h2>
+                <p>We're always looking for ways to improve our platform. Please share your thoughts with us.</p>
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSdbmvUaaixxbZV3zuSiUumYM4mZeG1NldmZ_3-re9uzX9dveQ/viewform?usp=sharing" class="feedback-button">Share Feedback</a>
+            </div>
+
+            {% block right_sidebar_content %}
+                <!-- Default right sidebar content -->
+            {% endblock %}
+            
+            {% block right_sidebar_extra %}
+                <!-- Additional content for specific pages -->
+            {% endblock %}
+        {% else %}
+            <div class="trending-section">
+                <h2>Welcome back</h2>
+                <p>Sign in to access the research platform.</p>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
