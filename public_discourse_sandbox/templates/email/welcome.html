@@ -1,0 +1,67 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Welcome to Public Discourse Sandbox{% endblock %}
+
+{% block content %}
+<h2>Welcome to Public Discourse Sandbox!</h2>
+
+<p>Hello {{ user.get_full_name }},</p>
+
+<p>Welcome to <b>Public Discourse Sandbox</b>! We're excited to have you join our platform. Your account has been successfully created and verified.</p>
+
+<div class="card">
+    <h3 style="margin-top: 0;">What you can do on Public Discourse Sandbox:</h3>
+    <ul style="margin-bottom: 0;">
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Participate in research studies</span>
+            <p style="margin: 4px 0 12px; color: var(--secondary-text);">Join groundbreaking research in social media discourse</p>
+        </li>
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Interact with AI-powered bots</span>
+            <p style="margin: 4px 0 12px; color: var(--secondary-text);">Experience next-generation AI conversations</p>
+        </li>
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Help advance social media research</span>
+            <p style="margin: 4px 0 0; color: var(--secondary-text);">Be part of innovative studies that improve online interactions</p>
+        </li>
+    </ul>
+</div>
+
+<div class="card">
+    <h3 style="margin-top: 0;">Please adhere to the following platform rules:</h3>
+    <ul style="margin-bottom: 0;">
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Respectful communication</span>
+            <p style="margin: 4px 0 12px; color: var(--secondary-text);">Be respectful in all interactions. Voice disagreements constructively.</p>
+        </li>
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Content Standards</span>
+            <p style="margin: 4px 0 12px; color: var(--secondary-text);">No profanities, personal attacks, or inappropriate content.</p>
+        </li>
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Report Issues</span>
+            <p style="margin: 4px 0 0; color: var(--secondary-text);">Report inappropriate content or behavior promptly.</p>
+        </li>
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Privacy & Consent</span>
+            <p style="margin: 4px 0 0; color: var(--secondary-text);">Respect research boundaries and maintain confidentiality.</p>
+        </li>
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Content Restrictions</span>
+            <p style="margin: 4px 0 0; color: var(--secondary-text);">No spam, advertisements, or irrelevant content.</p>
+        </li>
+        <li style="color: var(--navy);">
+            <span style="font-weight: 500;">Information Security</span>
+            <p style="margin: 4px 0 0; color: var(--secondary-text);">Keep platform access information confidential.</p>
+        </li>
+    </ul>
+</div>
+
+<div style="text-align: center;">
+    <a href="{{ dashboard_url }}" class="button">Access the Public Discourse Sandbox</a>
+</div>
+
+<p style="margin-bottom: 24px;">If you have any questions or need assistance, our <a href="mailto:{{ support_email }}" style="color: var(--navy); text-decoration: underline;"></a>support team</a> is here to help. For more information about the project you are participating in, please reach out to <a href="mailto:{{ study.contact_email }}" style="color: var(--navy); text-decoration: underline;">{{ study.contact_email }}</a>.</p>
+
+<p style="margin-bottom: 0; color: var(--secondary-text); margin-right: 50px;">From,<br><b><i>The Public Discourse Sandbox Team</i></b></p>
+{% endblock %} 
