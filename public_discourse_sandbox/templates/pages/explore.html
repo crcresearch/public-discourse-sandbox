@@ -4,15 +4,17 @@
 
 {% block content %}
     <!-- Left Sidebar -->
-    {% include 'left_nav.html' %}
+    {% include 'pages/left_nav.html' %}
 
     <!-- Main Content -->
     <div class="main-content">
-        <h1 style="color: black;">Home</h1>
+        <header class="main-header">
+            <h1>Explore</h1>
+        </header>
     </div>
 
     <!-- Right Sidebar -->
-    {% include 'right_content.html' %}
+    {% include 'pages/right_content.html' %}
 
     <!-- Compose Popup -->
     <div id="compose-popup" class="compose-popup-overlay" style="display: none;">

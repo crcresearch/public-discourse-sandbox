@@ -29,9 +29,18 @@
                 Home
             </a>
         </li>
-
+        <li>
+            <a href="{% url 'explore' %}" class="{% if '/explore/' in request.path %}active{% endif %}">
+                <i class="ri-compass-3-line"></i>
+                Explore
+            </a>
+        </li>
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'users:detail' request.user.id %}">{% translate "My Profile" %}</a>
+            
+            <a class="nav-link" href="{% url 'users:detail' request.user.id %}">
+                <i class="ri-user-3-line"></i>
+                {% translate "My Profile" %}
+            </a>
         </li>
         <li>
             <a href="{% url 'about' %}" class="{% if '/about/' in request.path %}active{% endif %}">

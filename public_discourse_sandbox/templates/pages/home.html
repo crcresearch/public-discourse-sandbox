@@ -1,3 +1,36 @@
 {% extends "base.html" %}
 
+{% load static %}
 
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="main-header">
+            <h1>Home</h1>
+        </header>
+    </div>
+
+    <!-- Right Sidebar -->
+    {% include 'pages/right_content.html' %}
+
+    <!-- Compose Popup -->
+    <div id="compose-popup" class="compose-popup-overlay" style="display: none;">
+        <div class="compose-popup">
+            <div class="popup-header">
+                <button class="close-button" onclick="closeComposePopup()">×</button>
+                <h2>New Post</h2>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block inline_javascript %}
+    <script>
+    function closeComposePopup() {
+        document.getElementById('compose-popup').style.display = 'none';
+    }
+    </script>
+{% endblock %} 
