@@ -28,37 +28,18 @@
             background-color: var(--light-bg);
         }
         .email-layout {
-            display: flex;
-            max-width: 1200px;
+            max-width: 640px;
             margin: 0 auto;
             min-height: 100vh;
             background-color: white;
-        }
-        .sidebar-left {
-            width: 280px;
-            background-color: white;
-            padding: 40px 20px;
-            flex-shrink: 0;
-        }
-        .main-content {
-            flex-grow: 1;
             padding: 40px;
-            background-color: white;
-            border-left: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            max-width: 640px;
-        }
-        .sidebar-right {
-            width: 280px;
-            background-color: white;
-            padding: 40px 20px;
-            flex-shrink: 0;
         }
         .logo-section {
             display: flex;
             align-items: center;
             gap: 12px;
             text-decoration: none;
+            margin-bottom: 40px;
         }
         .logo-icon {
             width: 48px;
@@ -154,30 +135,24 @@
 </head>
 <body>
     <div class="email-layout">
-        <div class="sidebar-left">
-            <div class="logo-section">
-                <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-                    </svg>
-                </div>
-                <div class="brand-text">
-                    <span class="brand-name">Public Discourse</span>
-                    <span class="sandbox-label">Sandbox</span>
-                </div>
+        <div class="logo-section">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <span class="brand-name">Public Discourse</span>
+                <span class="sandbox-label">Sandbox</span>
             </div>
         </div>
         
-        <div class="main-content">
-            {% block content %}{% endblock %}
-            
-            <div class="footer">
-                <p style="margin-bottom: 8px;">© Public Discourse Sandbox. All rights reserved.</p>
-                <p style="margin-bottom: 0;">This is an automated message, please do not reply to this email.</p>
-            </div>
+        {% block content %}{% endblock %}
+        
+        <div class="footer">
+            <p style="margin-bottom: 8px;">© Public Discourse Sandbox. All rights reserved.</p>
+            <p style="margin-bottom: 0;">This is an automated message, please do not reply to this email.</p>
         </div>
-
-        <div class="sidebar-right"></div>
     </div>
 </body>
 </html> 

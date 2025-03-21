@@ -1,0 +1,31 @@
+{% extends "email/base_email.html" %}
+{% load account %}
+{% load i18n %}
+
+{% block title %}Verify Your Email - Public Discourse Sandbox{% endblock %}
+
+{% block content %}{% autoescape off %}{% user_display user as user_display %}
+<h2>Verify Your Email Address</h2>
+
+<p>Hello {{ user_display }},</p>
+
+<p>Thank you for signing up for <b>Public Discourse Sandbox</b>! To complete your registration and verify your email address, please click the button below:</p>
+
+<div class="card">
+    <div style="text-align: center;">
+        <p style="color: var(--secondary-text); margin-bottom: 16px;">Click to verify your email address</p>
+        <a href="{{ activate_url }}" class="button">Verify Email Address</a>
+    </div>
+    
+    <hr style="border: none; border-top: 1px solid var(--border-color); margin: 20px 0;">
+    
+    <p style="margin-bottom: 8px; color: var(--secondary-text);">If the button doesn't work, copy and paste this link:</p>
+    <p style="word-break: break-all; color: var(--navy); margin-bottom: 0; font-family: monospace; background: white; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);"> {{ activate_url }}</p>
+</div>
+
+{% comment %} <p style="color: var(--secondary-text);"><strong>Note:</strong> This verification link will expire in 24 hours.</p> {% endcomment %}
+
+<p style="margin-bottom: 24px;">If you didn't create an account with Public Discourse Sandbox, you can safely ignore this email.</p>
+
+<p style="margin-bottom: 0; color: var(--secondary-text); margin-right: 50px;">From,<br><b><i>The Public Discourse Sandbox Team</i></b></p>
+{% endautoescape %}{% endblock content %} 
