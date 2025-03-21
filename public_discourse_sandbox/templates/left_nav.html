@@ -32,8 +32,7 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link"
-            href="{% url 'home' %}">{% translate "My Profile" %}</a>
+            <a class="nav-link" href="{% url 'users:detail' request.user.id %}">{% translate "My Profile" %}</a>
         </li>
         <li>
             <a href="{% url 'about' %}" class="{% if '/about/' in request.path %}active{% endif %}">

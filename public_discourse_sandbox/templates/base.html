@@ -16,22 +16,18 @@
           content="Kristina Radivojevic" />
     <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
     {% block css %}
-      <!-- Latest compiled and minified Bootstrap CSS -->
-      <link rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
-            integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer" />
-<!-- Your stuff: Third-party CSS libraries go here -->
-<!-- This file stores project-specific CSS -->
-  <link href="{% static 'css/project.css' %}" rel="stylesheet" />
-  <link rel="stylesheet" type="text/css" href="{% static 'css/landing/landing.css' %}" />
-  <!-- <link rel="stylesheet" type="text/css" href="{% static 'css/main_base.css' %}" />
-  <link rel="stylesheet" href="{% static 'css/main.css' %}">
-  <link rel="stylesheet" href="{% static 'css/base.css' %}"> -->
-  <link rel="stylesheet" href="{% static 'css/main_dps.css' %}">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Third-party CSS libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Project-specific CSS -->
+    <link href="{% static 'css/project.css' %}" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'css/main_dps.css' %}">
+    <!-- Latest compiled and minified Bootstrap CSS -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
+          integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
 {% endblock css %}
 <!-- Le javascript
     ================================================== -->
@@ -57,7 +53,7 @@
 </head>
 <body class="{% block bodyclass %}{% endblock bodyclass %}">
   {% block body %}
-  <div class="container">
+  <div class="app-container">
     {% if messages %}
       {% for message in messages %}
         <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
@@ -74,7 +70,6 @@
         <p>Use this document as a way to quick start any new project.</p>
       {% endblock content %}
     {% endblock main %}
-
   </div>
   {% endblock body %}
   <!-- /container -->
