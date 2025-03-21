@@ -3,39 +3,35 @@
 {% load static %}
 
 {% block title %}
-  User: 
-  
-    {{ object.name }}
-  
-  
+  User: {{ object.name }}
 {% endblock title %}
 {% block content %}
-  <div class="container-fluid">
-    <div class="row">
+  <!-- Left Sidebar -->
+  {% include 'left_nav.html' %}
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="row mt-5">
       <div class="col-sm-12">
-        <h2>
-        
-        
-          {{ object.name }}
-        
-      </h2>
+        <h2>{{ object.name }}</h2>
+      </div>
     </div>
-  </div>
-  {% if object == request.user %}
+    {% if object == request.user %}
     <!-- Action buttons -->
     <div class="row">
       <div class="col-sm-12">
         <a class="btn btn-primary" href="{% url 'users:update' %}" role="button">My Info</a>
         <a class="btn btn-primary"
-           href="{% url 'account_email' %}"
-           role="button">E-Mail</a>
+          href="{% url 'account_email' %}"
+          role="button">E-Mail</a>
         <a class="btn btn-primary"
-           href="{% url 'mfa_index' %}"
-           role="button">MFA</a>
+          href="{% url 'mfa_index' %}"
+          role="button">MFA</a>
         <!-- Your Stuff: Custom user template urls -->
       </div>
+    {% endif %}
     </div>
     <!-- End Action buttons -->
-  {% endif %}
-</div>
+  </div>
+  <!-- Right Sidebar -->
+  {% include 'right_content.html' %}
 {% endblock content %}
