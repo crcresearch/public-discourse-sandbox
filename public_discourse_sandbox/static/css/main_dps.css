@@ -298,6 +298,13 @@ p, a, button, span {
 }
 
 /* Compose Area */
+.compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 8px;
+}
+
 .compose-area {
     padding: 16px;
     border-bottom: 1px solid var(--border-color);

@@ -12,26 +12,31 @@
             <h1>Home</h1>
         </header>
 
-        <!-- Post Composition Form -->
+        <!-- Post form -->
         <div class="compose-area">
-            <div class="compose-form-content">
-                <div class="user-avatar">
-                    {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
-                    {% else %}
-                        <div class="avatar-placeholder">
-                            <i class="ri-user-line"></i>
-                        </div>
-                    {% endif %}
-                </div>
+            <form method="post" action="{% url 'home' %}">
+                {% csrf_token %}
                 <div class="compose-content">
-                    <form method="post" class="compose-input-wrapper">
-                        {% csrf_token %}
-                        {{ form.content }}
-                        <button type="submit" class="post-button">Post</button>
-                    </form>
+                    <div class="user-avatar">
+                        {% if user.profile.profile_picture %}
+                            <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}'s avatar">
+                        {% else %}
+                            <i class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                    <div class="compose-input">
+                        <textarea name="content" placeholder="Share your thoughts..." maxlength="500">{{ form.content.value|default:'' }}</textarea>
+                        {% if form.content.errors %}
+                            <div class="error">
+                                {{ form.content.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+                <div class="compose-actions">
+                    <button type="submit" class="post-button">Post</button>
+                </div>
+            </form>
         </div>
 
         <!-- Posts List -->
