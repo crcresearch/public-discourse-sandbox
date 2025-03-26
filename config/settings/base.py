@@ -146,6 +146,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "public_discourse_sandbox.contrib.mfa.middleware.AllUserRequire2FAMiddleware",
     "allauth.account.middleware.AccountMiddleware",
 ]
 
