@@ -6,7 +6,10 @@ class PostForm(forms.Form):
         widget=forms.Textarea(
             attrs={
                 'class': 'compose-input',
+                'name': 'post_content',
                 'placeholder': 'Share your thoughts...',
+                'maxlength': '500',
+                'required': True,
                 'rows': '3',
             }
         ),
@@ -15,5 +18,6 @@ class PostForm(forms.Form):
 
     class Media:
         css = {
-            'all': ('css/compose_form.css',)
+            # 'all': ('css/compose_form.css',)
+            'all': ('css/main_dps.css',)
         } 

@@ -21,6 +21,16 @@ def home(request):
     else:
         form = PostForm()
 
+    # Fetch posts ordered by creation date, newest first
+    posts = Post.objects.filter(
+        is_deleted=False,
+        parent_post__isnull=True  # Only show top-level posts, not replies
+    ).select_related(
+        'user_profile',
+        'user_profile__user'
+    ).order_by('-created_date')
+
     return render(request, 'pages/home.html', {
         'form': form,
+        'posts': posts,
     }) 
