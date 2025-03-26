@@ -173,9 +173,9 @@ p, a, button, span {
 /* Main Content */
 .main-content {
     width: 600px;
-    margin-left: 275px;
-    margin-right: 350px;
-    /* margin: auto; */
+    /* margin-left: 275px;
+    margin-right: 350px; */
+    margin: auto;
     border-left: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
     min-height: 100vh;
