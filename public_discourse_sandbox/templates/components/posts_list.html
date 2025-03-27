@@ -1,43 +1,53 @@
 <!-- Posts List -->
-<div class="posts-list">
+<div class="post-feed">
     {% for post in posts %}
-        <article class="post-card">
-            <div class="post-header">
-                <div class="post-author">
-                    <div class="user-avatar small">
-                        {% if post.user_profile.profile_picture %}
-                            <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
-                        {% else %}
-                            <div class="avatar-placeholder">
-                                <i class="ri-user-line"></i>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="author-info">
-                        <div class="author-name">
-                            {{ post.user_profile.user.username }}
-                            <span class="username">@{{ post.user_profile.user.username }}</span>
+        <article class="post" data-tweet-id="15">
+            <div class="post-main">
+                <a href="post.user_profile" class="user-avatar">
+                    {% if post.user_profile.profile_picture %}
+                        <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            <i class="ri-user-line"></i>
                         </div>
-                        <span class="post-time">{{ post.created_date|timesince }} ago</span>
+                    {% endif %}
+                </a>
+                <div class="post-content">
+                    <!-- Regular tweet header -->
+                    <div class="post-header">
+                        <div class="user-info">
+                            <a href="/profile/swhitfie/" class="user-name">
+                                {{ post.user_profile.user.username }}
+                            </a>
+                            <a href="/profile/swhitfie/" class="user-handle">
+                                @{{ post.user_profile.user.username }}
+                            </a>
+                            <span class="dot">·</span>
+                            <span class="time">{{ post.created_date|timesince }}</span>
+                        </div>
+                    </div>
+        
+                    <!-- Regular tweet content -->
+                    <div class="post-text">{{ post.content }}</div>
+        
+                    <!-- Tweet Actions -->
+                    <div class="post-actions">
+                        <button class="action-button comment-button" data-tweet-id="15" data-authenticated="true" onclick="showCommentPopup('15')">
+                            <i class="ri-chat-1-line"></i>
+                            <span>0</span>
+                        </button>
+        
+                        <button class="action-button repost-button " data-tweet-id="15" data-authenticated="true" onclick="showRepostPopup('15')">
+                            <i class="ri-repeat-line"></i>
+                            <span>0</span>
+                        </button>
+        
+                        <button class="action-button like-button " data-tweet-id="15" data-authenticated="true" onclick="handleLike(this, '15')">
+                            <i class="ri-heart-line"></i>
+                            <span>0</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-            <div class="post-content">
-                {{ post.content }}
-            </div>
-            <div class="post-actions">
-                <button class="action-btn comments">
-                    <i class="ri-chat-1-line"></i>
-                    <span>{{ post.num_comments }}</span>
-                </button>
-                <button class="action-btn repost">
-                    <i class="ri-repeat-line"></i>
-                    <span>{{ post.num_shares }}</span>
-                </button>
-                <button class="action-btn like">
-                    <i class="ri-heart-line"></i>
-                    <span>{{ post.num_upvotes }}</span>
-                </button>
             </div>
         </article>
     {% empty %}
