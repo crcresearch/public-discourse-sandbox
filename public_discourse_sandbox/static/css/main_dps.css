@@ -251,12 +251,12 @@ p, a, button, span {
 }
 
 /* Buttons */
-.feedback-button, .post-button, .logout-button {
+.feedback-button, .logout-button {
     display: inline-block;
     padding: 8px 16px;
     background-color: var(--nd-blue);
     color: white;
-    border: 2px solid var(--nd-metallic-gold);
+    /* border: 2px solid var(--nd-metallic-gold); */
     border-radius: 35px;
     text-decoration: none;
     font-weight: 600;
@@ -265,10 +265,28 @@ p, a, button, span {
     text-align: center;
 }
 
-.feedback-button:hover, .post-button:hover, .logout-button:hover {
+.feedback-button:hover, .logout-button:hover {
     background-color: var(--nd-metallic-gold);
     text-decoration: none;
     color: white;
+}
+
+.post-button {
+    background: #1d1e3a;
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 8px 24px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 84px;
+    min-height: 36px;
+}
+
+.post-button:hover {
+    background-color: var(--nd-metallic-gold);
 }
 
 /* User Profile Elements */
@@ -285,6 +303,18 @@ p, a, button, span {
     background-size: cover;
 }
 
+/* .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+} */
+
 .user-avatar img {
     width: 100%;
     height: 100%;
@@ -298,16 +328,28 @@ p, a, button, span {
 }
 
 /* Compose Area */
-.compose-actions {
+/* .compose-actions {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     margin-top: 8px;
+} */
+
+.compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 12px;
+    margin-left: 60px;
+    border-top: 1px solid var(--border-color, #EFF3F4);
 }
 
 .compose-area {
     padding: 16px;
     border-bottom: 1px solid var(--border-color);
+}
+
+.compose-content {
+    display: flex;
 }
 
 .compose-input textarea {
@@ -321,6 +363,37 @@ p, a, button, span {
     padding: 0;
     min-height: 100px;
 }
+
+.compose-input textarea::placeholder {
+    color: #536471;
+}
+
+.compose-input textarea:focus {
+    outline: none;
+}
+
+/* .compose-input textarea {
+    width: 100%;
+    min-height: 80px;
+    border: none;
+    padding: 12px 0;
+    font-size: 20px;
+    line-height: 24px;
+    font-family: inherit;
+    resize: none;
+} */
+
+/* .compose-input {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+} */
+
+.error {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 4px;
+} 
 
 /* post Feed */
 .post {

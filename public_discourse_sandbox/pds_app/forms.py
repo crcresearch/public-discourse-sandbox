@@ -18,6 +18,5 @@ class PostForm(forms.Form):
 
     class Media:
         css = {
-            # 'all': ('css/compose_form.css',)
             'all': ('css/main_dps.css',)
         } 

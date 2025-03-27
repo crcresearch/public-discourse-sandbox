@@ -1,0 +1,48 @@
+<!-- Posts List -->
+<div class="posts-list">
+    {% for post in posts %}
+        <article class="post-card">
+            <div class="post-header">
+                <div class="post-author">
+                    <div class="user-avatar small">
+                        {% if post.user_profile.profile_picture %}
+                            <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                <i class="ri-user-line"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="author-info">
+                        <div class="author-name">
+                            {{ post.user_profile.user.username }}
+                            <span class="username">@{{ post.user_profile.user.username }}</span>
+                        </div>
+                        <span class="post-time">{{ post.created_date|timesince }} ago</span>
+                    </div>
+                </div>
+            </div>
+            <div class="post-content">
+                {{ post.content }}
+            </div>
+            <div class="post-actions">
+                <button class="action-btn comments">
+                    <i class="ri-chat-1-line"></i>
+                    <span>{{ post.num_comments }}</span>
+                </button>
+                <button class="action-btn repost">
+                    <i class="ri-repeat-line"></i>
+                    <span>{{ post.num_shares }}</span>
+                </button>
+                <button class="action-btn like">
+                    <i class="ri-heart-line"></i>
+                    <span>{{ post.num_upvotes }}</span>
+                </button>
+            </div>
+        </article>
+    {% empty %}
+        <div class="no-posts">
+            <p>No posts yet. Be the first to post!</p>
+        </div>
+    {% endfor %}
+</div> 
