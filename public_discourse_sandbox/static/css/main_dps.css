@@ -297,6 +297,7 @@ p, a, button, span {
     border: 2px solid var(--nd-metallic-gold);
     overflow: hidden;
     margin-bottom: 12px;
+    margin-right: 12px;
     background-color: lightgrey;
     background-position: center;
     background-repeat: no-repeat;
@@ -340,7 +341,7 @@ p, a, button, span {
     justify-content: flex-end;
     padding-top: 12px;
     margin-left: 60px;
-    border-top: 1px solid var(--border-color, #EFF3F4);
+    /* border-top: 1px solid var(--border-color, #EFF3F4); */
 }
 
 .compose-area {
