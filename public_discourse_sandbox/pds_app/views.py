@@ -1,52 +1,61 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from django.urls import reverse_lazy
 from .forms import PostForm
 from .models import Post
 
-@login_required
-def home(request):
-    """Home page view."""
-    if request.method == 'POST':
+class HomeView(LoginRequiredMixin, ListView):
+    """Home page view that displays and handles creation of posts."""
+    model = Post
+    template_name = 'pages/home.html'
+    context_object_name = 'posts'
+
+    def get_queryset(self):
+        """Get posts ordered by creation date, newest first."""
+        return Post.objects.filter(
+            is_deleted=False,
+            parent_post__isnull=True  # Only show top-level posts, not replies
+        ).select_related(
+            'user_profile',
+            'user_profile__user'
+        ).order_by('-created_date')
+
+    def get_context_data(self, **kwargs):
+        """Add the post form to the context."""
+        context = super().get_context_data(**kwargs)
+        context['form'] = PostForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Handle post creation."""
         form = PostForm(request.POST)
         if form.is_valid():
-            content = form.cleaned_data['content']
-            # Create a new post
             post = Post(
                 user_profile=request.user.userprofile,
-                content=content,
+                content=form.cleaned_data['content'],
                 experiment=request.user.userprofile.experiment,
             )
             post.save()
             return redirect('home')
-    else:
-        form = PostForm()
+        
+        # If form is invalid, show form with errors
+        return self.get(request, *args, **kwargs)
 
-    # Fetch posts ordered by creation date, newest first
-    posts = Post.objects.filter(
-        is_deleted=False,
-        parent_post__isnull=True  # Only show top-level posts, not replies
-    ).select_related(
-        'user_profile',
-        'user_profile__user'
-    ).order_by('-created_date')
 
-    return render(request, 'pages/home.html', {
-        'form': form,
-        'posts': posts,
-    }) 
+class ExploreView(LoginRequiredMixin, ListView):
+    """Explore page view that displays all posts."""
+    model = Post
+    template_name = 'pages/explore.html'
+    context_object_name = 'posts'
 
-@login_required
-def explore(request):
-    """Explore page view."""
-    # Fetch posts ordered by creation date, newest first
-    posts = Post.objects.filter(
-        is_deleted=False,
-        parent_post__isnull=True  # Only show top-level posts, not replies
-    ).select_related(
-        'user_profile',
-        'user_profile__user'
-    ).order_by('-created_date')
-
-    return render(request, 'pages/explore.html', {
-        'posts': posts,
-    }) # Create your views here.
+    def get_queryset(self):
+        """Get posts ordered by creation date, newest first."""
+        return Post.objects.filter(
+            is_deleted=False,
+            parent_post__isnull=True  # Only show top-level posts, not replies
+        ).select_related(
+            'user_profile',
+            'user_profile__user'
+        ).order_by('-created_date')
