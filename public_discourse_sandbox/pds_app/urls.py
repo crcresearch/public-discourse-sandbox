@@ -1,8 +1,8 @@
 from django.urls import path
 from django.views.generic import TemplateView
 
-from .views.home import home
-from .views.explore import explore
+# Import views using absolute import path for Celery compatibility
+from public_discourse_sandbox.pds_app.views import home, explore
 
 urlpatterns = [
     path("", TemplateView.as_view(template_name="pages/landing.html"), name="landing"),
