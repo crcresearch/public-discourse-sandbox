@@ -6,6 +6,16 @@ from django.urls import reverse_lazy
 from .forms import PostForm
 from .models import Post
 
+def get_active_posts():
+    """Get non-deleted top-level posts with related user data."""
+    return Post.objects.filter(
+        is_deleted=False,
+        parent_post__isnull=True  # Only show top-level posts, not replies
+    ).select_related(
+        'user_profile',
+        'user_profile__user'
+    ).order_by('-created_date')
+
 class HomeView(LoginRequiredMixin, ListView):
     """Home page view that displays and handles creation of posts."""
     model = Post
@@ -13,14 +23,7 @@ class HomeView(LoginRequiredMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        """Get posts ordered by creation date, newest first."""
-        return Post.objects.filter(
-            is_deleted=False,
-            parent_post__isnull=True  # Only show top-level posts, not replies
-        ).select_related(
-            'user_profile',
-            'user_profile__user'
-        ).order_by('-created_date')
+        return get_active_posts()
 
     def get_context_data(self, **kwargs):
         """Add the post form to the context."""
@@ -51,11 +54,4 @@ class ExploreView(LoginRequiredMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        """Get posts ordered by creation date, newest first."""
-        return Post.objects.filter(
-            is_deleted=False,
-            parent_post__isnull=True  # Only show top-level posts, not replies
-        ).select_related(
-            'user_profile',
-            'user_profile__user'
-        ).order_by('-created_date')
+        return get_active_posts()
