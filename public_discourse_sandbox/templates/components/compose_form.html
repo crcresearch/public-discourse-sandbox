@@ -4,10 +4,10 @@
         {% csrf_token %}
         <div class="compose-content">
             <div class="user-avatar">
-                {% if user.profile.profile_picture %}
-                    <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}'s avatar">
+                {% if post.user_profile.profile_picture %}
+                    <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
                 {% else %}
-                    <i class="fas fa-user"></i>
+                    <i class="ri-user-3-line"></i>
                 {% endif %}
             </div>
             <div class="compose-input">
