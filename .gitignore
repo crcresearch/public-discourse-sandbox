@@ -276,3 +276,4 @@ public_discourse_sandbox/media/
 .env
 .envs/*
 !.envs/.local/
+.envs/.local/.django

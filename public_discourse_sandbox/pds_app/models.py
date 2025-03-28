@@ -100,7 +100,10 @@ class SocialNetwork(BaseModel):
         return f"{self.source_node} → {self.target_node}"
 
 
-class Bot(BaseModel):
+class DigitalTwin(BaseModel):
+    """
+    Digital twin of a human user.
+    """
     # name = models.CharField(max_length=100)
     persona = models.TextField()
     # user = models.OneToOneField(User, on_delete=models.CASCADE)

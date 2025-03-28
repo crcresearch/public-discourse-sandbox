@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Experiment, UserProfile, Post, Vote, SocialNetwork
+from .models import Experiment, UserProfile, Post, Vote, SocialNetwork, DigitalTwin
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
@@ -51,3 +51,10 @@ class SocialNetworkAdmin(admin.ModelAdmin):
     raw_id_fields = ('source_node', 'target_node')
     date_hierarchy = 'created_date'
     ordering = ('-created_date',)
+
+@admin.register(DigitalTwin)
+class DigitalTwinAdmin(admin.ModelAdmin):
+    list_display = ('user_profile', 'is_active', 'last_post')
+    search_fields = ('user_profile__user__username',)
+    readonly_fields = ('created_date', 'last_modified', 'last_post')
+    raw_id_fields = ('user_profile',)
