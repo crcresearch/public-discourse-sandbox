@@ -97,3 +97,16 @@ class SocialNetwork(BaseModel):
 
     def __str__(self):
         return f"{self.source_node} → {self.target_node}"
+
+
+class Bot(BaseModel):
+    # name = models.CharField(max_length=100)
+    persona = models.TextField()
+    # user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    api_token = models.CharField(max_length=255, default='default_token')
+    last_post = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.user_profile.username
