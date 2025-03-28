@@ -37,6 +37,7 @@ class UserProfile(BaseModel):
     User profile model.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    username = models.CharField(max_length=255, unique=True)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     banner_picture = models.ImageField(upload_to='banner_pictures/', null=True, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
@@ -49,7 +50,7 @@ class UserProfile(BaseModel):
     
     def __str__(self):
         bot_status = " (Bot)" if self.is_bot else ""
-        return f"{self.user.username}{bot_status}"
+        return f"{self.username}{bot_status}"
 
 
 class Post(BaseModel):
@@ -72,7 +73,7 @@ class Post(BaseModel):
     def __str__(self):
         preview = self.content[:50] + "..." if len(self.content) > 50 else self.content
         status = " (Deleted)" if self.is_deleted else ""
-        return f"Post by {self.user_profile}: {preview}{status}"
+        return f"Post by {self.user_profile.username}: {preview}{status}"
 
 
 class Vote(BaseModel):

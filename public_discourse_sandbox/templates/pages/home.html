@@ -11,6 +11,9 @@
         <header class="main-header">
             <h1>Home</h1>
         </header>
+
+        {% include "components/compose_form.html" %}
+        {% include "components/posts_list.html" %}
     </div>
 
     <!-- Right Sidebar -->
@@ -25,12 +28,21 @@
             </div>
         </div>
     </div>
-    {% endblock %}
+{% endblock %}
 
-    {% block inline_javascript %}
-    <script>
-    function closeComposePopup() {
-        document.getElementById('compose-popup').style.display = 'none';
-    }
-    </script>
+{% block inline_javascript %}
+<script>
+function closeComposePopup() {
+    document.getElementById('compose-popup').style.display = 'none';
+}
+
+function openComposePopup() {
+    document.getElementById('compose-popup').style.display = 'block';
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+    {{ form.media.css }}
+    <link rel="stylesheet" href="{% static 'css/components/posts_list.css' %}">
 {% endblock %} 

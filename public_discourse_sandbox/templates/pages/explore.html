@@ -11,20 +11,11 @@
         <header class="main-header">
             <h1>Explore</h1>
         </header>
+        {% include "components/posts_list.html" %}
     </div>
 
     <!-- Right Sidebar -->
     {% include 'pages/right_content.html' %}
-
-    <!-- Compose Popup -->
-    <div id="compose-popup" class="compose-popup-overlay" style="display: none;">
-        <div class="compose-popup">
-            <div class="popup-header">
-                <button class="close-button" onclick="closeComposePopup()">×</button>
-                <h2>New Post</h2>
-            </div>
-        </div>
-    </div>
     {% endblock %}
 
     {% block inline_javascript %}

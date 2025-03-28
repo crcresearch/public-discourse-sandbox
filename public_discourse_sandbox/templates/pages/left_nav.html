@@ -9,15 +9,15 @@
     <a href="{% url 'users:detail' request.user.id %}" class="my-account-link">
         <div class="my-account-content">
             <div class="my-account-photo">
-                {% if current_basic_user_profile.profile_photo %}
-                    <img src="{{ current_basic_user_profile.profile_photo.url }}" alt="Profile">
+                {% if user.userprofile.profile_picture %}
+                    <img src="{{ user.userprofile.profile_picture.url }}" alt="Profile">
                 {% else %}
                     <i class="ri-user-3-line"></i>
                 {% endif %}
             </div>
             <div class="my-account-info">
-                <span class="my-account-name">{{ current_basic_user_profile.full_name }}</span>
-                <span class="my-account-username">@{{ current_basic_user.username }}</span>
+                <span class="my-account-name">{{ user.name }}</span>
+                <span class="my-account-username">@{{ user.userprofile.username }}</span>
             </div>
             <i class="ri-arrow-right-s-line account-arrow"></i>
         </div>
