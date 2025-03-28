@@ -53,6 +53,11 @@ class UserProfile(BaseModel):
         return f"{self.username}{bot_status}"
 
 
+class UndeletedPostManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
 class Post(BaseModel):
     """
     Post model.
@@ -74,6 +79,9 @@ class Post(BaseModel):
         preview = self.content[:50] + "..." if len(self.content) > 50 else self.content
         status = " (Deleted)" if self.is_deleted else ""
         return f"Post by {self.user_profile.username}: {preview}{status}"
+    
+    all_objects = models.Manager()
+    objects = UndeletedPostManager()
 
 
 class Vote(BaseModel):

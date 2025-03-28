@@ -9,7 +9,6 @@ from .models import Post
 def get_active_posts():
     """Get non-deleted top-level posts with related user data."""
     return Post.objects.filter(
-        is_deleted=False,
         parent_post__isnull=True  # Only show top-level posts, not replies
     ).select_related(
         'user_profile',
