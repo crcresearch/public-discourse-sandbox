@@ -113,17 +113,17 @@ class Command(BaseCommand):
                     self.stdout.write(f"Created profile for {bot_config['display_name']}")
 
                 # Get bot token from environment variables
-                bot_token = os.getenv(f"BOT{bot_number}_AUTH_TOKEN", f"bot{bot_number}_default_token")
+                api_token = os.getenv(f"OPENAI_API_KEY")
 
                 # Create or update bot
-                bot = DigitalTwin.objects.create(
+                digital_twin = DigitalTwin.objects.create(
                     user_profile=profile,
                     # name=bot_config['display_name'],
                     persona=persona_description,
                     is_active=file_path in active_files,  # Only activate selected bots
-                    api_token=bot_token
+                    api_token=api_token
                 )
-                self.stdout.write(f"Created digital twin: {bot_config['display_name']} (Active: {bot.is_active})")
+                self.stdout.write(f"Created digital twin: {bot_config['display_name']} (Active: {digital_twin.is_active})")
 
             except Exception as e:
                 self.stderr.write(f"Error setting up digital twin from {file_path}: {str(e)}")
