@@ -1,0 +1,26 @@
+<!-- Tweet form -->
+<div class="compose-area">
+    <form method="post" action="{% url 'home' %}">
+        {% csrf_token %}
+        <div class="compose-content">
+            <div class="user-avatar">
+                {% if user.userprofile.profile_picture %}
+                    <img src="{{ user.userprofile.profile_picture.url }}" alt="{{ user.username }}'s avatar" class="avatar-img">
+                {% else %}
+                    <i class="ri-user-3-line"></i>
+                {% endif %}
+            </div>
+            <div class="compose-input">
+                <textarea name="content" placeholder="Share your thoughts..." maxlength="500">{{ form.content.value|default:'' }}</textarea>
+                {% if form.content.errors %}
+                    <div class="error">
+                        {{ form.content.errors }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="compose-actions">
+            <button type="submit" class="post-button">Post</button>
+        </div>
+    </form>
+</div> 

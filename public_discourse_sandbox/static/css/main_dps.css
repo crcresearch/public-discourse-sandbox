@@ -173,9 +173,9 @@ p, a, button, span {
 /* Main Content */
 .main-content {
     width: 600px;
-    margin-left: 275px;
-    margin-right: 350px;
-    /* margin: auto; */
+    /* margin-left: 275px;
+    margin-right: 350px; */
+    margin: auto;
     border-left: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
     min-height: 100vh;
@@ -251,12 +251,12 @@ p, a, button, span {
 }
 
 /* Buttons */
-.feedback-button, .post-button, .logout-button {
+.feedback-button, .logout-button {
     display: inline-block;
     padding: 8px 16px;
     background-color: var(--nd-blue);
     color: white;
-    border: 2px solid var(--nd-metallic-gold);
+    /* border: 2px solid var(--nd-metallic-gold); */
     border-radius: 35px;
     text-decoration: none;
     font-weight: 600;
@@ -265,10 +265,28 @@ p, a, button, span {
     text-align: center;
 }
 
-.feedback-button:hover, .post-button:hover, .logout-button:hover {
+.feedback-button:hover, .logout-button:hover {
     background-color: var(--nd-metallic-gold);
     text-decoration: none;
     color: white;
+}
+
+.post-button {
+    background: #1d1e3a;
+    color: white;
+    border: none;
+    border-radius: 24px;
+    padding: 8px 24px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 84px;
+    min-height: 36px;
+}
+
+.post-button:hover {
+    background-color: var(--nd-metallic-gold);
 }
 
 /* User Profile Elements */
@@ -279,16 +297,35 @@ p, a, button, span {
     border: 2px solid var(--nd-metallic-gold);
     overflow: hidden;
     margin-bottom: 12px;
+    margin-right: 12px;
     background-color: lightgrey;
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
 }
 
+/* .user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+} */
+
 .user-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .default-avatar {
@@ -298,9 +335,28 @@ p, a, button, span {
 }
 
 /* Compose Area */
+/* .compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 8px;
+} */
+
+.compose-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 12px;
+    margin-left: 60px;
+    /* border-top: 1px solid var(--border-color, #EFF3F4); */
+}
+
 .compose-area {
     padding: 16px;
     border-bottom: 1px solid var(--border-color);
+}
+
+.compose-content {
+    display: flex;
 }
 
 .compose-input textarea {
@@ -315,45 +371,86 @@ p, a, button, span {
     min-height: 100px;
 }
 
-/* Tweet Feed */
-.tweet {
+.compose-input textarea::placeholder {
+    color: #536471;
+}
+
+.compose-input textarea:focus {
+    outline: none;
+}
+
+/* .compose-input textarea {
+    width: 100%;
+    min-height: 80px;
+    border: none;
+    padding: 12px 0;
+    font-size: 20px;
+    line-height: 24px;
+    font-family: inherit;
+    resize: none;
+} */
+
+/* .compose-input {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+} */
+
+.error {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 4px;
+} 
+
+/* post Feed */
+.post-feed {
+    padding-top: 60px;
+}
+
+.post {
     display: flex;
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
 }
 
-.tweet-content {
+.post-main {
+    display: flex;
+    gap: 12px;
+}
+
+.post-content {
     flex: 1;
     min-width: 0;
 }
 
-.tweet-header {
+.post-header {
     margin-bottom: 2px;
 }
 
-.tweet-header .user-name {
+.post-header .user-name {
     color: var(--nd-blue);
     font-weight: 700;
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
-.tweet-header .user-name:hover {
+.post-header .user-name:hover {
     text-decoration: underline;
 }
 
-.tweet-header .user-handle,
-.tweet-header .dot,
-.tweet-header .time {
+.post-header .user-handle,
+.post-header .dot,
+.post-header .time {
     color: var(--secondary-text);
     font-size: 15px;
+    text-decoration: none;
 }
 
-.tweet-header > * + * {
+.post-header > * + * {
     margin-left: 4px;
 }
 
-.tweet-text {
+.post-text {
     color: rgb(15, 20, 25);
     font-size: 15px;
     line-height: 20px;
@@ -361,7 +458,7 @@ p, a, button, span {
     margin-bottom: 12px;
 }
 
-.tweet-actions {
+.post-actions {
     display: flex;
     justify-content: flex-start;
     gap: 80px;
@@ -431,7 +528,7 @@ p, a, button, span {
 }
 
 /* Popup Styles */
-.tweet-popup-overlay, .compose-popup-overlay {
+.post-popup-overlay, .compose-popup-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -444,7 +541,7 @@ p, a, button, span {
     z-index: 1000;
 }
 
-.tweet-popup, .compose-popup {
+.post-popup, .compose-popup {
     background: white;
     width: 600px;
     border-radius: 16px;
@@ -577,14 +674,14 @@ p, a, button, span {
 }
 
 /* Utility Classes */
-.no-tweets, .no-trends {
+.no-posts, .no-trends {
     padding: 32px 16px;
     text-align: center;
     color: var(--secondary-text);
     border-bottom: 1px solid var(--border-color);
 }
 
-.no-tweets p {
+.no-posts p {
     margin: 0;
     font-size: 15px;
 }
