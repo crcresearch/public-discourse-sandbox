@@ -1,6 +1,4 @@
-import random
 import logging
-import os
 import time
 import openai
 from typing import Any, Dict, List
@@ -24,20 +22,20 @@ def validate_config(config):
     assert all(key in config["LLM"] for key in ["prompt_model", "action_model", "api_key", "functions"]), "LLM is missing required keys"
     return True
 
-class AgentCode:
-    def __init__(self, config: Dict[str, Any]):
-        if "control_flow" not in config:
-            raise ValueError("Missing required key 'control_flow' in config")
+# class AgentCode:
+#     def __init__(self, config: Dict[str, Any]):
+#         if "control_flow" not in config:
+#             raise ValueError("Missing required key 'control_flow' in config")
         
-        self.config = config
-        self.objective = config["objective"] if "objective" in config else input("What is my purpose? ")
-        self.control_flow = config["control_flow"]
-        self.name = config.get("name", "TinyAgent")
+#         self.config = config
+#         self.objective = config["objective"] if "objective" in config else input("What is my purpose? ")
+#         self.control_flow = config["control_flow"]
+#         self.name = config.get("name", "TinyAgent")
     
-    def template(self, phase: str, input_data: Any) -> Any:
-        if phase not in self.config:
-            raise ValueError(f"Undefined phase: {phase}")
-        return self.config[phase].format(input_data)
+#     def template(self, phase: str, input_data: Any) -> Any:
+#         if phase not in self.config:
+#             raise ValueError(f"Undefined phase: {phase}")
+#         return self.config[phase].format(input_data)
 
 
 class DTService:
@@ -47,27 +45,6 @@ class DTService:
         self.token_counter = 0
         self.max_token_length = 512  # Default value, adjust as needed
         self.agent_code = None  # Initialize agent_code as None
-    
-    def get_random_digitial_twins(self, count=1, exclude_twin=None):
-        """Get random active twins, optionally excluding a specific twin"""
-        active_twins = DigitalTwin.objects.filter(is_active=True)
-        if exclude_twin:
-            active_twins = active_twins.exclude(id=exclude_twin.id)
-        
-        twin_count = active_twins.count()
-        logger.info(f"Found {twin_count} eligible active twins")
-        
-        if twin_count == 0:
-            return []
-            
-        # Get exactly the specified number of twins, or all available if less
-        count = min(count, twin_count)
-        selected_twins = random.sample(list(active_twins), count)
-        
-        for twin in selected_twins:
-            logger.info(f"Selected twin: {twin.user_profile.username} (ID: {twin.id})")
-        
-        return selected_twins
 
     def _add_to_working_memory(self, input_data: str) -> None:
         """Adds the input_data to working memory, considering token constraints."""
@@ -94,7 +71,6 @@ class DTService:
     def execute(self, template: str) -> Any:
         """Executes a particular phase using sub-agents."""
         start_time = time.time()
-        # template = self.agent_code.template(phase, input_data)
         self._add_to_working_memory(template)
         
         # Use OpenAI directly instead of self.llm.prompt
@@ -118,6 +94,7 @@ class DTService:
 
     def _analyze_sentiment(self, text: str) -> str:
         """Analyze text sentiment"""
+        print(f"Analyzing sentiment for text: {text}")
         try:
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
             response = client.chat.completions.create(
@@ -134,6 +111,7 @@ class DTService:
 
     def _extract_keywords(self, text: str) -> List[str]:
         """Extract key topics from text"""
+        print(f"Extracting keywords for text: {text}")
         try:
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
             response = client.chat.completions.create(
@@ -150,13 +128,12 @@ class DTService:
             return []
 
     def analyze_context(self, post: Post) -> Dict:
-        """Analyze the context of a tweet"""
-        print(f"Analyzing context for tweet: {post.id}")
+        """Analyze the context of a post"""
         try:
             # Create a simpler context without API calls first
             context = {
-                'tweet_content': post.content,
-                'tweet_id': post.id,
+                'post_content': post.content,
+                'post_id': post.id,
                 'user': post.user_profile.username if post.user_profile.username else 'unknown',
                 'timestamp': post.created_date.isoformat() if post.created_date else None
             }
@@ -204,6 +181,7 @@ class DTService:
         }
     
     def template(self, phase: str, input_data: Any, twin: DigitalTwin) -> Any:
+        # print(f"Template for {phase} with input: {input_data}")
         if phase not in self.get_twin_config(twin)["AgentCode"]:
             raise ValueError(f"Undefined phase: {phase}")
         return self.get_twin_config(twin)["AgentCode"][phase].format(input_data)
@@ -232,27 +210,6 @@ class DTService:
             print(f"Sending prompt to LLM for {twin.user_profile.username}")
             for attempt in range(3):  # Try up to 3 times
                 try:
-                    config = {
-                        "AgentCode": {
-                            "name": twin.user_profile.username,
-                            "objective": f"You are {twin.user_profile.username}. {twin.persona}",
-                            "control_flow": {
-                                "BEGIN": "ANALYZE",
-                                "ANALYZE": "RESPOND",
-                                "RESPOND": "END"
-                            },
-                            "ANALYZE": "Analyze this tweet: {0}",
-                            "RESPOND": "{0}"
-                        },
-                        "LLM": {
-                            "prompt_model": "openai/gpt-3.5-turbo",
-                            "action_model": "openai/gpt-3.5-turbo",
-                            "api_key": settings.OPENAI_API_KEY,
-                            "functions": [],
-                            "system_message": twin.persona,
-                            "max_retries": 3
-                        }
-                    }
                     # template = self.agent_code.template("RESPOND", prompt)
                     template = self.template("RESPOND", prompt, twin)
                     response = self.execute(template)
@@ -267,44 +224,17 @@ class DTService:
                     print(f"API error on attempt {attempt + 1}: {str(api_error)}")
                     if attempt == 2:  # Last attempt
                         raise
-            
             return None
             
         except Exception as e:
             print(f"Error generating response: {str(e)}")
             return None
 
-
     def generate_comment(self, twin: DigitalTwin, content: str, post: Post) -> str:
         try:
             print(f"\nGenerating comment for digital twin {twin.user_profile.username} on post: {post.id}")
             print(f"Post content: {content}")
             print(f"Digital twin persona: {twin.persona[:100]}...")  # Print first 100 chars of persona
-            
-            # # Get twin's agent
-            # agent = self.get_agent(twin)
-            # print("Got twin agent")
-            config = {
-                "AgentCode": {
-                    "name": twin.user_profile.username,
-                    "objective": f"You are {twin.user_profile.username}. {twin.persona}",
-                    "control_flow": {
-                        "BEGIN": "ANALYZE",
-                        "ANALYZE": "RESPOND",
-                        "RESPOND": "END"
-                    },
-                    "ANALYZE": "Analyze this tweet: {0}",
-                    "RESPOND": "{0}"
-                },
-                "LLM": {
-                    "prompt_model": "openai/gpt-3.5-turbo",
-                    "action_model": "openai/gpt-3.5-turbo",
-                    "api_key": settings.OPENAI_API_KEY,
-                    "functions": [],
-                    "system_message": twin.persona,
-                    "max_retries": 3
-                }
-            }
             
             # Analyze context
             print("Analyzing context...")
@@ -339,58 +269,42 @@ class DTService:
             # )
             return None
 
-    def respond_to_content(self, content, post, parent_comment=None, num_responses=2):
+    def respond_to_content(self, twin, content, post, parent_comment=None):
         """Generate digital twin responses to content"""
         logger.info(f"""
         Attempting to respond to content:
         Content: {content[:100]}
         Post ID: {post.id}
         Parent Comment: {parent_comment.id if parent_comment else 'None'}
-        Number of responses: {num_responses}
         """)
 
-        # Get random digital twins for responses
-        twins = self.get_random_digitial_twins(count=num_responses)
-        if not twins:
-            logger.warning("No active digital twins available")
-            return []
-
         responses = []
-        for twin in twins:
-            try:
-                # Stop if we've reached the requested number of responses
-                if len(responses) >= num_responses:
-                    break
+        try:
+            # Generate digital twin response
+            logger.info(f"Generating comment using digital twin {twin.user_profile.username}")
+            comment_content = self.generate_comment(
+                twin=twin, 
+                content=content,
+                post=post
+            )
+            
+            if not comment_content:
+                logger.error(f"Failed to generate comment content for digital twin {twin.user_profile.username}")
 
-                # Generate digital twin response
-                logger.info(f"Generating comment using digital twin {twin.user_profile.username}")
-                comment_content = self.generate_comment(
-                    twin=twin, 
-                    content=content,
-                    post=post
+            if not post.user_profile.is_bot:
+
+                # Create the comment
+                comment = Post.objects.create(
+                    user_profile=twin.user_profile,
+                    # parent_post=post,
+                    content=comment_content,
+                    experiment=post.experiment
                 )
                 
-                if not comment_content:
-                    logger.error(f"Failed to generate comment content for digital twin {twin.user_profile.username}")
-                    continue
+                logger.info(f"Created digital twin comment: {comment.content[:50]}...")
+                responses.append(comment)
 
-                if not post.user_profile.is_bot:
-
-                    # get default experiment
-                    experiment = Experiment.objects.get(name="First")
-
-                    # Create the comment
-                    comment = Post.objects.create(
-                        user_profile=twin.user_profile,
-                        # parent_post=post,
-                        content=comment_content,
-                        experiment=experiment
-                    )
-                    
-                    logger.info(f"Created digital twin comment: {comment.content[:50]}...")
-                    responses.append(comment)
-
-            except Exception as e:
-                logger.error(f"Error in twin {twin.user_profile.username} response: {str(e)}", exc_info=True)
+        except Exception as e:
+            logger.error(f"Error in twin {twin.user_profile.username} response: {str(e)}", exc_info=True)
 
         return responses
