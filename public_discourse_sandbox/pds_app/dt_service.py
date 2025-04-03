@@ -4,38 +4,11 @@ import openai
 from typing import Any, Dict, List
 from django.conf import settings
 
-from public_discourse_sandbox.pds_app.models import DigitalTwin, Post, Experiment
-
-MAX_ATTEMPTS, MAX_TOKEN_LENGTH, PREVIEW_LENGTH = 3, 512, 250
+from public_discourse_sandbox.pds_app.models import DigitalTwin, Post
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# @receiver(post_save, sender=Post)
-# def create_post(sender, instance, created, **kwargs):
-#     if created:
-#         Post.objects.create(digital_twin=instance)
-
-def validate_config(config):
-    assert all(key in config for key in ["AgentCode", "LLM"]), "Both AgentCode and LLM sub-agents are required"
-    assert "control_flow" in config["AgentCode"], "AgentCode must have a 'control_flow' key"
-    assert all(key in config["LLM"] for key in ["prompt_model", "action_model", "api_key", "functions"]), "LLM is missing required keys"
-    return True
-
-# class AgentCode:
-#     def __init__(self, config: Dict[str, Any]):
-#         if "control_flow" not in config:
-#             raise ValueError("Missing required key 'control_flow' in config")
-        
-#         self.config = config
-#         self.objective = config["objective"] if "objective" in config else input("What is my purpose? ")
-#         self.control_flow = config["control_flow"]
-#         self.name = config.get("name", "TinyAgent")
-    
-#     def template(self, phase: str, input_data: Any) -> Any:
-#         if phase not in self.config:
-#             raise ValueError(f"Undefined phase: {phase}")
-#         return self.config[phase].format(input_data)
 
 
 class DTService:
@@ -167,7 +140,7 @@ class DTService:
                     "ANALYZE": "RESPOND",
                     "RESPOND": "END"
                 },
-                "ANALYZE": "Analyze this tweet: {0}",
+                "ANALYZE": "Analyze this post: {0}",
                 "RESPOND": "{0}"
             },
             "LLM": {
@@ -187,8 +160,8 @@ class DTService:
         return self.get_twin_config(twin)["AgentCode"][phase].format(input_data)
 
     def generate_response(self, post: Post, context: Dict = None, twin: DigitalTwin = None) -> str:
-        """Generate a response to a tweet"""
-        print(f"Generating response for tweet: {post.id}")
+        """Generate a response to a pst"""
+        print(f"Generating response for pst: {post.id}")
         try:
             if not context:
                 context = self.analyze_context(post)
@@ -246,27 +219,11 @@ class DTService:
             response = self.generate_response(post, context, twin)
             print(f"Generated response: {response}")
             
-            # Log activity
-            # logger.log_activity(
-            #     twin_name=twin.user_profile.username,
-            #     activity_type='generated_response',
-            #     content=content,
-            #     response=response,
-            #     metadata={'context': context}
-            # )
-            print("Activity logged")
-            
             return response
 
         except Exception as e:
             print(f"Error in generate_comment: {str(e)}")
             logger.error(f"Error generating comment for twin {twin.user_profile.username}", exc_info=True)
-            # logger.log_activity(
-            #     twin_name=twin.user_profile.username,
-            #     activity_type='error',
-            #     content=content,
-            #     metadata={'error': str(e)}
-            # )
             return None
 
     def respond_to_content(self, twin, content, post, parent_comment=None):
