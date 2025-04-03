@@ -42,6 +42,11 @@ logger = logging.getLogger(__name__)
 
 
 class DTService:
+    """
+    Service class that manages digital twin interactions with posts.
+    Handles the creation of contextually appropriate responses using LLM.
+    """
+
     def __init__(self):
         logger.info("DTListener initialized")
         self.working_memory = ""
@@ -49,7 +54,12 @@ class DTService:
         self.max_token_length = 512  # Default value, adjust as needed
 
     def _add_to_working_memory(self, input_data: str) -> None:
-        """Adds the input_data to working memory, considering token constraints."""
+        """
+        Maintains a rolling memory of conversation context for the LLM.
+        Part of the memory management system that ensures context stays within token limits.
+
+        Flow: Called by execute() before each LLM interaction
+        """
         self.working_memory += f" {input_data}"
         self.token_counter += len(input_data.split())
         
@@ -57,12 +67,23 @@ class DTService:
         self._ensure_objective()
 
     def _truncate_memory(self):
+        """
+        Ensures working memory stays within token limits by removing oldest tokens when exceeded.
+        Keeps the most recent max_token_length tokens.
+
+        Flow: Called by _add_to_working_memory() when new content is added
+        """
         if self.token_counter > self.max_token_length:
             tokens = self.working_memory.split()[-self.max_token_length:]
             self.working_memory, self.token_counter = ' '.join(tokens), self.max_token_length
 
     def execute(self, template: str) -> Any:
-        """Executes a particular phase using sub-agents."""
+        """
+        Core LLM interaction method. Sends prompts to OpenAI and manages the conversation memory.
+        Acts as the central point for all AI model interactions.
+
+        Flow: Called by generate_llm_response() to get AI responses
+        """
         start_time = time.time()
         self._add_to_working_memory(template)
         
@@ -86,7 +107,12 @@ class DTService:
         return output
 
     def _analyze_sentiment(self, text: str) -> str:
-        """Analyze text sentiment"""
+        """
+        Uses OpenAI to determine the emotional tone of text.
+        Returns one of: positive, negative, or neutral.
+
+        Flow: Called by analyze_context() as part of post analysis
+        """
         print(f"Analyzing sentiment for text: {text}")
         try:
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -103,7 +129,12 @@ class DTService:
             return "neutral"
 
     def _extract_keywords(self, text: str) -> List[str]:
-        """Extract key topics from text"""
+        """
+        Uses OpenAI to identify 3-5 main topics/themes from the text.
+        Returns a list of key terms that represent the content.
+
+        Flow: Called by analyze_context() after sentiment analysis
+        """
         print(f"Extracting keywords for text: {text}")
         try:
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -121,7 +152,13 @@ class DTService:
             return []
 
     def analyze_context(self, post: Post) -> Dict:
-        """Analyze the context of a post"""
+        """
+        Creates a comprehensive context dictionary for a post.
+        Combines basic post metadata with AI-derived insights (sentiment and keywords).
+        Handles API failures gracefully by providing neutral defaults.
+
+        Flow: Called by generate_comment() as first step in response generation
+        """
         try:
             # Create a simpler context without API calls first
             context = {
@@ -151,6 +188,12 @@ class DTService:
             }
 
     def get_twin_config(self, twin: DigitalTwin) -> Dict:
+        """
+        Builds configuration dictionary for a digital twin's behavior.
+        Defines the twin's identity, objectives, and control flow for responses.
+
+        Flow: Called by template() to get twin-specific response parameters
+        """
         return {
             "AgentCode": {
                 "name": twin.user_profile.username,
@@ -174,13 +217,25 @@ class DTService:
         }
     
     def template(self, phase: str, input_data: Any, twin: DigitalTwin) -> Any:
+        """
+        Formats prompts according to the twin's configuration and current phase.
+        Ensures responses align with the twin's persona and objectives.
+
+        Flow: Called by generate_llm_response() to format prompts for the LLM
+        """
         # print(f"Template for {phase} with input: {input_data}")
         if phase not in self.get_twin_config(twin)["AgentCode"]:
             raise ValueError(f"Undefined phase: {phase}")
         return self.get_twin_config(twin)["AgentCode"][phase].format(input_data)
 
     def generate_llm_response(self, post: Post, context: Dict = None, twin: DigitalTwin = None) -> str:
-        """Generate a response to a post"""
+        """
+        Creates contextually appropriate responses using the LLM.
+        Handles retry logic for API failures and ensures responses stay within length limits.
+        Uses twin's persona to maintain consistent character voice.
+
+        Flow: Called by generate_comment() after context analysis
+        """
         print(f"Generating response for pst: {post.id}")
         try:
             if not context:
@@ -223,6 +278,13 @@ class DTService:
             return None
 
     def generate_comment(self, twin: DigitalTwin, content: str, post: Post) -> str:
+        """
+        Orchestrates the full response generation process.
+        Coordinates context analysis and LLM response generation.
+        Provides detailed logging of the generation process.
+
+        Flow: Called by respond_to_post() to create twin's response
+        """
         print(f"Generating comment for digital twin {twin.user_profile.username} on post: {post.id}")
         try:
             print(f"\nGenerating comment for digital twin {twin.user_profile.username} on post: {post.id}")
@@ -247,7 +309,13 @@ class DTService:
             return None
 
     def respond_to_post(self, twin, post):
-        """Generate digital twin responses to content"""
+        """
+        Entry point for digital twin interactions.
+        Manages the full flow from content analysis to response creation.
+        Creates and stores the final comment in the database.
+
+        Flow: Main entry point called by external code
+        """
         print(f"Responding to content: {post.content[:100]}")
         logger.info(f"""
         Attempting to respond to content:
