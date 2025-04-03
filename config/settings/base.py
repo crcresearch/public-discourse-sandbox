@@ -198,6 +198,7 @@ TEMPLATES = [
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
                 "public_discourse_sandbox.users.context_processors.allauth_settings",
+                "public_discourse_sandbox.pds_app.context_processors.active_bots",
             ],
         },
     },
