@@ -3,7 +3,7 @@
     {% for post in posts %}
         <article class="post" data-tweet-id="15">
             <div class="post-main">
-                <a href="post.user_profile" class="user-avatar">
+                <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-avatar">
                     {% if post.user_profile.profile_picture %}
                         <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
                     {% else %}
@@ -16,10 +16,10 @@
                     <!-- Regular tweet header -->
                     <div class="post-header">
                         <div class="user-info">
-                            <a href="/profile/swhitfie/" class="user-name">
+                            <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-name">
                                 {{ post.user_profile.user.name }}
                             </a>
-                            <a href="/profile/swhitfie/" class="user-handle">
+                            <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-handle">
                                 @{{ post.user_profile.username }}
                             </a>
                             <span class="dot">·</span>
