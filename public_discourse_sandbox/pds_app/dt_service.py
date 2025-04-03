@@ -6,6 +6,36 @@ from django.conf import settings
 
 from public_discourse_sandbox.pds_app.models import DigitalTwin, Post
 
+"""
+DTService Execution Flow:
+------------------------
+
+respond_to_post(twin, post)
+└── generate_comment(twin, content, post)
+    ├── analyze_context(post)
+    │   ├── create basic context (post_content, post_id, user, timestamp)
+    │   ├── _analyze_sentiment(post.content)
+    │   └── _extract_keywords(post.content)
+    │
+    └── generate_llm_response(post, context, twin)
+        ├── template("RESPOND", prompt, twin)
+        │   └── get_twin_config(twin)
+        │
+        └── execute(template)
+            ├── _add_to_working_memory(template)
+            │   ├── _truncate_memory()
+            │   └── _ensure_objective()
+            │
+            └── OpenAI API Call
+                └── Create Post Comment
+
+Working Memory System:
+--------------------
+- Maintains conversation state
+- Max token length: 512
+- Truncates automatically when limit reached
+"""
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -17,7 +47,6 @@ class DTService:
         self.working_memory = ""
         self.token_counter = 0
         self.max_token_length = 512  # Default value, adjust as needed
-        self.agent_code = None  # Initialize agent_code as None
 
     def _add_to_working_memory(self, input_data: str) -> None:
         """Adds the input_data to working memory, considering token constraints."""
@@ -31,15 +60,6 @@ class DTService:
         if self.token_counter > self.max_token_length:
             tokens = self.working_memory.split()[-self.max_token_length:]
             self.working_memory, self.token_counter = ' '.join(tokens), self.max_token_length
-
-    def _ensure_objective(self):
-        if self.agent_code is None:
-            return  # Skip if agent_code is not set
-            
-        if self.agent_code.objective not in self.working_memory:
-            objective = f"Objective: {self.agent_code.objective}"
-            self.working_memory = f"{objective} {self.working_memory}"
-            self.token_counter += len(objective.split())
 
     def execute(self, template: str) -> Any:
         """Executes a particular phase using sub-agents."""
@@ -159,8 +179,8 @@ class DTService:
             raise ValueError(f"Undefined phase: {phase}")
         return self.get_twin_config(twin)["AgentCode"][phase].format(input_data)
 
-    def generate_response(self, post: Post, context: Dict = None, twin: DigitalTwin = None) -> str:
-        """Generate a response to a pst"""
+    def generate_llm_response(self, post: Post, context: Dict = None, twin: DigitalTwin = None) -> str:
+        """Generate a response to a post"""
         print(f"Generating response for pst: {post.id}")
         try:
             if not context:
@@ -183,7 +203,6 @@ class DTService:
             print(f"Sending prompt to LLM for {twin.user_profile.username}")
             for attempt in range(3):  # Try up to 3 times
                 try:
-                    # template = self.agent_code.template("RESPOND", prompt)
                     template = self.template("RESPOND", prompt, twin)
                     response = self.execute(template)
                     if response:
@@ -204,6 +223,7 @@ class DTService:
             return None
 
     def generate_comment(self, twin: DigitalTwin, content: str, post: Post) -> str:
+        print(f"Generating comment for digital twin {twin.user_profile.username} on post: {post.id}")
         try:
             print(f"\nGenerating comment for digital twin {twin.user_profile.username} on post: {post.id}")
             print(f"Post content: {content}")
@@ -216,7 +236,7 @@ class DTService:
             
             # Generate response
             print("Generating response...")
-            response = self.generate_response(post, context, twin)
+            response = self.generate_llm_response(post, context, twin)
             print(f"Generated response: {response}")
             
             return response
@@ -226,13 +246,13 @@ class DTService:
             logger.error(f"Error generating comment for twin {twin.user_profile.username}", exc_info=True)
             return None
 
-    def respond_to_content(self, twin, content, post, parent_comment=None):
+    def respond_to_post(self, twin, post):
         """Generate digital twin responses to content"""
+        print(f"Responding to content: {post.content[:100]}")
         logger.info(f"""
         Attempting to respond to content:
-        Content: {content[:100]}
+        Content: {post.content[:100]}
         Post ID: {post.id}
-        Parent Comment: {parent_comment.id if parent_comment else 'None'}
         """)
 
         responses = []
@@ -241,7 +261,7 @@ class DTService:
             logger.info(f"Generating comment using digital twin {twin.user_profile.username}")
             comment_content = self.generate_comment(
                 twin=twin, 
-                content=content,
+                content=post.content,
                 post=post
             )
             

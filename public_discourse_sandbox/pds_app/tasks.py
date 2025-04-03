@@ -35,8 +35,9 @@ def process_bot_response(post_id):
     Celery task to process bot response to a post.
     """
     logger.info(f"Starting bot response processing for post {post_id}")
+    print(f"Starting bot response processing for post {post_id}")
 
-    num_responses=1
+    num_responses = 1
 
     try:
         twins = get_random_digitial_twins(count=num_responses)
@@ -54,12 +55,7 @@ def process_bot_response(post_id):
         for twin in twins:
             logger.info("Waiting 10 seconds for response...")
             # time.sleep(10)
-            response = dt_service.respond_to_content(
-                twin,
-                post.content,
-                post,
-                parent_comment=None,
-            )
+            response = dt_service.respond_to_post(twin,post)
             logger.info(f"Generated first digital twin response to post {post_id}")
         
         logger.info(f"Successfully processed all bot responses for post {post_id}")
