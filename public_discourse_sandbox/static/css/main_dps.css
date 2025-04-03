@@ -157,14 +157,6 @@ p, a, button, span {
     color: var(--nd-metallic-gold);
 }
 
-.nav-menu li a[href*="home"] {
-    color: inherit;
-}
-
-.nav-menu li a[href*="home"] i {
-    color: inherit;
-}
-
 .nav-menu li a i {
     margin-right: 16px;
     font-size: 24px;
