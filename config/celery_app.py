@@ -26,3 +26,7 @@ def config_loggers(*args, **kwargs):
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
+
+# This will ensure Django is set up before Celery uses it
+import django
+django.setup()

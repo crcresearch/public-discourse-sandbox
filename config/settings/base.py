@@ -92,7 +92,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "public_discourse_sandbox.users",
     # Your stuff: custom apps go here
-    "pds_app",
+    "public_discourse_sandbox.pds_app",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

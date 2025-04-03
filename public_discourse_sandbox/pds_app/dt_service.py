@@ -48,47 +48,6 @@ class DTService:
         self.max_token_length = 512  # Default value, adjust as needed
         self.agent_code = None  # Initialize agent_code as None
     
-    def delayed_digital_twin_response(self, post: Post):
-        """Function to handle delayed digital twin responses with sequential timing:
-        - First twin: 10 seconds after tweet
-        - Second twin: 30 seconds after first twin (40s total)
-        - Third twin: 10 seconds after second twin (50s total)
-        """
-        try:
-
-            # First twin response after 10 seconds
-            # time.sleep(10)
-            first_response = self.respond_to_content(
-                post.content,
-                post,
-                parent_comment=None,
-                num_responses=1
-            )
-            logger.info(f"Generated first digital twin response to post {post.id}")
-
-            # Second twin response after 30 more seconds
-            # time.sleep(30)
-            second_response = self.respond_to_content(
-                post.content,
-                post,
-                parent_comment=None,
-                num_responses=1
-            )
-            logger.info(f"Generated second digital twin response to post {post.id}")
-
-            # Third twin response after 10 more seconds
-            # time.sleep(10)
-            third_response = self.respond_to_content(
-                post.content,
-                post,
-                parent_comment=None,
-                num_responses=1
-            )
-            logger.info(f"Generated third digital twin response to post {post.id}")
-
-        except Exception as e:
-            logger.error(f"Error in delayed digital twin response for post {post.id}: {str(e)}", exc_info=True)
-
     def get_random_digitial_twins(self, count=1, exclude_twin=None):
         """Get random active twins, optionally excluding a specific twin"""
         active_twins = DigitalTwin.objects.filter(is_active=True)

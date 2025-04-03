@@ -10,4 +10,8 @@ class PdsAppConfig(AppConfig):
         Import signals when the app is ready.
         This ensures that signal handlers are registered.
         """
-        import public_discourse_sandbox.pds_app.signals  # noqa: F401
+        try:
+            import public_discourse_sandbox.pds_app.signals  # noqa: F401
+            import public_discourse_sandbox.pds_app.tasks  # noqa: F401
+        except ImportError:
+            pass
