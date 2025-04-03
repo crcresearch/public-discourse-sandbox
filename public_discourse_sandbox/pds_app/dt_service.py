@@ -24,99 +24,6 @@ def validate_config(config):
     assert all(key in config["LLM"] for key in ["prompt_model", "action_model", "api_key", "functions"]), "LLM is missing required keys"
     return True
 
-class Agent:
-    """Main Agent class that orchestrates sub-agents."""
-    def __init__(self, sub_agents: Dict[str, Any]):
-        self.initialize_agent(sub_agents)
-        # self.initialize_memory_modules()
-            
-    def initialize_agent(self, sub_agents: Dict[str, Any]):
-        self.sub_agents = sub_agents
-        self.agent_code = AgentCode(sub_agents["AgentCode"])
-        self.llm = LLM(sub_agents["LLM"])
-        self.working_memory = ""
-        self.max_token_length = self.llm.config.get("max_token_length", MAX_TOKEN_LENGTH)
-        self.token_counter = 0
-        self.status = "BEGIN"
-
-    # def initialize_memory_modules(self):
-    #     self.memory_modules = self.sub_agents.get("MemoryModules", [])
-    #     for memory_module in self.memory_modules:
-    #         get_memory_module(memory_module)
-    
-    @staticmethod
-    def create_output_folder(agent_name: str, timestamp: str) -> str:
-        folder_name = f"{agent_name}_{timestamp}"
-        folder_path = os.path.join(os.getcwd(), folder_name)
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        return folder_path
-
-    def _add_to_working_memory(self, input_data: str) -> None:
-        """Adds the input_data to working memory, considering token constraints."""
-        self.working_memory += f" {input_data}"
-        self.token_counter += len(input_data.split())
-        
-        self._truncate_memory()
-        self._ensure_objective()
-
-    def _truncate_memory(self):
-        if self.token_counter > self.max_token_length:
-            tokens = self.working_memory.split()[-self.max_token_length:]
-            self.working_memory, self.token_counter = ' '.join(tokens), self.max_token_length
-
-    def _ensure_objective(self):
-        if self.agent_code is None:
-            return  # Skip if agent_code is not set
-            
-        if self.agent_code.objective not in self.working_memory:
-            objective = f"Objective: {self.agent_code.objective}"
-            self.working_memory = f"{objective} {self.working_memory}"
-            self.token_counter += len(objective.split())
-
-    def execute(self, phase: str, input_data: Any) -> Any:
-        """Executes a particular phase using sub-agents."""
-        start_time = time.time()
-        template = self.agent_code.template(phase, input_data)
-        self._add_to_working_memory(template)
-        
-        output = self.llm.prompt(self.working_memory)
-        elapsed_time = time.time() - start_time
-        
-        return output
-
-    def run(self):
-        results = {}
-        stage, ct = "BEGIN", 0
-        while True:
-            ct += 1
-            
-            if stage == "BEGIN":
-                stage = self._begin_stage()  
-            elif stage == "ACTION":
-                stage_results = self._action_stage()
-                stage = self.agent_code.control_flow[stage]
-            elif stage == "END":
-                return results
-            else:
-                stage_results = self._execute_stage(stage)
-                results[stage] = stage_results[0]
-                stage = stage_results[1]
-
-    def _begin_stage(self):
-        return self.agent_code.control_flow["BEGIN"]
-
-    def _execute_stage(self, stage):
-        output_data = self.execute(stage, self.working_memory)
-        if "XXTERMINATEXX" in output_data:
-            self.status = "END"
-        self.working_memory = output_data
-        return (output_data, self.agent_code.control_flow[stage])
-
-    def _action_stage(self):
-        action_results = self.llm.act(self.working_memory)
-        self._add_to_working_memory(f"{action_results['action']} {action_results['output']}")
-
 class AgentCode:
     def __init__(self, config: Dict[str, Any]):
         if "control_flow" not in config:
@@ -159,25 +66,25 @@ class DTService:
             )
             logger.info(f"Generated first digital twin response to post {post.id}")
 
-            # # Second twin response after 30 more seconds
-            # # time.sleep(30)
-            # second_response = self.respond_to_content(
-            #     post.content,
-            #     post,
-            #     parent_comment=None,
-            #     num_responses=1
-            # )
-            # logger.info(f"Generated second digital twin response to post {post.id}")
+            # Second twin response after 30 more seconds
+            # time.sleep(30)
+            second_response = self.respond_to_content(
+                post.content,
+                post,
+                parent_comment=None,
+                num_responses=1
+            )
+            logger.info(f"Generated second digital twin response to post {post.id}")
 
-            # # Third twin response after 10 more seconds
-            # # time.sleep(10)
-            # third_response = self.respond_to_content(
-            #     post.content,
-            #     post,
-            #     parent_comment=None,
-            #     num_responses=1
-            # )
-            # logger.info(f"Generated third digital twin response to post {post.id}")
+            # Third twin response after 10 more seconds
+            # time.sleep(10)
+            third_response = self.respond_to_content(
+                post.content,
+                post,
+                parent_comment=None,
+                num_responses=1
+            )
+            logger.info(f"Generated third digital twin response to post {post.id}")
 
         except Exception as e:
             logger.error(f"Error in delayed digital twin response for post {post.id}: {str(e)}", exc_info=True)
@@ -520,8 +427,6 @@ class DTService:
                         content=comment_content,
                         experiment=experiment
                     )
-
-                    print("#########################")
                     
                     logger.info(f"Created digital twin comment: {comment.content[:50]}...")
                     responses.append(comment)
