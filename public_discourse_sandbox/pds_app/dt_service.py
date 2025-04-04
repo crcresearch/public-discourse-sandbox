@@ -82,16 +82,25 @@ class DTService:
 
     def _ensure_objective(self):
         """
-        Ensures the current twin's objective is present in working memory.
+        Ensures the digital twin's objective/persona is present in the working memory context.
+        Prepends the twin's objective to working memory if it's not already present,
+        ensuring the LLM maintains consistent character voice throughout the conversation.
+        Updates token counter when objective is added.
+
+        Flow: Called by _add_to_working_memory() as part of memory management system
+        
+        Memory Structure:
+            - If objective not present: "{objective} {existing_memory}"
+            - If objective present: leaves memory unchanged
+            
+        Note: Requires self.current_twin to be set. Silently returns if no twin is set,
+        as this can happen during initialization or between responses.
         """
         if not self.current_twin:
             return  # Skip if no twin is set
-        
-        print("ENSURING OBJECTIVE")
             
         objective = self.get_twin_config(self.current_twin)["AgentCode"]["objective"]
         if objective not in self.working_memory:
-            print(f"Adding objective to working memory: {objective}")
             self.working_memory = f"{objective} {self.working_memory}"
             self.token_counter += len(objective.split())
 
