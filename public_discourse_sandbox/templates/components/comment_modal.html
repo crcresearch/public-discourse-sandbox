@@ -1,0 +1,305 @@
+<div id="commentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button class="close-modal" aria-label="Close">&times;</button>
+            <h2>Reply</h2>
+        </div>
+        
+        <!-- Original post section -->
+        <div class="original-post">
+            <div class="post-header">
+                <span class="user-name" id="originalPostName"></span>
+                <span class="user-handle" id="originalPostHandle"></span>
+                <span class="dot">·</span>
+                <span class="time" id="originalPostTime"></span>
+            </div>
+            <div class="post-content" id="originalPostContent"></div>
+            <div class="replying-to">
+                Replying to <span class="user-handle" id="replyingToHandle"></span>
+            </div>
+        </div>
+
+        <!-- Reply form -->
+        <form id="replyForm" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="parent_post_id" name="parent_post_id" value="">
+            <textarea name="content" placeholder="Write your reply" required></textarea>
+            <button type="submit" class="reply-button">Reply</button>
+        </form>
+
+        <!-- Replies section -->
+        <div class="replies-section">
+            <div id="repliesList"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--background-color);
+    margin: 15% auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.close-modal {
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+.original-post {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.user-name {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.user-handle {
+    color: var(--text-color-secondary);
+}
+
+.dot {
+    color: var(--text-color-secondary);
+    margin: 0 4px;
+}
+
+.time {
+    color: var(--text-color-secondary);
+}
+
+.replying-to {
+    color: var(--text-color-secondary);
+    margin-top: 12px;
+    font-size: 0.9em;
+}
+
+.post-content {
+    color: var(--text-color);
+    margin-bottom: 15px;
+}
+
+#replyForm textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    resize: vertical;
+}
+
+.reply-button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    float: right;
+}
+
+.reply-button:hover {
+    background-color: var(--primary-color-dark);
+}
+
+.replies-section {
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+.reply-item {
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.reply-item:last-child {
+    border-bottom: none;
+}
+
+.reply-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.reply-name {
+    font-weight: bold;
+    margin-right: 8px;
+    color: var(--text-color);
+}
+
+.reply-username {
+    color: var(--text-color-secondary);
+    margin-right: 8px;
+}
+
+.reply-date {
+    color: var(--text-color-secondary);
+    font-size: 0.9em;
+}
+
+.reply-content {
+    color: var(--text-color);
+    line-height: 1.4;
+}
+</style>
+
+<script>
+// Function to format the date
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    // Less than 24 hours
+    if (diff < 24 * 60 * 60 * 1000) {
+        const hours = Math.floor(diff / (60 * 60 * 1000));
+        if (hours < 1) {
+            const minutes = Math.floor(diff / (60 * 1000));
+            return `${minutes}m`;
+        }
+        return `${hours}h`;
+    }
+    
+    // Less than 7 days
+    if (diff < 7 * 24 * 60 * 60 * 1000) {
+        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+        return `${days}d`;
+    }
+    
+    // Otherwise return the date
+    return date.toLocaleDateString();
+}
+
+// Function to render replies
+function renderReplies(replies) {
+    const repliesList = document.getElementById('repliesList');
+    repliesList.innerHTML = replies.map(reply => `
+        <div class="reply-item">
+            <div class="post-header">
+                <span class="user-name">${reply.user_name}</span>
+                <span class="user-handle">@${reply.username}</span>
+                <span class="dot">·</span>
+                <span class="time">${formatDate(reply.created_date)}</span>
+            </div>
+            <div class="reply-content">${reply.content}</div>
+        </div>
+    `).join('');
+}
+
+// Update showCommentPopup to properly set up the modal
+async function showCommentPopup(postId) {
+    // Get the post data
+    const postElement = document.querySelector(`article[data-tweet-id="${postId}"]`);
+    const userName = postElement.querySelector('.user-name').textContent.trim();
+    const userHandle = postElement.querySelector('.user-handle').textContent.trim();
+    const timeElement = postElement.querySelector('.time');
+    const content = postElement.querySelector('.post-text').textContent.trim();
+    
+    // Update modal content
+    document.getElementById('originalPostName').textContent = userName;
+    document.getElementById('originalPostHandle').textContent = userHandle;
+    document.getElementById('replyingToHandle').textContent = userHandle;
+    document.getElementById('originalPostTime').textContent = timeElement.textContent;
+    document.getElementById('originalPostContent').textContent = content;
+    document.getElementById('parent_post_id').value = postId;
+    
+    // Show modal
+    const modal = document.getElementById('commentModal');
+    modal.style.display = 'block';
+    
+    // Handle close button
+    const closeBtn = modal.querySelector('.close-modal');
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+    
+    // Close when clicking outside
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    // Fetch replies
+    try {
+        const response = await fetch(`/get-replies/${postId}/`);
+        if (response.ok) {
+            const data = await response.json();
+            renderReplies(data.replies);
+        }
+    } catch (error) {
+        console.error('Error fetching replies:', error);
+    }
+}
+
+// Update form submission to refresh replies after posting
+document.getElementById('replyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const postId = document.getElementById('parent_post_id').value;
+    
+    try {
+        const response = await fetch('{% url "create_comment" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        if (response.ok) {
+            // Clear the form
+            this.reset();
+            
+            // Fetch and display updated replies
+            const repliesResponse = await fetch(`/get-replies/${postId}/`);
+            if (repliesResponse.ok) {
+                const data = await repliesResponse.json();
+                renderReplies(data.replies);
+            }
+        } else {
+            console.error('Error posting comment');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+</script> 
