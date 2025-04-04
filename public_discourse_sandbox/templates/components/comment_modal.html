@@ -32,8 +32,12 @@
             <form id="replyForm" method="post">
                 {% csrf_token %}
                 <input type="hidden" id="parent_post_id" name="parent_post_id" value="">
-                <textarea name="content" placeholder="Write your reply" required></textarea>
-                <button type="submit" class="reply-button">Reply</button>
+                <div class="comment-input-container">
+                    <textarea name="content" placeholder="Write your reply" required class="borderless-input"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="post-button">Reply</button>
+                </div>
             </form>
 
             <!-- Replies section -->
@@ -217,6 +221,32 @@
 .reply-item:last-child {
     border-bottom: none;
 }
+
+.post-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.action-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 50px;
+}
+
+.action-button:hover {
+    background-color: var(--hover-color);
+}
+
+.action-button i {
+    font-size: 18px;
+}
 </style>
 
 <script>
@@ -267,7 +297,13 @@ function renderReplies(replies) {
                         <span class="time">${formatDate(reply.created_date)}</span>
                     </div>
                 </div>
-                <div class="post-content">${reply.content}</div>
+            </div>
+            <div class="post-content">${reply.content}</div>
+            <div class="post-actions">
+                <!-- <button class="action-button reply-button" onclick="showReplyForm('${reply.id}')">
+                    <i class="ri-chat-1-line"></i>
+                    <span>Reply</span>
+                </button> -->
             </div>
         </div>
     `).join('');
