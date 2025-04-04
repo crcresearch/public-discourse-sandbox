@@ -16,6 +16,7 @@
     --twitter-blue-hover: #1991DA;
     --twitter-light-hover: #E8F6FD;
     --form-border: #E5E8E8;
+    --text-color-secondary: var(--secondary-text);  /* Added for modal compatibility */
 }
 
 /* Base Styles */
@@ -1098,4 +1099,188 @@ a.user-avatar {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--background-color);
+    margin: 20px auto;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* Reply Form Styles */
+.reply-form {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nested-reply-form {
+    margin-left: 52px;
+    margin-top: 10px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--background-color);
+}
+
+.replies-section {
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+.reply-item {
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Update existing styles to match modal needs */
+.popup-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.popup-header h2 {
+    margin: 0 auto;
+    font-size: 1.2em;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    margin-right: 20px;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 15px;
+}
+
+.close-popup:hover {
+    background-color: var(--hover-color);
+    border-radius: 50%;
+}
+
+.close-popup i {
+    font-size: 20px;
+}
+
+/* Original Post Styles */
+.original-post {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+/* Update existing styles to ensure consistency */
+.post-header {
+    margin-bottom: 12px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--background-gray);
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-avatar i {
+    font-size: 24px;
+    color: var(--text-color-secondary);
+}
+
+.user-name {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.user-handle {
+    color: var(--text-color-secondary);
+}
+
+.dot {
+    color: var(--text-color-secondary);
+    margin: 0 4px;
+}
+
+.time {
+    color: var(--text-color-secondary);
+}
+
+.post-content {
+    color: var(--text-color);
+    margin: 12px 0;
+    line-height: 1.4;
+}
+
+/* Form Input Styles */
+.comment-input-container {
+    margin: 15px 0;
+}
+
+.borderless-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
 }
