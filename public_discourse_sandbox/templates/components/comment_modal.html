@@ -28,17 +28,22 @@
                 <div class="post-content" id="originalPostContent"></div>
             </div>
 
-            <!-- Reply form -->
-            <form id="replyForm" method="post">
-                {% csrf_token %}
-                <input type="hidden" id="parent_post_id" name="parent_post_id" value="">
-                <div class="comment-input-container">
-                    <textarea name="content" placeholder="Write your reply" required class="borderless-input"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="post-button">Reply</button>
-                </div>
-            </form>
+            <!-- Reply form template - will be cloned and used for both top-level and nested replies -->
+            <template id="replyFormTemplate">
+                <form class="reply-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="parent_post_id" value="">
+                    <div class="comment-input-container">
+                        <textarea name="content" placeholder="Write your reply" required class="borderless-input"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="post-button" disabled>Reply</button>
+                    </div>
+                </form>
+            </template>
+
+            <!-- Main reply form container -->
+            <div id="mainReplyForm"></div>
 
             <!-- Replies section -->
             <div class="replies-section">
@@ -181,11 +186,14 @@
     line-height: 1.4;
 }
 
-#replyForm textarea {
+.comment-input-container {
+    margin: 15px 0;
+}
+
+.borderless-input {
     width: 100%;
     min-height: 100px;
     padding: 10px;
-    margin: 15px 0;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background-color: var(--background-color);
@@ -193,18 +201,42 @@
     resize: vertical;
 }
 
-.reply-button {
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+/* .post-button {
     background-color: var(--primary-color);
     color: white;
     padding: 8px 16px;
     border: none;
     border-radius: 20px;
     cursor: pointer;
-    float: right;
+} */
+
+.post-button:hover {
+    background-color: var(--nd-gold);
 }
 
-.reply-button:hover {
-    background-color: var(--primary-color-dark);
+/* .post-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+} */
+
+.reply-form {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nested-reply-form {
+    margin-left: 52px; /* avatar width + gap */
+    margin-top: 10px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--background-color);
 }
 
 .replies-section {
@@ -279,10 +311,69 @@ function formatDate(dateString) {
     return date.toLocaleDateString();
 }
 
+function createReplyForm(parentId, isNested = false) {
+    const template = document.getElementById('replyFormTemplate');
+    const form = template.content.cloneNode(true).querySelector('form');
+    
+    // Set up form
+    form.querySelector('[name="parent_post_id"]').value = parentId;
+    if (isNested) {
+        form.classList.add('nested-reply-form');
+    }
+    
+    // Add form submission handler
+    form.addEventListener('submit', handleReplySubmit);
+    
+    // Add input handler for enabling/disabling submit button
+    const textarea = form.querySelector('textarea');
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    
+    textarea.addEventListener('input', function() {
+        submitButton.disabled = !this.value.trim();
+    });
+    
+    return form;
+}
+
+async function handleReplySubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const parentId = form.querySelector('[name="parent_post_id"]').value;
+    
+    try {
+        const response = await fetch('{% url "create_comment" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        if (response.ok) {
+            // Clear the form
+            form.reset();
+            form.querySelector('button[type="submit"]').disabled = true;
+            
+            // Fetch and display updated replies
+            const repliesResponse = await fetch(`/get-replies/${parentId}/`);
+            if (repliesResponse.ok) {
+                const data = await repliesResponse.json();
+                renderReplies(data.replies);
+            }
+        } else {
+            console.error('Error posting comment');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
 function renderReplies(replies) {
     const repliesList = document.getElementById('repliesList');
     repliesList.innerHTML = replies.map(reply => `
-        <div class="reply-item">
+        <div class="reply-item" data-reply-id="${reply.id}">
             <div class="post-header">
                 <div class="user-info">
                     <div class="user-avatar">
@@ -300,13 +391,25 @@ function renderReplies(replies) {
             </div>
             <div class="post-content">${reply.content}</div>
             <div class="post-actions">
-                <!-- <button class="action-button reply-button" onclick="showReplyForm('${reply.id}')">
+                <button class="action-button" onclick="showReplyForm('${reply.id}')">
                     <i class="ri-chat-1-line"></i>
                     <span>Reply</span>
-                </button> -->
+                </button>
             </div>
+            <div class="nested-reply-container" id="replyForm-${reply.id}"></div>
         </div>
     `).join('');
+}
+
+function showReplyForm(replyId) {
+    const container = document.getElementById(`replyForm-${replyId}`);
+    // Remove existing form if present
+    container.innerHTML = '';
+    // Create and add new form
+    const form = createReplyForm(replyId, true);
+    container.appendChild(form);
+    // Focus the textarea
+    form.querySelector('textarea').focus();
 }
 
 async function showCommentPopup(postId) {
@@ -323,7 +426,6 @@ async function showCommentPopup(postId) {
     document.getElementById('originalPostHandle').textContent = userHandle;
     document.getElementById('originalPostTime').textContent = timeElement.textContent;
     document.getElementById('originalPostContent').textContent = content;
-    document.getElementById('parent_post_id').value = postId;
     
     // Update avatar
     const originalPostAvatar = document.getElementById('originalPostAvatar');
@@ -340,6 +442,11 @@ async function showCommentPopup(postId) {
         }
     }
     
+    // Create main reply form
+    const mainReplyForm = document.getElementById('mainReplyForm');
+    mainReplyForm.innerHTML = '';
+    mainReplyForm.appendChild(createReplyForm(postId));
+    
     // Fetch replies
     try {
         const response = await fetch(`/get-replies/${postId}/`);
@@ -351,38 +458,4 @@ async function showCommentPopup(postId) {
         console.error('Error fetching replies:', error);
     }
 }
-
-// Handle form submission
-document.getElementById('replyForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const postId = document.getElementById('parent_post_id').value;
-    
-    try {
-        const response = await fetch('{% url "create_comment" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        });
-        
-        if (response.ok) {
-            // Clear the form
-            this.reset();
-            
-            // Fetch and display updated replies
-            const repliesResponse = await fetch(`/get-replies/${postId}/`);
-            if (repliesResponse.ok) {
-                const data = await repliesResponse.json();
-                renderReplies(data.replies);
-            }
-        } else {
-            console.error('Error posting comment');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-});
 </script> 

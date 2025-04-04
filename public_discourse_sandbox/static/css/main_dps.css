@@ -1073,3 +1073,29 @@ a.user-avatar {
     resize: none;
     background: transparent;
 }
+
+.form-actions .post-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--nd-blue);
+    transform: none;
+}
+
+.form-actions .post-button {
+    background-color: var(--nd-blue);
+    color: white;
+    border: 2px solid var(--nd-gold);
+    border-radius: 9999px;
+    padding: 0 16px;
+    height: 32px;
+    min-width: 80px;
+    max-width: 120px;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
