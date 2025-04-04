@@ -39,7 +39,7 @@ def process_digital_twin_response(post_id: str):
     logger.info(f"Starting bot response processing for post {post_id}")
     print(f"Starting bot response processing for post {post_id}")
 
-    num_responses = 1
+    num_responses = 3
 
     try:
         # First fetch the post using the ID

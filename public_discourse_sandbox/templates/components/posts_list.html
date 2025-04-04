@@ -1,7 +1,7 @@
 <!-- Posts List -->
 <div class="post-feed">
     {% for post in posts %}
-        <article class="post" data-tweet-id="{{ post.id }}">
+        <article class="post" data-post-id="{{ post.id }}">
             <div class="post-main">
                 <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-avatar">
                     {% if post.user_profile.profile_picture %}
@@ -32,17 +32,17 @@
         
                     <!-- Post Actions -->
                     <div class="post-actions">
-                        <button class="action-button comment-button" data-tweet-id="{{ post.id }}" data-authenticated="true" onclick="showCommentPopup('{{ post.id }}')">
+                        <button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true" onclick="showCommentPopup('{{ post.id }}')">
                             <i class="ri-chat-1-line"></i>
                             <span>{{ post.comment_count }}</span>
                         </button>
         
-                        <button class="action-button repost-button " data-tweet-id="{{ post.id }}" data-authenticated="true" onclick="showRepostPopup('{{ post.id }}')">
+                        <button class="action-button repost-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="showRepostPopup('{{ post.id }}')">
                             <i class="ri-repeat-line"></i>
                             <span>0</span>
                         </button>
         
-                        <button class="action-button like-button " data-tweet-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
+                        <button class="action-button like-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
                             <i class="ri-heart-line"></i>
                             <span>0</span>
                         </button>
@@ -55,4 +55,6 @@
             <p>No posts yet. Be the first to post!</p>
         </div>
     {% endfor %}
-</div> 
+</div>
+
+{% include 'components/comment_modal.html' %}
