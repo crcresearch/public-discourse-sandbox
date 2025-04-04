@@ -133,6 +133,14 @@ async function handleReplySubmit(e) {
             if (repliesResponse.ok) {
                 const data = await repliesResponse.json();
                 renderReplies(data.replies);
+                
+                // If this was a nested reply, remove the reply form
+                if (form.classList.contains('nested-reply-form')) {
+                    const container = form.closest('.nested-reply-container');
+                    if (container) {
+                        container.innerHTML = '';
+                    }
+                }
             }
         } else {
             console.error('Error posting comment');
