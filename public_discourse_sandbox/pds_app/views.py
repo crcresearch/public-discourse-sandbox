@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.urls import reverse_lazy
+from django.db.models import Count, Q, Subquery, OuterRef
 from .forms import PostForm
 from .models import Post
+from django.db import models
 
 def get_active_posts():
     """Get non-deleted top-level posts with related user data."""
@@ -13,6 +15,8 @@ def get_active_posts():
     ).select_related(
         'user_profile',
         'user_profile__user'
+    ).annotate(
+        comment_count=Count('post')
     ).order_by('-created_date')
 
 class HomeView(LoginRequiredMixin, ListView):

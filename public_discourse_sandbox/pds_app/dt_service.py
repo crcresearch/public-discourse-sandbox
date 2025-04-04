@@ -368,7 +368,7 @@ class DTService:
                 # Create the comment
                 comment = Post.objects.create(
                     user_profile=twin.user_profile,
-                    # parent_post=post,
+                    parent_post=post,
                     content=comment_content,
                     experiment=post.experiment
                 )

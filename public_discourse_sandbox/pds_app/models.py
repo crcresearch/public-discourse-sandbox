@@ -82,6 +82,12 @@ class Post(BaseModel):
     
     all_objects = models.Manager()
     objects = UndeletedPostManager()
+    
+    def get_comment_count(self):
+        """
+        Returns the number of posts that have this post as their parent.
+        """
+        return Post.objects.filter(parent_post=self).count()
 
 
 class Vote(BaseModel):
