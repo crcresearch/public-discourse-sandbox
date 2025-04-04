@@ -17,9 +17,9 @@
                     <span class="time" id="originalPostTime"></span>
                 </div>
                 <div class="post-content" id="originalPostContent"></div>
-                <div class="replying-to">
+                <!-- <div class="replying-to">
                     Replying to <span class="user-handle" id="replyingToHandle"></span>
-                </div>
+                </div> -->
             </div>
 
             <!-- Reply form -->
@@ -139,12 +139,6 @@
 
 .time {
     color: var(--text-color-secondary);
-}
-
-.replying-to {
-    color: var(--text-color-secondary);
-    margin-top: 12px;
-    font-size: 0.9em;
 }
 
 .post-content {
@@ -281,7 +275,6 @@ async function showCommentPopup(postId) {
     // Update modal content
     document.getElementById('originalPostName').textContent = userName;
     document.getElementById('originalPostHandle').textContent = userHandle;
-    document.getElementById('replyingToHandle').textContent = userHandle;
     document.getElementById('originalPostTime').textContent = timeElement.textContent;
     document.getElementById('originalPostContent').textContent = content;
     document.getElementById('parent_post_id').value = postId;
