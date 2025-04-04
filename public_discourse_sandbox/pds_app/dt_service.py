@@ -3,6 +3,8 @@ import time
 import openai
 from typing import Any, Dict, List
 from django.conf import settings
+import uuid
+from django.core.exceptions import ObjectDoesNotExist
 
 from public_discourse_sandbox.pds_app.models import DigitalTwin, Post
 
@@ -52,6 +54,7 @@ class DTService:
         self.working_memory = ""
         self.token_counter = 0
         self.max_token_length = 512  # Default value, adjust as needed
+        self.current_twin = None  # Add this line to store current twin
 
     def _add_to_working_memory(self, input_data: str) -> None:
         """
@@ -76,6 +79,22 @@ class DTService:
         if self.token_counter > self.max_token_length:
             tokens = self.working_memory.split()[-self.max_token_length:]
             self.working_memory, self.token_counter = ' '.join(tokens), self.max_token_length
+
+    def _ensure_objective(self):
+        """
+        Ensures the current twin's objective is present in working memory.
+        """
+        if not self.current_twin:
+            return  # Skip if no twin is set
+        
+        print("ENSURING OBJECTIVE")
+            
+        objective = self.get_twin_config(self.current_twin)["AgentCode"]["objective"]
+        if objective not in self.working_memory:
+            print(f"Adding objective to working memory: {objective}")
+            self.working_memory = f"{objective} {self.working_memory}"
+            self.token_counter += len(objective.split())
+
 
     def execute(self, template: str) -> Any:
         """
@@ -238,6 +257,7 @@ class DTService:
         """
         print(f"Generating response for pst: {post.id}")
         try:
+            self.current_twin = twin  # Set the current twin
             if not context:
                 context = self.analyze_context(post)
             
@@ -276,6 +296,8 @@ class DTService:
         except Exception as e:
             print(f"Error generating response: {str(e)}")
             return None
+        finally:
+            self.current_twin = None  # Clear the current twin when done
 
     def generate_comment(self, twin: DigitalTwin, content: str, post: Post) -> str:
         """
@@ -285,28 +307,12 @@ class DTService:
 
         Flow: Called by respond_to_post() to create twin's response
         """
-        print(f"Generating comment for digital twin {twin.user_profile.username} on post: {post.id}")
-        try:
-            print(f"\nGenerating comment for digital twin {twin.user_profile.username} on post: {post.id}")
-            print(f"Post content: {content}")
-            print(f"Digital twin persona: {twin.persona[:100]}...")  # Print first 100 chars of persona
-            
-            # Analyze context
-            print("Analyzing context...")
-            context = self.analyze_context(post)
-            print(f"Context analysis result: {context}")
-            
-            # Generate response
-            print("Generating response...")
-            response = self.generate_llm_response(post, context, twin)
-            print(f"Generated response: {response}")
-            
-            return response
-
-        except Exception as e:
-            print(f"Error in generate_comment: {str(e)}")
-            logger.error(f"Error generating comment for twin {twin.user_profile.username}", exc_info=True)
-            return None
+        context = self.analyze_context(post)
+        print("Generating response...")
+        response = self.generate_llm_response(post, context, twin)
+        print(f"Generated response: {response}")
+        
+        return response
 
     def respond_to_post(self, twin, post):
         """
@@ -314,17 +320,29 @@ class DTService:
         Manages the full flow from content analysis to response creation.
         Creates and stores the final comment in the database.
 
+        Args:
+            twin (DigitalTwin): The digital twin that will respond
+            post (Post or UUID): The post to respond to, can be Post object or UUID
+
         Flow: Main entry point called by external code
         """
-        print(f"Responding to content: {post.content[:100]}")
-        logger.info(f"""
-        Attempting to respond to content:
-        Content: {post.content[:100]}
-        Post ID: {post.id}
-        """)
-
-        responses = []
         try:
+            # First ensure we have a valid post object
+            if isinstance(post, str) or isinstance(post, uuid.UUID):
+                try:
+                    post = Post.objects.get(id=post)
+                except Post.DoesNotExist:
+                    logger.error(f"Post with id {post} not found")
+                    return []
+
+            print(f"Responding to content: {post.content[:100]}")
+            logger.info(f"""
+            Attempting to respond to content:
+            Content: {post.content[:100]}
+            Post ID: {post.id}
+            """)
+
+            responses = []
             # Generate digital twin response
             logger.info(f"Generating comment using digital twin {twin.user_profile.username}")
             comment_content = self.generate_comment(
@@ -349,7 +367,7 @@ class DTService:
                 logger.info(f"Created digital twin comment: {comment.content[:50]}...")
                 responses.append(comment)
 
+            return responses
+
         except Exception as e:
             logger.error(f"Error in twin {twin.user_profile.username} response: {str(e)}", exc_info=True)
-
-        return responses
