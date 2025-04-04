@@ -1,35 +1,39 @@
 <div id="commentModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="popup-header">
-            <button type="button" class="close-popup" onclick="closeCommentModal()"><i class="ri-arrow-left-line"></i></button>
+            <button type="button" class="close-popup" onclick="closeCommentModal()">
+                <i class="ri-arrow-left-line"></i>
+            </button>
             <h2>Reply</h2>
         </div>
         
-        <!-- Original post section -->
-        <div class="original-post">
-            <div class="post-header">
-                <span class="user-name" id="originalPostName"></span>
-                <span class="user-handle" id="originalPostHandle"></span>
-                <span class="dot">·</span>
-                <span class="time" id="originalPostTime"></span>
+        <div class="modal-body">
+            <!-- Original post section -->
+            <div class="original-post">
+                <div class="post-header">
+                    <span class="user-name" id="originalPostName"></span>
+                    <span class="user-handle" id="originalPostHandle"></span>
+                    <span class="dot">·</span>
+                    <span class="time" id="originalPostTime"></span>
+                </div>
+                <div class="post-content" id="originalPostContent"></div>
+                <div class="replying-to">
+                    Replying to <span class="user-handle" id="replyingToHandle"></span>
+                </div>
             </div>
-            <div class="post-content" id="originalPostContent"></div>
-            <div class="replying-to">
-                Replying to <span class="user-handle" id="replyingToHandle"></span>
+
+            <!-- Reply form -->
+            <form id="replyForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" id="parent_post_id" name="parent_post_id" value="">
+                <textarea name="content" placeholder="Write your reply" required></textarea>
+                <button type="submit" class="reply-button">Reply</button>
+            </form>
+
+            <!-- Replies section -->
+            <div class="replies-section">
+                <div id="repliesList"></div>
             </div>
-        </div>
-
-        <!-- Reply form -->
-        <form id="replyForm" method="post">
-            {% csrf_token %}
-            <input type="hidden" id="parent_post_id" name="parent_post_id" value="">
-            <textarea name="content" placeholder="Write your reply" required></textarea>
-            <button type="submit" class="reply-button">Reply</button>
-        </form>
-
-        <!-- Replies section -->
-        <div class="replies-section">
-            <div id="repliesList"></div>
         </div>
     </div>
 </div>
@@ -43,17 +47,23 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
 }
 
 .modal-content {
     position: relative;
     background-color: var(--background-color);
-    margin: 15% auto;
-    padding: 20px;
-    width: 80%;
+    margin: 20px auto;
+    width: 90%;
     max-width: 600px;
     border-radius: 15px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .popup-header {
@@ -62,6 +72,7 @@
     padding: 10px 15px;
     border-bottom: 1px solid var(--border-color);
     position: relative;
+    flex-shrink: 0;
 }
 
 .popup-header h2 {
@@ -79,6 +90,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    left: 15px;
 }
 
 .close-popup:hover {
@@ -88,6 +101,13 @@
 
 .close-popup i {
     font-size: 20px;
+}
+
+/* Scrollable content area */
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
 }
 
 .original-post {
