@@ -1,7 +1,7 @@
 <div id="commentModal" class="modal" style="display: none;">
     <div class="modal-content">
-        <div class="modal-header">
-            <button class="close-modal" aria-label="Close">&times;</button>
+        <div class="popup-header">
+            <button type="button" class="close-popup" onclick="closeCommentModal()"><i class="ri-arrow-left-line"></i></button>
             <h2>Reply</h2>
         </div>
         
@@ -56,17 +56,38 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.modal-header {
+.popup-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
 }
 
-.close-modal {
-    font-size: 24px;
+.popup-header h2 {
+    margin: 0 auto;
+    font-size: 1.2em;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    padding: 8px;
     cursor: pointer;
+    margin-right: 20px;
     color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-popup:hover {
+    background-color: var(--hover-color);
+    border-radius: 50%;
+}
+
+.close-popup i {
+    font-size: 20px;
 }
 
 .original-post {
@@ -181,6 +202,11 @@
 </style>
 
 <script>
+// Function to close the modal
+function closeCommentModal() {
+    document.getElementById('commentModal').style.display = 'none';
+}
+
 // Function to format the date
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -226,7 +252,7 @@ function renderReplies(replies) {
 // Update showCommentPopup to properly set up the modal
 async function showCommentPopup(postId) {
     // Get the post data
-    const postElement = document.querySelector(`article[data-tweet-id="${postId}"]`);
+    const postElement = document.querySelector(`article[data-post-id="${postId}"]`);
     const userName = postElement.querySelector('.user-name').textContent.trim();
     const userHandle = postElement.querySelector('.user-handle').textContent.trim();
     const timeElement = postElement.querySelector('.time');
@@ -244,16 +270,10 @@ async function showCommentPopup(postId) {
     const modal = document.getElementById('commentModal');
     modal.style.display = 'block';
     
-    // Handle close button
-    const closeBtn = modal.querySelector('.close-modal');
-    closeBtn.onclick = function() {
-        modal.style.display = 'none';
-    }
-    
     // Close when clicking outside
     window.onclick = function(event) {
         if (event.target == modal) {
-            modal.style.display = 'none';
+            closeCommentModal();
         }
     }
     

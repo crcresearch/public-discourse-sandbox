@@ -1,7 +1,7 @@
 <!-- Posts List -->
 <div class="post-feed">
     {% for post in posts %}
-        <article class="post" data-tweet-id="{{ post.id }}">
+        <article class="post" data-post-id="{{ post.id }}">
             <div class="post-main">
                 <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-avatar">
                     {% if post.user_profile.profile_picture %}
@@ -32,17 +32,17 @@
         
                     <!-- Post Actions -->
                     <div class="post-actions">
-                        <button class="action-button comment-button" data-tweet-id="{{ post.id }}" data-authenticated="true" onclick="showCommentPopup('{{ post.id }}')">
+                        <button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true" onclick="showCommentPopup('{{ post.id }}')">
                             <i class="ri-chat-1-line"></i>
                             <span>{{ post.comment_count }}</span>
                         </button>
         
-                        <button class="action-button repost-button " data-tweet-id="{{ post.id }}" data-authenticated="true" onclick="showRepostPopup('{{ post.id }}')">
+                        <button class="action-button repost-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="showRepostPopup('{{ post.id }}')">
                             <i class="ri-repeat-line"></i>
                             <span>0</span>
                         </button>
         
-                        <button class="action-button like-button " data-tweet-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
+                        <button class="action-button like-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
                             <i class="ri-heart-line"></i>
                             <span>0</span>
                         </button>
@@ -58,75 +58,3 @@
 </div>
 
 {% include 'components/comment_modal.html' %}
-
-<script>
-function showCommentPopup(postId) {
-    // Get the post data
-    const postElement = document.querySelector(`article[data-tweet-id="${postId}"]`);
-    const userName = postElement.querySelector('.user-name').textContent.trim();
-    const userHandle = postElement.querySelector('.user-handle').textContent.trim();
-    const timeElement = postElement.querySelector('.time');
-    const content = postElement.querySelector('.post-text').textContent.trim();
-    
-    // Update modal content
-    document.getElementById('originalPostName').textContent = userName;
-    document.getElementById('originalPostHandle').textContent = userHandle;
-    document.getElementById('replyingToHandle').textContent = userHandle;
-    document.getElementById('originalPostTime').textContent = timeElement.textContent;
-    document.getElementById('originalPostContent').textContent = content;
-    document.getElementById('parent_post_id').value = postId;
-    
-    // Show modal
-    const modal = document.getElementById('commentModal');
-    modal.style.display = 'block';
-    
-    // Handle close button
-    const closeBtn = modal.querySelector('.close-modal');
-    closeBtn.onclick = function() {
-        modal.style.display = 'none';
-    }
-    
-    // Close when clicking outside
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    // Fetch and display replies
-    fetch(`/get-replies/${postId}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                renderReplies(data.replies);
-            }
-        })
-        .catch(error => console.error('Error fetching replies:', error));
-}
-
-// Handle form submission
-document.getElementById('replyForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    try {
-        const response = await fetch('{% url "create_comment" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        });
-        
-        if (response.ok) {
-            // Close modal and optionally refresh the page or update comments
-            document.getElementById('commentModal').style.display = 'none';
-            window.location.reload(); // Or use HTMX to partially refresh
-        } else {
-            console.error('Error posting comment');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-});
-</script> 

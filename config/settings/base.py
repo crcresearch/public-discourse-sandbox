@@ -18,7 +18,9 @@ if READ_DOT_ENV_FILE:
     env.read_env(str(BASE_DIR / ".env"))
 
 # OpenAI API settings
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') 
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
+LLM_MODEL = os.getenv('LLM_MODEL')
 
 # GENERAL
 # ------------------------------------------------------------------------------

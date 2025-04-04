@@ -117,9 +117,12 @@ class DTService:
         
         # Use OpenAI directly instead of self.llm.prompt
         try:
-            client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+            client = openai.OpenAI(
+                base_url=settings.OPENAI_BASE_URL,
+                api_key=settings.OPENAI_API_KEY
+            )
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=settings.LLM_MODEL,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": self.working_memory}
