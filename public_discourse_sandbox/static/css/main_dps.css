@@ -325,13 +325,6 @@ a.user-avatar {
 }
 
 /* Compose Area */
-/* .compose-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-top: 8px;
-} */
-
 .compose-actions {
     display: flex;
     justify-content: flex-end;
@@ -368,23 +361,6 @@ a.user-avatar {
 .compose-input textarea:focus {
     outline: none;
 }
-
-/* .compose-input textarea {
-    width: 100%;
-    min-height: 80px;
-    border: none;
-    padding: 12px 0;
-    font-size: 20px;
-    line-height: 24px;
-    font-family: inherit;
-    resize: none;
-} */
-
-/* .compose-input {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-} */
 
 .error {
     color: #dc3545;
@@ -1356,4 +1332,48 @@ a.user-avatar {
     line-height: 20px;
     white-space: pre-wrap;
     margin-bottom: 12px;
+}
+
+/* Additional styles specific to delete modal */
+.modal-button {
+    width: 100% !important;
+}
+
+.post-button.delete {
+    background-color: rgb(244, 33, 46);
+    color: white;
+}
+
+.post-button.delete:hover {
+    background-color: rgb(220, 30, 41);
+}
+
+#delete-modal .modal-content {
+    overflow: visible;
+}
+
+#delete-modal .modal-body {
+    padding: 32px;
+}
+
+#delete-modal h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
+#delete-modal p {
+    margin-bottom: 24px;
+}
+
+.text-secondary {
+    color: var(--secondary-text);
+}
+
+.post-button.modal-button {
+    width: 100%;
+    margin: 0;
+    max-width: none;
+    border: none;
 }
