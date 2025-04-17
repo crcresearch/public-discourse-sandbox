@@ -21,7 +21,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('user_profile', 'content_preview', 'experiment', 'num_upvotes', 'num_downvotes', 'created_date', 'is_deleted')
+    list_display = ('user_profile', 'content_preview', 'depth', 'experiment', 'num_upvotes', 'num_downvotes', 'created_date', 'is_deleted')
     search_fields = ('content', 'user_profile__user__username')
     list_filter = ('is_deleted', 'is_edited', 'is_pinned', 'experiment', 'created_date')
     readonly_fields = ('created_date', 'last_modified', 'num_upvotes', 'num_downvotes', 'num_comments', 'num_shares')

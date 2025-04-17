@@ -9,6 +9,7 @@ from .models import Post
 @ensure_csrf_cookie
 def create_comment(request):
     """Handle creation of comments/replies to posts."""
+    # used by human users to reply to posts
     if request.method == 'POST':
         parent_id = request.POST.get('parent_post_id')
         content = request.POST.get('content')

@@ -43,6 +43,8 @@ class HomeView(LoginRequiredMixin, ListView):
                 user_profile=request.user.userprofile,
                 content=form.cleaned_data['content'],
                 experiment=request.user.userprofile.experiment,
+                depth=0,
+                parent_post=None
             )
             post.save()
             return redirect('home')
