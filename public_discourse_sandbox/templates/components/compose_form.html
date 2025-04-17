@@ -1,3 +1,4 @@
+{% if not user.userprofile.is_banned %}
 <!-- Post form -->
 <div class="compose-area">
     <form method="post" action="{% url 'home' %}">
@@ -23,4 +24,9 @@
             <button type="submit" class="post-button">Post</button>
         </div>
     </form>
-</div> 
+</div>
+{% else %}
+<div class="compose-area banned-message">
+    <p>Your account has been banned. You cannot create new posts at this time.</p>
+</div>
+{% endif %} 

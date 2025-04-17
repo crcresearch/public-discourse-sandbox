@@ -338,6 +338,18 @@ a.user-avatar {
     border-bottom: 1px solid var(--border-color);
 }
 
+.compose-area.banned-message {
+    background-color: #FFF4F4;
+    text-align: center;
+}
+
+.compose-area.banned-message p {
+    color: #DC3545;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+}
+
 .compose-content {
     display: flex;
     width: 100%;
