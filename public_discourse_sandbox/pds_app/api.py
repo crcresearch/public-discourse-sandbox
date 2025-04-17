@@ -39,13 +39,14 @@ def create_comment(request):
     return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
 
 @login_required
-@ensure_csrf_cookie
+# @ensure_csrf_cookie
 def get_post_replies(request, post_id):
     """Get replies for a specific post."""
     try:
-        # Use default manager which already filters out deleted posts
+
+        # Filter replies that are not deleted and not from banned users
         replies = Post.objects.filter(
-            parent_post_id=post_id
+            parent_post__id=post_id,
         ).select_related(
             'user_profile',
             'user_profile__user'
