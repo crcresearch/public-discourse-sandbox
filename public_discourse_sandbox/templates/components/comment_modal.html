@@ -30,6 +30,7 @@
 
             <!-- Reply form template - will be cloned and used for both top-level and nested replies -->
             <template id="replyFormTemplate">
+                {% if not user.userprofile.is_banned %}
                 <form class="reply-form" method="post">
                     {% csrf_token %}
                     <input type="hidden" name="parent_post_id" value="">
@@ -40,6 +41,11 @@
                         <button type="submit" class="post-button" disabled>Reply</button>
                     </div>
                 </form>
+                {% else %}
+                <div class="compose-area banned-message">
+                    <p>Your account has been suspended. You cannot reply to posts at this time.</p>
+                </div>
+                {% endif %}
             </template>
 
             <!-- Main reply form container -->
@@ -85,27 +91,33 @@ function formatDate(dateString) {
 
 function createReplyForm(parentId, isNested = false) {
     const template = document.getElementById('replyFormTemplate');
-    const form = template.content.cloneNode(true).querySelector('form');
+    const form = template.content.cloneNode(true);
+    const isBanned = form.querySelector('.banned-message') !== null;
+    const formElement = form.querySelector(isBanned ? '.compose-area.banned-message' : '.reply-form');
     
-    // Set up form
-    form.querySelector('[name="parent_post_id"]').value = parentId;
-    if (isNested) {
-        form.classList.add('nested-reply-form');
+    if (!isBanned) {
+        // Set up form
+        formElement.querySelector('[name="parent_post_id"]').value = parentId;
+        if (isNested) {
+            formElement.classList.add('nested-reply-form');
+        }
+        
+        // Add form submission handler
+        formElement.addEventListener('submit', handleReplySubmit);
+        
+        // Add input handler for enabling/disabling submit button
+        const textarea = formElement.querySelector('textarea');
+        const submitButton = formElement.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        
+        textarea.addEventListener('input', function() {
+            submitButton.disabled = !this.value.trim();
+        });
+    } else if (isNested) {
+        formElement.classList.add('nested-reply-form');
     }
     
-    // Add form submission handler
-    form.addEventListener('submit', handleReplySubmit);
-    
-    // Add input handler for enabling/disabling submit button
-    const textarea = form.querySelector('textarea');
-    const submitButton = form.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    
-    textarea.addEventListener('input', function() {
-        submitButton.disabled = !this.value.trim();
-    });
-    
-    return form;
+    return formElement;
 }
 
 async function handleReplySubmit(e) {
