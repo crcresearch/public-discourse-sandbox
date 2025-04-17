@@ -2,7 +2,11 @@ from django.urls import path
 from django.views.generic import TemplateView
 
 # Import views using absolute import path for Celery compatibility
-from public_discourse_sandbox.pds_app.views import HomeView, ExploreView, create_comment, get_post_replies
+from public_discourse_sandbox.pds_app.views import HomeView, ExploreView
+from public_discourse_sandbox.pds_app.api import (
+    create_comment, get_post_replies,
+    delete_post
+)
 
 urlpatterns = [
     path("", TemplateView.as_view(template_name="pages/landing.html"), name="landing"),
@@ -11,4 +15,5 @@ urlpatterns = [
     path("explore/", ExploreView.as_view(), name="explore"),
     path('create-comment/', create_comment, name='create_comment'),
     path('get-replies/<uuid:post_id>/', get_post_replies, name='get_replies'),
+    path('api/posts/<uuid:post_id>/delete/', delete_post, name='delete_post'),
 ]

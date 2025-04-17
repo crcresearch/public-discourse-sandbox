@@ -267,7 +267,7 @@ class DTService:
 
         Flow: Called by generate_comment() after context analysis
         """
-        print(f"Generating response for pst: {post.id}")
+        print(f"Generating response for post: {post.id}")
         try:
             self.current_twin = twin  # Set the current twin
             if not context:
@@ -366,20 +366,17 @@ class DTService:
             if not comment_content:
                 logger.error(f"Failed to generate comment content for digital twin {twin.user_profile.username}")
 
-            # Currently only responding to top-level posts made by human users
-            # TODO: Move this check to the signal handler?
-            if not post.user_profile.is_bot and not post.parent_post:  # TODO: handle nested replies
-
-                # Create the comment
-                comment = Post.objects.create(
-                    user_profile=twin.user_profile,
-                    parent_post=post,
-                    content=comment_content,
-                    experiment=post.experiment
-                )
-                
-                logger.info(f"Created digital twin comment: {comment.content[:50]}...")
-                responses.append(comment)
+            # Create the comment
+            comment = Post.objects.create(
+                user_profile=twin.user_profile,
+                parent_post=post,
+                content=comment_content,
+                experiment=post.experiment,
+                depth=post.depth + 1
+            )
+            
+            logger.info(f"Created digital twin comment: {comment.content[:50]}...")
+            responses.append(comment)
 
             return responses
 

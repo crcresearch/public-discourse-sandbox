@@ -10,7 +10,8 @@ def handle_post(sender, instance, created, **kwargs):
     Signal handler for Post model's post_save signal.
     This will be called whenever a Post is saved.
     """
-    if created:  # Only process new posts
+    # if the post is made by a human user and the depth is 0, then process the post
+    if not instance.user_profile.is_digital_twin and instance.depth == 0:
         def send_task():
             process_digital_twin_response.delay(str(instance.id))
         

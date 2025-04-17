@@ -95,7 +95,7 @@ class Command(BaseCommand):
                 profile, created = UserProfile.objects.get_or_create(
                     user=user,
                     defaults={
-                        'is_bot': True,
+                        'is_digital_twin': True,
                         'username': bot_config['username'],
                         # 'display_name': bot_config['display_name'],
                         # 'visibility': 'public'

@@ -26,7 +26,7 @@ class Experiment(BaseModel):
     name = models.CharField(max_length=255)
     description = models.TextField()
     options = models.JSONField(default=dict)
-    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # This defines what user "owns" this experiment
 
     def __str__(self):
         return f"{self.name}"
@@ -44,12 +44,15 @@ class UserProfile(BaseModel):
     bio = models.TextField(null=True, blank=True)
     num_followers = models.IntegerField(default=0)
     num_following = models.IntegerField(default=0)
-    is_bot = models.BooleanField(default=False)
+    is_digital_twin = models.BooleanField(default=False)
+    is_collaborator = models.BooleanField(default=False)  # Works with the experiment owner to administer the experiment
+    is_moderator = models.BooleanField(default=False)  # Delete posts, ban / report users
+    is_banned = models.BooleanField(default=False)  # Cannot post, reply, or view content
     is_private = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     
     def __str__(self):
-        bot_status = " (Bot)" if self.is_bot else ""
+        bot_status = " (Digital Twin)" if self.is_digital_twin else ""
         return f"{self.username}{bot_status}"
 
 

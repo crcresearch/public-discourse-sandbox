@@ -325,13 +325,6 @@ a.user-avatar {
 }
 
 /* Compose Area */
-/* .compose-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-top: 8px;
-} */
-
 .compose-actions {
     display: flex;
     justify-content: flex-end;
@@ -369,23 +362,6 @@ a.user-avatar {
     outline: none;
 }
 
-/* .compose-input textarea {
-    width: 100%;
-    min-height: 80px;
-    border: none;
-    padding: 12px 0;
-    font-size: 20px;
-    line-height: 24px;
-    font-family: inherit;
-    resize: none;
-} */
-
-/* .compose-input {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-} */
-
 .error {
     color: #dc3545;
     font-size: 14px;
@@ -414,7 +390,9 @@ a.user-avatar {
 }
 
 .post-header {
-    margin-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
 .post-header .user-name {
@@ -1283,4 +1261,119 @@ a.user-avatar {
     display: flex;
     justify-content: flex-end;
     margin-top: 10px;
+}
+
+.post-menu {
+    position: relative;
+}
+
+.menu-button {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.menu-button:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+.post-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #ffffff;
+    border: 1px solid var(--nd-blue);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 200px;
+    margin-top: 4px;
+}
+
+.post-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+.post-menu-item:first-child {
+    border-top-left-radius: 11px;
+    border-top-right-radius: 11px;
+}
+
+.post-menu-item:last-child {
+    border-bottom-left-radius: 11px;
+    border-bottom-right-radius: 11px;
+}
+
+.post-menu-item:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+.post-menu-item i {
+    font-size: 1.2em;
+    color: var(--nd-blue);
+}
+
+.post-text {
+    color: rgb(15, 20, 25);
+    font-size: 15px;
+    line-height: 20px;
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+}
+
+/* Additional styles specific to delete modal */
+.modal-button {
+    width: 100% !important;
+}
+
+.post-button.delete {
+    background-color: rgb(244, 33, 46);
+    color: white;
+}
+
+.post-button.delete:hover {
+    background-color: rgb(220, 30, 41);
+}
+
+#delete-modal .modal-content {
+    overflow: visible;
+}
+
+#delete-modal .modal-body {
+    padding: 32px;
+}
+
+#delete-modal h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
+#delete-modal p {
+    margin-bottom: 24px;
+}
+
+.text-secondary {
+    color: var(--secondary-text);
+}
+
+.post-button.modal-button {
+    width: 100%;
+    margin: 0;
+    max-width: none;
+    border: none;
 }
