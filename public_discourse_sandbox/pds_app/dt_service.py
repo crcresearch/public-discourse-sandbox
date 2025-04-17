@@ -368,7 +368,7 @@ class DTService:
 
             # Currently only responding to top-level posts made by human users
             # TODO: Move this check to the signal handler?
-            if not post.user_profile.is_bot and not post.parent_post:  # TODO: handle nested replies
+            if not post.user_profile.is_digital_twin and not post.parent_post:  # TODO: handle nested replies
 
                 # Create the comment
                 comment = Post.objects.create(

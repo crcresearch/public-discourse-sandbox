@@ -11,9 +11,9 @@ class ExperimentAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'experiment', 'is_bot', 'is_private', 'is_deleted', 'num_followers', 'num_following')
+    list_display = ('user', 'experiment', 'is_digital_twin', 'is_private', 'is_deleted', 'num_followers', 'num_following')
     search_fields = ('user__username', 'bio')
-    list_filter = ('is_bot', 'is_private', 'is_deleted', 'experiment')
+    list_filter = ('is_digital_twin', 'is_private', 'is_deleted', 'experiment')
     readonly_fields = ('created_date', 'last_modified', 'num_followers', 'num_following')
     raw_id_fields = ('user', 'experiment')
     date_hierarchy = 'created_date'
