@@ -366,7 +366,9 @@ class DTService:
             if not comment_content:
                 logger.error(f"Failed to generate comment content for digital twin {twin.user_profile.username}")
 
-            if not post.user_profile.is_bot:
+            # Currently only responding to top-level posts made by human users
+            # TODO: Move this check to the signal handler?
+            if not post.user_profile.is_bot and not post.parent_post:  # TODO: handle nested replies
 
                 # Create the comment
                 comment = Post.objects.create(
