@@ -122,3 +122,30 @@ def ban_user(request, user_profile_id):
         return JsonResponse({'status': 'success', 'message': 'User banned successfully'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@ensure_csrf_cookie
+def unban_user(request, user_profile_id):
+    """Handle unbanning of users."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    
+    try:
+        # Get the target user profile
+        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
+        
+        # Check if the requesting user is a moderator in the same experiment
+        try:
+            mod_profile = request.user.userprofile
+            if not (mod_profile.experiment == target_profile.experiment and mod_profile.is_moderator):
+                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        except AttributeError:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        
+        # Unban the user
+        target_profile.is_banned = False
+        target_profile.save()
+        
+        return JsonResponse({'status': 'success', 'message': 'User unbanned successfully'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

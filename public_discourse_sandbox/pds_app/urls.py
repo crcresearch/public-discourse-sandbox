@@ -5,7 +5,7 @@ from django.views.generic import TemplateView
 from public_discourse_sandbox.pds_app.views import HomeView, ExploreView
 from public_discourse_sandbox.pds_app.api import (
     create_comment, get_post_replies,
-    delete_post, ban_user
+    delete_post, ban_user, unban_user
 )
 
 urlpatterns = [
@@ -17,4 +17,5 @@ urlpatterns = [
     path('get-replies/<uuid:post_id>/', get_post_replies, name='get_replies'),
     path('api/posts/<uuid:post_id>/delete/', delete_post, name='delete_post'),
     path('api/users/<uuid:user_profile_id>/ban/', ban_user, name='ban_user'),
+    path('api/users/<uuid:user_profile_id>/unban/', unban_user, name='unban_user'),
 ]
