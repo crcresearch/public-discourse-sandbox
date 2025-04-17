@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from .models import Post
+from .models import Post, UserProfile
 
 @login_required
 @ensure_csrf_cookie
@@ -93,5 +93,32 @@ def delete_post(request, post_id):
         post.save()
         
         return JsonResponse({'status': 'success', 'message': 'Post deleted successfully'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@ensure_csrf_cookie
+def ban_user(request, user_profile_id):
+    """Handle banning of users."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    
+    try:
+        # Get the target user profile
+        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
+        
+        # Check if the requesting user is a moderator in the same experiment
+        try:
+            mod_profile = request.user.userprofile
+            if not (mod_profile.experiment == target_profile.experiment and mod_profile.is_moderator):
+                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        except AttributeError:
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        
+        # Ban the user
+        target_profile.is_banned = True
+        target_profile.save()
+        
+        return JsonResponse({'status': 'success', 'message': 'User banned successfully'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

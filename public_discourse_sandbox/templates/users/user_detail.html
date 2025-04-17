@@ -6,6 +6,7 @@
   User: {{ object.name }}
 {% endblock title %}
 {% block content %}
+  {% csrf_token %}
   <!-- Left Sidebar -->
   {% include 'pages/left_nav.html' %}
   <!-- Main Content -->
@@ -28,10 +29,92 @@
           role="button">MFA</a>
         <!-- Your Stuff: Custom user template urls -->
       </div>
-    {% endif %}
     </div>
+    {% endif %}
+
     <!-- End Action buttons -->
+
+    {% if request.user.userprofile.is_moderator and object != request.user %}
+    <!-- Moderator Actions -->
+    <div class="row">
+      <div class="col-sm-12">
+        <button class="btn btn-danger" id="banUserBtn" data-user-id="{{ object.userprofile.id }}">
+          {% if object.userprofile.is_banned %}
+          Unban User
+          {% else %}
+          Ban User
+          {% endif %}
+        </button>
+      </div>
+    </div>
+    <!-- Ban User Confirmation Modal -->
+    <div class="modal fade" id="banUserModal" tabindex="-1" aria-labelledby="banUserModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="banUserModalLabel">Confirm Action</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to <span id="banActionText">ban</span> {{ object.name }}?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmBanBtn">Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
   </div>
   <!-- Right Sidebar -->
   {% include 'pages/right_content.html' %}
 {% endblock content %}
+
+{% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const banUserBtn = document.getElementById('banUserBtn');
+    const banUserModal = document.getElementById('banUserModal');
+    const confirmBanBtn = document.getElementById('confirmBanBtn');
+    const banActionText = document.getElementById('banActionText');
+    
+    if (!banUserBtn || !banUserModal || !confirmBanBtn) return;
+
+    const modal = new bootstrap.Modal(banUserModal);
+    
+    banUserBtn.addEventListener('click', function() {
+      const isBanned = banUserBtn.textContent.trim() === 'Unban User';
+      banActionText.textContent = isBanned ? 'unban' : 'ban';
+      modal.show();
+    });
+
+    confirmBanBtn.addEventListener('click', async function() {
+      const userId = banUserBtn.dataset.userId;
+      const isBanned = banUserBtn.textContent.trim() === 'Unban User';
+      const action = isBanned ? 'unban' : 'ban';
+      
+      try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const response = await fetch(`/api/users/${userId}/${action}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+      
+      modal.hide();
+    });
+  });
+</script>
+{% endblock inline_javascript %}
