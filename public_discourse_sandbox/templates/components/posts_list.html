@@ -26,7 +26,7 @@
                             <span class="dot">·</span>
                             <span class="time">{{ post.created_date|timesince }}</span>
                         </div>
-                        {% if post.user_profile.user == request.user %}
+                        {% if post.user_profile.user == request.user or request.user.userprofile.is_moderator %}
                             <div class="post-menu">
                                 <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
                                     <i class="ri-more-fill"></i>

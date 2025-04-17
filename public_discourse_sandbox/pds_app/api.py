@@ -79,7 +79,14 @@ def delete_post(request, post_id):
         
         # Check if the user owns the post
         if post.user_profile.user != request.user:
-            return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+            # If not the owner, check if user has a profile in this experiment and is a moderator
+            try:
+                user_profile = request.user.userprofile
+                if not (user_profile.experiment == post.experiment and user_profile.is_moderator):
+                    print(f"User is not a moderator")
+                    return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+            except AttributeError as e:
+                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         
         # Soft delete the post
         post.is_deleted = True
