@@ -54,10 +54,9 @@ def get_post_replies(request, post_id):
         replies_data = [{
             'id': str(reply.id),  # Convert UUID to string
             'username': reply.user_profile.username,
-            'user_name': reply.user_profile.user.get_full_name() if hasattr(reply.user_profile.user, 'get_full_name') else reply.user_profile.username,
+            'user_name': reply.user_profile.user.name,
             'content': reply.content,
             'created_date': reply.created_date.isoformat(),
-            'user_name': reply.user_profile.user.name,
             'profile_picture': reply.user_profile.profile_picture.url if reply.user_profile.profile_picture else None
         } for reply in replies]
         
