@@ -1317,7 +1317,7 @@ a.user-avatar {
     margin-top: 4px;
 }
 
-.menu-item {
+.post-menu-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1331,21 +1331,21 @@ a.user-avatar {
     transition: background-color 0.2s ease;
 }
 
-.menu-item:first-child {
+.post-menu-item:first-child {
     border-top-left-radius: 11px;
     border-top-right-radius: 11px;
 }
 
-.menu-item:last-child {
+.post-menu-item:last-child {
     border-bottom-left-radius: 11px;
     border-bottom-right-radius: 11px;
 }
 
-.menu-item:hover {
+.post-menu-item:hover {
     background-color: rgba(29, 155, 240, 0.1);
 }
 
-.menu-item i {
+.post-menu-item i {
     font-size: 1.2em;
     color: var(--nd-blue);
 }
