@@ -382,6 +382,7 @@ a.user-avatar {
 .post-main {
     display: flex;
     gap: 12px;
+    width: 100%;
 }
 
 .post-content {
@@ -1376,4 +1377,9 @@ a.user-avatar {
     margin: 0;
     max-width: none;
     border: none;
+}
+
+.menu-button i {
+    text-align: right;
+    float: right;
 }
