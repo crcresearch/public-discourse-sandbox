@@ -340,6 +340,12 @@ a.user-avatar {
 
 .compose-content {
     display: flex;
+    width: 100%;
+}
+
+.compose-input {
+    flex: 1;
+    min-width: 0;  /* Prevents flex item from overflowing */
 }
 
 .compose-input textarea {
