@@ -340,6 +340,12 @@ a.user-avatar {
 
 .compose-content {
     display: flex;
+    width: 100%;
+}
+
+.compose-input {
+    flex: 1;
+    min-width: 0;  /* Prevents flex item from overflowing */
 }
 
 .compose-input textarea {
@@ -382,6 +388,7 @@ a.user-avatar {
 .post-main {
     display: flex;
     gap: 12px;
+    width: 100%;
 }
 
 .post-content {
@@ -1376,4 +1383,9 @@ a.user-avatar {
     margin: 0;
     max-width: none;
     border: none;
+}
+
+.menu-button i {
+    text-align: right;
+    float: right;
 }

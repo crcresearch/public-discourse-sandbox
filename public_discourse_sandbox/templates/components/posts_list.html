@@ -1,3 +1,4 @@
+{% load static %}
 {% csrf_token %}
 <!-- Posts List -->
 <div class="post-feed">
@@ -26,7 +27,7 @@
                             <span class="dot">·</span>
                             <span class="time">{{ post.created_date|timesince }}</span>
                         </div>
-                        {% if post.user_profile.user == request.user %}
+                        {% if post.user_profile.user == request.user or request.user.userprofile.is_moderator %}
                             <div class="post-menu">
                                 <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
                                     <i class="ri-more-fill"></i>
@@ -35,6 +36,11 @@
                                     <button onclick="deletePost('{{ post.id }}')" class="post-menu-item">
                                         <i class="ri-delete-bin-line"></i> Delete
                                     </button>
+                                    <!-- {% if request.user.userprofile.is_moderator %}
+                                    <button onclick="banUser('{{ post.user_profile.id }}')" class="post-menu-item">
+                                        <i class="ri-user-unfollow-line"></i> Ban User
+                                    </button>
+                                    {% endif %} -->
                                 </div>
                             </div>
                         {% endif %}
@@ -86,38 +92,8 @@
     </div>
 </div>
 
+<script src="{% static 'js/shared.js' %}"></script>
 <script>
-// Helper function to make API requests with proper CSRF handling
-async function makeRequest(url, method, data = null) {
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const headers = {
-        'X-CSRFToken': csrftoken,
-        'Content-Type': 'application/json',
-    };
-    
-    const options = {
-        method: method,
-        headers: headers,
-        credentials: 'same-origin'
-    };
-    
-    if (data) {
-        if (data instanceof FormData) {
-            delete headers['Content-Type'];
-            options.body = data;
-        } else {
-            options.body = JSON.stringify(data);
-        }
-    }
-    
-    const response = await fetch(url, options);
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Request failed');
-    }
-    return response.json();
-}
-
 function togglePostMenu(postId) {
     const menu = document.getElementById(`post-menu-${postId}`);
     const allMenus = document.querySelectorAll('.post-menu-dropdown');
@@ -192,4 +168,25 @@ document.addEventListener('DOMContentLoaded', function() {
 function deletePost(postId) {
     showDeleteModal(postId);
 }
+
+async function banUser(userId) {
+    if (!confirm('Are you sure you want to ban this user?')) {
+        return;
+    }
+    
+    try {
+        const response = await makeRequest(`/api/users/${userId}/ban/`, 'POST');
+        if (response.ok) {
+            showToast('success', 'User has been banned successfully');
+            // Reload the page to reflect the changes
+            window.location.reload();
+        } else {
+            showToast('error', 'Failed to ban user');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('error', 'An error occurred while banning the user');
+    }
+}
+
 </script>

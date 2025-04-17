@@ -58,7 +58,8 @@ class UserProfile(BaseModel):
 
 class UndeletedPostManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(is_deleted=False)
+        # Only return posts that are not deleted or from user profiles that are not banned
+        return super().get_queryset().filter(is_deleted=False, user_profile__is_banned=False)
 
 
 class Post(BaseModel):
