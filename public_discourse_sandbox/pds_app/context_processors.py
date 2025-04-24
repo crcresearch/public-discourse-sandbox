@@ -7,5 +7,5 @@ def active_bots(request):
     without having to add it to every view's context.
     """
     return {
-        'active_bots': DigitalTwin.objects.filter(is_active=True)
+        'active_bots': DigitalTwin.objects.filter(is_active=True, user_profile__experiment=request.user.userprofile.experiment)
     } 

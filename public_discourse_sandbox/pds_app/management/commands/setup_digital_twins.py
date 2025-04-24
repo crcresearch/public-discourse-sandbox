@@ -2,7 +2,7 @@ import os, random
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from public_discourse_sandbox.pds_app.models import UserProfile, DigitalTwin, Experiment
-
+from django.conf import settings
 User = get_user_model()
 
 class Command(BaseCommand):
@@ -11,11 +11,18 @@ class Command(BaseCommand):
     """
     help = "Sets up the bots for the application using persona files"
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--reset',
+            action='store_true',
+            help='Delete existing digital twins before creating new ones',
+        )
+
+    def handle(self, *args, **options):
         # Get the directory where this script lives
         current_dir = os.path.dirname(os.path.abspath(__file__))
         personas_dir = os.path.join(current_dir, 'personas')
-        experiment = Experiment.objects.get(name='First')
+        experiment = Experiment.objects.get(name='Public')
         self.stdout.write(f"Looking for personas in: {personas_dir}")
 
         # Define bot configurations
@@ -53,9 +60,10 @@ class Command(BaseCommand):
                 persona_files.append(file_path)
                 self.stdout.write(f"Found persona file: {file_path}")     
 
-        # First, delete existing digital twins
-        DigitalTwin.objects.all().delete()
-        self.stdout.write("Deleted existing digital twins")
+        # Delete existing digital twins only if --reset flag is provided
+        if options['reset']:
+            DigitalTwin.objects.all().delete()
+            self.stdout.write("Deleted existing digital twins")
 
         # Randomly select 5 persona files to be active
         active_files = random.sample(persona_files, min(5, len(persona_files)))
@@ -112,8 +120,8 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(f"Created profile for {bot_config['display_name']}")
 
-                # Get bot token from environment variables
-                api_token = os.getenv(f"OPENAI_API_KEY")
+                # Get bot token from settings
+                api_token = settings.OPENAI_API_KEY
 
                 # Create or update bot
                 digital_twin = DigitalTwin.objects.create(
