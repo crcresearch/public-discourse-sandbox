@@ -30,42 +30,31 @@ def get_random_digitial_twins(count=1, exclude_twin=None):
     return selected_twins
 
 @shared_task
-def process_digital_twin_response(post_id: str):
+def process_digital_twin_response(post_id: str, twin_id: str):
     """
     Celery task to process bot response to a post.
     Args:
         post_id (str): UUID of the post to respond to
+        twin_id (str): UUID of the digital twin that will respond
     """
-    logger.info(f"Starting bot response processing for post {post_id}")
-    print(f"Starting bot response processing for post {post_id}")
-
-    num_responses = 3
+    logger.info(f"Starting bot response processing for post {post_id} with twin {twin_id}")
+    print(f"Starting bot response processing for post {post_id} with twin {twin_id}")
 
     try:
-        # First fetch the post using the ID
+        # First fetch the post and twin using their IDs
         try:
             post = Post.objects.get(id=post_id)
-        except Post.DoesNotExist:
-            logger.error(f"Post with id {post_id} not found")
+            twin = DigitalTwin.objects.get(id=twin_id)
+        except (Post.DoesNotExist, DigitalTwin.DoesNotExist) as e:
+            logger.error(f"Post or Twin not found: {str(e)}")
             return
 
-        twins = get_random_digitial_twins(count=num_responses)
-        if not twins:
-            logger.warning("No active digital twins available")
-            return
-
-        logger.info(f"Found post by user {post.user_profile.username}")
-        
         # Initialize the digital twin service
         dt_service = DTService()
-
-        for twin in twins:
-            logger.info("Waiting 10 seconds for response...")
-            # time.sleep(10)
-            response = dt_service.respond_to_post(twin, post)
-            logger.info(f"Generated digital twin response to post {post.id}")
         
-        logger.info(f"Successfully processed all bot responses for post {post.id}")
+        # Generate response using the specific twin
+        response = dt_service.respond_to_post(twin, post)
+        logger.info(f"Generated digital twin response to post {post.id}")
         
     except Exception as e:
         logger.error(f"Error processing bot response: {str(e)}", exc_info=True) 

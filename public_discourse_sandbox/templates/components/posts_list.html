@@ -19,7 +19,7 @@
                     <div class="post-header">
                         <div class="user-info">
                             <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-name">
-                                {{ post.user_profile.user.name }}
+                                {{ post.user_profile.display_name }}
                             </a>
                             <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-handle">
                                 @{{ post.user_profile.username }}

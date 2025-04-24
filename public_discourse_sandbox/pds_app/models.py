@@ -37,6 +37,7 @@ class UserProfile(BaseModel):
     User profile model.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=255, unique=True)
     username = models.CharField(max_length=255, unique=True)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     banner_picture = models.ImageField(upload_to='banner_pictures/', null=True, blank=True)
