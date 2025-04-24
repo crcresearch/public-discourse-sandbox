@@ -1,12 +1,8 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
-from django.urls import reverse_lazy
 from .forms import PostForm
 from .models import Post
-from django.db import models
-from django.http import JsonResponse
 
 def get_active_posts():
     """Get non-deleted top-level posts with related user data."""
@@ -22,6 +18,7 @@ def get_active_posts():
         post.comment_count = post.get_comment_count()
     
     return posts
+
 
 class HomeView(LoginRequiredMixin, ListView):
     """Home page view that displays and handles creation of posts."""
