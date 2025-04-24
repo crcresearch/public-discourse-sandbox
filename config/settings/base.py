@@ -18,9 +18,10 @@ if READ_DOT_ENV_FILE:
     env.read_env(str(BASE_DIR / ".env"))
 
 # OpenAI API settings
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
-LLM_MODEL = os.getenv('LLM_MODEL')
+# No default value so that Django will raise an error if the variable is not set
+OPENAI_API_KEY = env.str('OPENAI_API_KEY')
+OPENAI_BASE_URL = env.str('OPENAI_BASE_URL')
+LLM_MODEL = env.str('LLM_MODEL')
 
 # GENERAL
 # ------------------------------------------------------------------------------
