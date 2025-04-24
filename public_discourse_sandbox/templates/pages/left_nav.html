@@ -16,7 +16,7 @@
                 {% endif %}
             </div>
             <div class="my-account-info">
-                <span class="my-account-name">{{ request.user.name }}</span>
+                <span class="my-account-name">{{ request.user.userprofile.display_name }}</span>
                 <span class="my-account-username">@{{ request.user.userprofile.username }}</span>
             </div>
             <i class="ri-arrow-right-s-line account-arrow"></i>

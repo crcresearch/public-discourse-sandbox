@@ -105,7 +105,7 @@ class Command(BaseCommand):
                     defaults={
                         'is_digital_twin': True,
                         'username': bot_config['username'],
-                        # 'display_name': bot_config['display_name'],
+                        'display_name': bot_config['display_name'],
                         # 'visibility': 'public'
                         'is_private': True,
                         'is_deleted': False,

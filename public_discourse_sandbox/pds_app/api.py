@@ -55,7 +55,7 @@ def get_post_replies(request, post_id):
         replies_data = [{
             'id': str(reply.id),  # Convert UUID to string
             'username': reply.user_profile.username,
-            'user_name': reply.user_profile.user.name,
+            'display_name': reply.user_profile.display_name,
             'content': reply.content,
             'created_date': reply.created_date.isoformat(),
             'profile_picture': reply.user_profile.profile_picture.url if reply.user_profile.profile_picture else None
