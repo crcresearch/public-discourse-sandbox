@@ -6,11 +6,19 @@ from .models import Post
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
 
-def get_active_posts():
+def get_active_posts(experiment=None):
     """Get non-deleted top-level posts with related user data."""
     posts = Post.objects.filter(
-        parent_post__isnull=True  # Only show top-level posts, not replies
-    ).select_related(
+        parent_post__isnull=True,  # Only show top-level posts, not replies
+        is_deleted=False  # Only show non-deleted posts
+    )
+    
+    # Filter by experiment if provided
+    if experiment:
+        posts = posts.filter(experiment=experiment)
+    
+    # Select related data for efficiency
+    posts = posts.select_related(
         'user_profile',
         'user_profile__user'
     ).order_by('-created_date')
@@ -29,9 +37,7 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        if self.experiment:
-            return get_active_posts().filter(experiment=self.experiment)
-        return get_active_posts()
+        return get_active_posts(experiment=self.experiment)
 
     def get_context_data(self, **kwargs):
         """Add the post form to the context."""
