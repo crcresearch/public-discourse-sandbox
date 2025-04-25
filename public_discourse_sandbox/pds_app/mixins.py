@@ -14,6 +14,7 @@ class ExperimentContextMixin:
         super().setup(request, *args, **kwargs)
         self.experiment = None
         self.should_redirect = False
+        self.user_profile = None
         
         if request.user.is_authenticated:
             # First try to get experiment from URL
@@ -25,20 +26,17 @@ class ExperimentContextMixin:
                 self.should_redirect = True
             else:
                 # If no experiment found, try to get the user's first available experiment
-                try:
-                    user_profile = request.user.userprofile
+                user_profile = request.user.userprofile_set.first()
+                if user_profile:
                     self.experiment = user_profile.experiment
                     self.should_redirect = True
-                except UserProfile.DoesNotExist:
+                else:
                     raise PermissionDenied("You do not have access to any experiments")
             
-            # Verify user has access to this experiment
+            # Verify user has access to this experiment and get their profile for this experiment
             if self.experiment:
-                try:
-                    user_profile = request.user.userprofile
-                    if user_profile.experiment != self.experiment:
-                        raise PermissionDenied("You do not have access to this experiment")
-                except UserProfile.DoesNotExist:
+                self.user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
+                if not self.user_profile:
                     raise PermissionDenied("You do not have a profile in this experiment")
                 
                 # Update user's last_accessed experiment
@@ -49,6 +47,7 @@ class ExperimentContextMixin:
         context = super().get_context_data(**kwargs)
         if self.experiment:
             context['experiment'] = self.experiment
+            context['user_profile'] = self.user_profile
         return context
 
     def dispatch(self, request, *args, **kwargs):

@@ -4,6 +4,7 @@ from django.views.generic import ListView
 from .forms import PostForm
 from .models import Post
 from .mixins import ExperimentContextMixin
+from django.core.exceptions import PermissionDenied
 
 def get_active_posts():
     """Get non-deleted top-level posts with related user data."""
@@ -42,8 +43,13 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
         """Handle post creation."""
         form = PostForm(request.POST)
         if form.is_valid():
+            # Get the user's profile for this experiment
+            user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
+            if not user_profile:
+                raise PermissionDenied("You do not have a profile in this experiment")
+                
             post = Post(
-                user_profile=request.user.userprofile,
+                user_profile=user_profile,
                 content=form.cleaned_data['content'],
                 experiment=self.experiment,
                 depth=0,
