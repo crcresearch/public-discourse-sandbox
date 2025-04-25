@@ -1,20 +1,24 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
-from django.urls import reverse_lazy
 from .forms import PostForm
 from .models import Post
 
 def get_active_posts():
     """Get non-deleted top-level posts with related user data."""
-    return Post.objects.filter(
-        is_deleted=False,
+    posts = Post.objects.filter(
         parent_post__isnull=True  # Only show top-level posts, not replies
     ).select_related(
         'user_profile',
         'user_profile__user'
     ).order_by('-created_date')
+
+    # Add comment count using the get_comment_count method
+    for post in posts:
+        post.comment_count = post.get_comment_count()
+    
+    return posts
+
 
 class HomeView(LoginRequiredMixin, ListView):
     """Home page view that displays and handles creation of posts."""
@@ -39,6 +43,8 @@ class HomeView(LoginRequiredMixin, ListView):
                 user_profile=request.user.userprofile,
                 content=form.cleaned_data['content'],
                 experiment=request.user.userprofile.experiment,
+                depth=0,
+                parent_post=None
             )
             post.save()
             return redirect('home')

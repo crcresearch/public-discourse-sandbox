@@ -66,6 +66,7 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
+.envs/
 
 # Rope project settings
 .ropeproject
@@ -275,4 +276,5 @@ public_discourse_sandbox/media/
 .ipython/
 .env
 .envs/*
-!.envs/.local/
+# !.envs/.local/
+.envs/.local/.django

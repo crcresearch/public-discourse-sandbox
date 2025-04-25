@@ -1,9 +1,11 @@
+{% load static %}
+{% csrf_token %}
 <!-- Posts List -->
 <div class="post-feed">
     {% for post in posts %}
-        <article class="post" data-tweet-id="15">
+        <article class="post" data-post-id="{{ post.id }}">
             <div class="post-main">
-                <a href="post.user_profile" class="user-avatar">
+                <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-avatar">
                     {% if post.user_profile.profile_picture %}
                         <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
                     {% else %}
@@ -16,33 +18,50 @@
                     <!-- Regular tweet header -->
                     <div class="post-header">
                         <div class="user-info">
-                            <a href="/profile/swhitfie/" class="user-name">
-                                {{ post.user_profile.user.name }}
+                            <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-name">
+                                {{ post.user_profile.display_name }}
                             </a>
-                            <a href="/profile/swhitfie/" class="user-handle">
+                            <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-handle">
                                 @{{ post.user_profile.username }}
                             </a>
                             <span class="dot">·</span>
                             <span class="time">{{ post.created_date|timesince }}</span>
                         </div>
+                        {% if post.user_profile.user == request.user or request.user.userprofile.is_moderator %}
+                            <div class="post-menu">
+                                <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
+                                    <i class="ri-more-fill"></i>
+                                </button>
+                                <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+                                    <button onclick="deletePost('{{ post.id }}')" class="post-menu-item">
+                                        <i class="ri-delete-bin-line"></i> Delete
+                                    </button>
+                                    <!-- {% if request.user.userprofile.is_moderator %}
+                                    <button onclick="banUser('{{ post.user_profile.id }}')" class="post-menu-item">
+                                        <i class="ri-user-unfollow-line"></i> Ban User
+                                    </button>
+                                    {% endif %} -->
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
         
                     <!-- Regular tweet content -->
                     <div class="post-text">{{ post.content }}</div>
         
-                    <!-- Tweet Actions -->
+                    <!-- Post Actions -->
                     <div class="post-actions">
-                        <button class="action-button comment-button" data-tweet-id="15" data-authenticated="true" onclick="showCommentPopup('15')">
+                        <button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true" onclick="showCommentPopup('{{ post.id }}')">
                             <i class="ri-chat-1-line"></i>
-                            <span>0</span>
+                            <span>{{ post.comment_count }}</span>
                         </button>
         
-                        <button class="action-button repost-button " data-tweet-id="15" data-authenticated="true" onclick="showRepostPopup('15')">
+                        <button class="action-button repost-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="showRepostPopup('{{ post.id }}')">
                             <i class="ri-repeat-line"></i>
                             <span>0</span>
                         </button>
         
-                        <button class="action-button like-button " data-tweet-id="15" data-authenticated="true" onclick="handleLike(this, '15')">
+                        <button class="action-button like-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
                             <i class="ri-heart-line"></i>
                             <span>0</span>
                         </button>
@@ -55,4 +74,119 @@
             <p>No posts yet. Be the first to post!</p>
         </div>
     {% endfor %}
-</div> 
+</div>
+
+{% include 'components/comment_modal.html' %}
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 320px;">
+        <div class="modal-body" style="overflow: visible;">
+            <h2>Delete post?</h2>
+            <p class="text-secondary">This can't be undone and it will be removed from your profile, the timeline of any accounts that follow you, and from search results.</p>
+            <div class="form-actions" style="flex-direction: column; gap: 12px;">
+                <button id="confirm-delete" class="post-button delete modal-button">Delete</button>
+                <button id="cancel-delete" class="post-button modal-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/shared.js' %}"></script>
+<script>
+function togglePostMenu(postId) {
+    const menu = document.getElementById(`post-menu-${postId}`);
+    const allMenus = document.querySelectorAll('.post-menu-dropdown');
+    
+    // Close all other menus
+    allMenus.forEach(m => {
+        if (m.id !== `post-menu-${postId}`) {
+            m.style.display = 'none';
+        }
+    });
+    
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    
+    // Close menu when clicking outside
+    const closeMenu = (e) => {
+        if (!e.target.closest('.post-menu')) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    
+    if (menu.style.display === 'block') {
+        // Add event listener with a slight delay to avoid immediate triggering
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 0);
+    }
+}
+
+let postToDelete = null;
+
+function showDeleteModal(postId) {
+    postToDelete = postId;
+    const modal = document.getElementById('delete-modal');
+    modal.style.display = 'flex';
+    
+    // Close when clicking outside the modal
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            hideDeleteModal();
+        }
+    });
+}
+
+function hideDeleteModal() {
+    const modal = document.getElementById('delete-modal');
+    modal.style.display = 'none';
+    postToDelete = null;
+}
+
+async function handleDeleteConfirm() {
+    if (!postToDelete) return;
+    
+    try {
+        await makeRequest(`/api/posts/${postToDelete}/delete/`, 'DELETE');
+        const postElement = document.querySelector(`[data-post-id="${postToDelete}"]`);
+        postElement.remove();
+        hideDeleteModal();
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to delete post');
+    }
+}
+
+// Set up event listeners for the delete modal
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('confirm-delete').addEventListener('click', handleDeleteConfirm);
+    document.getElementById('cancel-delete').addEventListener('click', hideDeleteModal);
+});
+
+// Update the delete button click handler
+function deletePost(postId) {
+    showDeleteModal(postId);
+}
+
+async function banUser(userId) {
+    if (!confirm('Are you sure you want to ban this user?')) {
+        return;
+    }
+    
+    try {
+        const response = await makeRequest(`/api/users/${userId}/ban/`, 'POST');
+        if (response.ok) {
+            showToast('success', 'User has been banned successfully');
+            // Reload the page to reflect the changes
+            window.location.reload();
+        } else {
+            showToast('error', 'Failed to ban user');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('error', 'An error occurred while banning the user');
+    }
+}
+
+</script>

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Experiment, UserProfile, Post, Vote, SocialNetwork
+from .models import Experiment, UserProfile, Post, Vote, SocialNetwork, DigitalTwin
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
@@ -11,9 +11,9 @@ class ExperimentAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'experiment', 'is_bot', 'is_private', 'is_deleted', 'num_followers', 'num_following')
+    list_display = ('user', 'experiment', 'is_digital_twin', 'is_collaborator', 'is_moderator', 'is_banned', 'is_private', 'is_deleted', 'num_followers', 'num_following')
     search_fields = ('user__username', 'bio')
-    list_filter = ('is_bot', 'is_private', 'is_deleted', 'experiment')
+    list_filter = ('is_digital_twin', 'is_collaborator', 'is_moderator', 'is_banned', 'is_private', 'is_deleted', 'experiment')
     readonly_fields = ('created_date', 'last_modified', 'num_followers', 'num_following')
     raw_id_fields = ('user', 'experiment')
     date_hierarchy = 'created_date'
@@ -21,7 +21,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('user_profile', 'content_preview', 'experiment', 'num_upvotes', 'num_downvotes', 'created_date', 'is_deleted')
+    list_display = ('user_profile', 'content_preview', 'depth', 'experiment', 'num_upvotes', 'num_downvotes', 'created_date', 'is_deleted')
     search_fields = ('content', 'user_profile__user__username')
     list_filter = ('is_deleted', 'is_edited', 'is_pinned', 'experiment', 'created_date')
     readonly_fields = ('created_date', 'last_modified', 'num_upvotes', 'num_downvotes', 'num_comments', 'num_shares')
@@ -51,3 +51,10 @@ class SocialNetworkAdmin(admin.ModelAdmin):
     raw_id_fields = ('source_node', 'target_node')
     date_hierarchy = 'created_date'
     ordering = ('-created_date',)
+
+@admin.register(DigitalTwin)
+class DigitalTwinAdmin(admin.ModelAdmin):
+    list_display = ('user_profile', 'is_active', 'last_post')
+    search_fields = ('user_profile__user__username',)
+    readonly_fields = ('created_date', 'last_modified', 'last_post')
+    raw_id_fields = ('user_profile',)

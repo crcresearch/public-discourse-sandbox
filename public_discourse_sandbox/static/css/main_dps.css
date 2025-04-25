@@ -16,6 +16,7 @@
     --twitter-blue-hover: #1991DA;
     --twitter-light-hover: #E8F6FD;
     --form-border: #E5E8E8;
+    --text-color-secondary: var(--secondary-text);  /* Added for modal compatibility */
 }
 
 /* Base Styles */
@@ -157,14 +158,6 @@ p, a, button, span {
     color: var(--nd-metallic-gold);
 }
 
-.nav-menu li a[href*="home"] {
-    color: inherit;
-}
-
-.nav-menu li a[href*="home"] i {
-    color: inherit;
-}
-
 .nav-menu li a i {
     margin-right: 16px;
     font-size: 24px;
@@ -298,23 +291,20 @@ p, a, button, span {
     overflow: hidden;
     margin-bottom: 12px;
     margin-right: 12px;
-    background-color: lightgrey;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-}
-
-/* .user-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: #f0f2f5;
+    background-color: var(--background-gray);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 12px;
-} */
+}
+
+a.user-avatar {
+    text-decoration: none;  /* Remove underline from avatar links */
+}
+
+.user-avatar i {
+    font-size: 20px;
+    color: var(--secondary-text);
+}
 
 .user-avatar img {
     width: 100%;
@@ -335,13 +325,6 @@ p, a, button, span {
 }
 
 /* Compose Area */
-/* .compose-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-top: 8px;
-} */
-
 .compose-actions {
     display: flex;
     justify-content: flex-end;
@@ -355,8 +338,26 @@ p, a, button, span {
     border-bottom: 1px solid var(--border-color);
 }
 
+.compose-area.banned-message {
+    background-color: #FFF4F4;
+    text-align: center;
+}
+
+.compose-area.banned-message p {
+    color: #DC3545;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+}
+
 .compose-content {
     display: flex;
+    width: 100%;
+}
+
+.compose-input {
+    flex: 1;
+    min-width: 0;  /* Prevents flex item from overflowing */
 }
 
 .compose-input textarea {
@@ -379,23 +380,6 @@ p, a, button, span {
     outline: none;
 }
 
-/* .compose-input textarea {
-    width: 100%;
-    min-height: 80px;
-    border: none;
-    padding: 12px 0;
-    font-size: 20px;
-    line-height: 24px;
-    font-family: inherit;
-    resize: none;
-} */
-
-/* .compose-input {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-} */
-
 .error {
     color: #dc3545;
     font-size: 14px;
@@ -416,6 +400,7 @@ p, a, button, span {
 .post-main {
     display: flex;
     gap: 12px;
+    width: 100%;
 }
 
 .post-content {
@@ -424,7 +409,9 @@ p, a, button, span {
 }
 
 .post-header {
-    margin-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
 .post-header .user-name {
@@ -1030,4 +1017,387 @@ p, a, button, span {
         flex-direction: column;
         gap: 12px;
     }
-} 
+}
+
+/* Comment Modal */
+.close-popup {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    margin-right: 20px;
+}
+
+.post-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.original-post {
+    border: 1px solid rgb(207, 217, 222);
+    border-radius: 16px;
+    margin: 12px 0;
+    padding: 12px;
+}
+
+.form-actions {
+    padding: 16px;
+    border-top: 1px solid #EFF3F4;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    /* gap: 12px; */
+    margin-top: 12px;
+}
+
+.comment-input-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.borderless-input {
+    width: 100%;
+    min-height: 24px;
+    padding: 12px 0;
+    border: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    color: #0F1419;
+    resize: none;
+    background: transparent;
+}
+
+.form-actions .post-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--nd-blue);
+    transform: none;
+}
+
+.form-actions .post-button {
+    background-color: var(--nd-blue);
+    color: white;
+    border: 2px solid var(--nd-gold);
+    border-radius: 9999px;
+    padding: 0 16px;
+    height: 32px;
+    min-width: 80px;
+    max-width: 120px;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--background-color);
+    margin: 20px auto;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* Reply Form Styles */
+.reply-form {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nested-reply-form {
+    margin-left: 52px;
+    margin-top: 10px;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--background-color);
+}
+
+.replies-section {
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 20px;
+}
+
+.reply-item {
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Update existing styles to match modal needs */
+.popup-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.popup-header h2 {
+    margin: 0 auto;
+    font-size: 1.2em;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    margin-right: 20px;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 15px;
+}
+
+.close-popup:hover {
+    background-color: var(--hover-color);
+    border-radius: 50%;
+}
+
+.close-popup i {
+    font-size: 20px;
+}
+
+/* Original Post Styles */
+.original-post {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+/* Update existing styles to ensure consistency */
+.post-header {
+    margin-bottom: 12px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--background-gray);
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-avatar i {
+    font-size: 24px;
+    color: var(--text-color-secondary);
+}
+
+.user-name {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.user-handle {
+    color: var(--text-color-secondary);
+}
+
+.dot {
+    color: var(--text-color-secondary);
+    margin: 0 4px;
+}
+
+.time {
+    color: var(--text-color-secondary);
+}
+
+.post-content {
+    color: var(--text-color);
+    margin: 12px 0;
+    line-height: 1.4;
+}
+
+/* Form Input Styles */
+.comment-input-container {
+    margin: 15px 0;
+}
+
+.borderless-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.post-menu {
+    position: relative;
+}
+
+.menu-button {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.menu-button:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+.post-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #ffffff;
+    border: 1px solid var(--nd-blue);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 200px;
+    margin-top: 4px;
+}
+
+.post-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+.post-menu-item:first-child {
+    border-top-left-radius: 11px;
+    border-top-right-radius: 11px;
+}
+
+.post-menu-item:last-child {
+    border-bottom-left-radius: 11px;
+    border-bottom-right-radius: 11px;
+}
+
+.post-menu-item:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+.post-menu-item i {
+    font-size: 1.2em;
+    color: var(--nd-blue);
+}
+
+.post-text {
+    color: rgb(15, 20, 25);
+    font-size: 15px;
+    line-height: 20px;
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+}
+
+/* Additional styles specific to delete modal */
+.modal-button {
+    width: 100% !important;
+}
+
+.post-button.delete {
+    background-color: rgb(244, 33, 46);
+    color: white;
+}
+
+.post-button.delete:hover {
+    background-color: rgb(220, 30, 41);
+}
+
+#delete-modal .modal-content {
+    overflow: visible;
+}
+
+#delete-modal .modal-body {
+    padding: 32px;
+}
+
+#delete-modal h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
+#delete-modal p {
+    margin-bottom: 24px;
+}
+
+.text-secondary {
+    color: var(--secondary-text);
+}
+
+.post-button.modal-button {
+    width: 100%;
+    margin: 0;
+    max-width: none;
+    border: none;
+}
+
+.menu-button i {
+    text-align: right;
+    float: right;
+}

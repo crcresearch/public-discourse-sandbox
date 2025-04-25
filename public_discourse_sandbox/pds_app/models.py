@@ -26,7 +26,7 @@ class Experiment(BaseModel):
     name = models.CharField(max_length=255)
     description = models.TextField()
     options = models.JSONField(default=dict)
-    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # This defines what user "owns" this experiment
 
     def __str__(self):
         return f"{self.name}"
@@ -37,6 +37,7 @@ class UserProfile(BaseModel):
     User profile model.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    display_name = models.CharField(max_length=255, unique=True)
     username = models.CharField(max_length=255, unique=True)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     banner_picture = models.ImageField(upload_to='banner_pictures/', null=True, blank=True)
@@ -44,13 +45,22 @@ class UserProfile(BaseModel):
     bio = models.TextField(null=True, blank=True)
     num_followers = models.IntegerField(default=0)
     num_following = models.IntegerField(default=0)
-    is_bot = models.BooleanField(default=False)
+    is_digital_twin = models.BooleanField(default=False)
+    is_collaborator = models.BooleanField(default=False)  # Works with the experiment owner to administer the experiment
+    is_moderator = models.BooleanField(default=False)  # Delete posts, ban / report users
+    is_banned = models.BooleanField(default=False)  # Cannot post, reply, or view content
     is_private = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     
     def __str__(self):
-        bot_status = " (Bot)" if self.is_bot else ""
+        bot_status = " (Digital Twin)" if self.is_digital_twin else ""
         return f"{self.username}{bot_status}"
+
+
+class UndeletedPostManager(models.Manager):
+    def get_queryset(self):
+        # Only return posts that are not deleted or from user profiles that are not banned
+        return super().get_queryset().filter(is_deleted=False).exclude(user_profile__is_banned=True)
 
 
 class Post(BaseModel):
@@ -74,6 +84,15 @@ class Post(BaseModel):
         preview = self.content[:50] + "..." if len(self.content) > 50 else self.content
         status = " (Deleted)" if self.is_deleted else ""
         return f"Post by {self.user_profile.username}: {preview}{status}"
+    
+    all_objects = models.Manager()
+    objects = UndeletedPostManager()
+    
+    def get_comment_count(self):
+        """
+        Returns the number of posts that have this post as their parent.
+        """
+        return Post.objects.filter(parent_post=self).count()
 
 
 class Vote(BaseModel):
@@ -98,3 +117,19 @@ class SocialNetwork(BaseModel):
 
     def __str__(self):
         return f"{self.source_node} → {self.target_node}"
+
+
+class DigitalTwin(BaseModel):
+    """
+    Digital twin of a human user.
+    """
+    # name = models.CharField(max_length=100)
+    persona = models.TextField()
+    # user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    api_token = models.CharField(max_length=255, default='default_token')
+    last_post = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.user_profile.username

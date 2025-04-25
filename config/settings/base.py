@@ -3,6 +3,7 @@
 
 import ssl
 from pathlib import Path
+import os
 
 import environ
 
@@ -15,6 +16,12 @@ READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=False)
 if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(str(BASE_DIR / ".env"))
+
+# OpenAI API settings
+# No default value so that Django will raise an error if the variable is not set
+OPENAI_API_KEY = env.str('OPENAI_API_KEY')
+OPENAI_BASE_URL = env.str('OPENAI_BASE_URL')
+LLM_MODEL = env.str('LLM_MODEL')
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -88,7 +95,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "public_discourse_sandbox.users",
     # Your stuff: custom apps go here
-    "pds_app",
+    "public_discourse_sandbox.pds_app",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -194,6 +201,7 @@ TEMPLATES = [
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
                 "public_discourse_sandbox.users.context_processors.allauth_settings",
+                "public_discourse_sandbox.pds_app.context_processors.active_bots",
             ],
         },
     },
