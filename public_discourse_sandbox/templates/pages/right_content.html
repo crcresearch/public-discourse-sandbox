@@ -1,6 +1,18 @@
 {% block right_content %}
       <div class="right-sidebar">
         {% if user.is_authenticated %}
+            <!-- Experiment Selection Dropdown -->
+            <div class="trending-section">
+                <h2>Discourses</h2>
+                <select id="experiment-dropdown" class="form-select">
+                    {% for experiment in user_experiments %}
+                        <option value="{{ experiment.identifier }}">{{ experiment.name }}</option>
+                    {% empty %}
+                        <option value="" disabled>No experiments available</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="trending-section">
                 <h2>Trending</h2>
                 {% if trending_topics %}
