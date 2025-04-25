@@ -50,7 +50,10 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
                 parent_post=None
             )
             post.save()
-            return redirect('home', experiment_identifier=self.experiment.identifier)
+            # Redirect to the appropriate URL based on whether we have an experiment identifier
+            if 'experiment_identifier' in kwargs:
+                return redirect('home_with_experiment', experiment_identifier=self.experiment.identifier)
+            return redirect('home')
         
         # If form is invalid, show form with errors
         return self.get(request, *args, **kwargs)
