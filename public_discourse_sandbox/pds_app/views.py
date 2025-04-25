@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from .forms import PostForm
 from .models import Post
+from .mixins import ExperimentContextMixin
 
 def get_active_posts():
     """Get non-deleted top-level posts with related user data."""
@@ -20,13 +21,15 @@ def get_active_posts():
     return posts
 
 
-class HomeView(LoginRequiredMixin, ListView):
+class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
     """Home page view that displays and handles creation of posts."""
     model = Post
     template_name = 'pages/home.html'
     context_object_name = 'posts'
 
     def get_queryset(self):
+        if self.experiment:
+            return get_active_posts().filter(experiment=self.experiment)
         return get_active_posts()
 
     def get_context_data(self, **kwargs):
@@ -42,22 +45,24 @@ class HomeView(LoginRequiredMixin, ListView):
             post = Post(
                 user_profile=request.user.userprofile,
                 content=form.cleaned_data['content'],
-                experiment=request.user.userprofile.experiment,
+                experiment=self.experiment,
                 depth=0,
                 parent_post=None
             )
             post.save()
-            return redirect('home')
+            return redirect('home', experiment_identifier=self.experiment.identifier)
         
         # If form is invalid, show form with errors
         return self.get(request, *args, **kwargs)
 
 
-class ExploreView(LoginRequiredMixin, ListView):
+class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
     """Explore page view that displays all posts."""
     model = Post
     template_name = 'pages/explore.html'
     context_object_name = 'posts'
 
     def get_queryset(self):
+        if self.experiment:
+            return get_active_posts().filter(experiment=self.experiment)
         return get_active_posts()

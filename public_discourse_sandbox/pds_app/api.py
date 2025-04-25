@@ -3,11 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from .models import Post, UserProfile
+from .models import Post, UserProfile, Experiment
 
 @login_required
 @ensure_csrf_cookie
-def create_comment(request):
+def create_comment(request, experiment_identifier):
     """Handle creation of comments/replies to posts."""
     # used by human users to reply to posts
     if request.method == 'POST':
@@ -18,12 +18,13 @@ def create_comment(request):
             return JsonResponse({'status': 'error', 'message': 'Content is required'}, status=400)
             
         try:
-            parent_post = Post.objects.get(id=parent_id)
+            experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
+            parent_post = Post.objects.get(id=parent_id, experiment=experiment)
             comment = Post.objects.create(
                 user_profile=request.user.userprofile,
                 content=content,
                 parent_post=parent_post,
-                experiment=request.user.userprofile.experiment,
+                experiment=experiment,
                 depth=parent_post.depth + 1
             )
             return JsonResponse({
@@ -69,21 +70,21 @@ def get_post_replies(request, post_id):
 
 @login_required
 @ensure_csrf_cookie
-def delete_post(request, post_id):
+def delete_post(request, experiment_identifier, post_id):
     """Handle deletion of posts."""
     if request.method != 'DELETE':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
     
     try:
-        post = get_object_or_404(Post, id=post_id)
+        experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
+        post = get_object_or_404(Post, id=post_id, experiment=experiment)
         
         # Check if the user owns the post
         if post.user_profile.user != request.user:
             # If not the owner, check if user has a profile in this experiment and is a moderator
             try:
                 user_profile = request.user.userprofile
-                if not (user_profile.experiment == post.experiment and user_profile.is_moderator):
-                    print(f"User is not a moderator")
+                if not (user_profile.experiment == experiment and user_profile.is_moderator):
                     return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
             except AttributeError as e:
                 return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
@@ -98,19 +99,20 @@ def delete_post(request, post_id):
 
 @login_required
 @ensure_csrf_cookie
-def ban_user(request, user_profile_id):
+def ban_user(request, experiment_identifier, user_profile_id):
     """Handle banning of users."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
     
     try:
+        experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
         # Get the target user profile
-        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
+        target_profile = get_object_or_404(UserProfile, id=user_profile_id, experiment=experiment)
         
         # Check if the requesting user is a moderator in the same experiment
         try:
             mod_profile = request.user.userprofile
-            if not (mod_profile.experiment == target_profile.experiment and mod_profile.is_moderator):
+            if not (mod_profile.experiment == experiment and mod_profile.is_moderator):
                 return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         except AttributeError:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
@@ -125,19 +127,20 @@ def ban_user(request, user_profile_id):
 
 @login_required
 @ensure_csrf_cookie
-def unban_user(request, user_profile_id):
+def unban_user(request, experiment_identifier, user_profile_id):
     """Handle unbanning of users."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
     
     try:
+        experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
         # Get the target user profile
-        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
+        target_profile = get_object_or_404(UserProfile, id=user_profile_id, experiment=experiment)
         
         # Check if the requesting user is a moderator in the same experiment
         try:
             mod_profile = request.user.userprofile
-            if not (mod_profile.experiment == target_profile.experiment and mod_profile.is_moderator):
+            if not (mod_profile.experiment == experiment and mod_profile.is_moderator):
                 return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         except AttributeError:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
