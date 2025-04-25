@@ -24,6 +24,7 @@ class Experiment(BaseModel):
     Experiment model.
     """
     name = models.CharField(max_length=255)
+    identifier = models.CharField(max_length=5, unique=True)
     description = models.TextField()
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # This defines what user "owns" this experiment
