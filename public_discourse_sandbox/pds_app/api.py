@@ -70,30 +70,20 @@ def get_post_replies(request, post_id):
 
 @login_required
 @ensure_csrf_cookie
-def delete_post(request, experiment_identifier, post_id):
-    """Handle deletion of posts."""
+def delete_post(request, post_id):
+    """Delete a post."""
     if request.method != 'DELETE':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
-    
+        
     try:
-        experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
-        post = get_object_or_404(Post, id=post_id, experiment=experiment)
-        
-        # Check if the user owns the post
-        if post.user_profile.user != request.user:
-            # If not the owner, check if user has a profile in this experiment and is a moderator
-            try:
-                user_profile = request.user.userprofile
-                if not (user_profile.experiment == experiment and user_profile.is_moderator):
-                    return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-            except AttributeError as e:
-                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        
-        # Soft delete the post
-        post.is_deleted = True
-        post.save()
-        
-        return JsonResponse({'status': 'success', 'message': 'Post deleted successfully'})
+        post = get_object_or_404(Post, id=post_id)
+        # Check if user has permission to delete (either the author or a moderator)
+        if request.user.userprofile_set.filter(experiment=post.experiment, is_moderator=True).exists() or post.user_profile.user == request.user:
+            post.is_deleted = True
+            post.save()
+            return JsonResponse({'status': 'success', 'message': 'Post deleted successfully'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'You do not have permission to delete this post'}, status=403)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
