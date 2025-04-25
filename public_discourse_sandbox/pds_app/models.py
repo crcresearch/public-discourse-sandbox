@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -31,6 +32,24 @@ class Experiment(BaseModel):
 
     def __str__(self):
         return f"{self.name}"
+
+    def create_identifier(self):
+        """
+        Create a unique identifier for the experiment.
+        """
+        tries = 0
+        # Create a hash digest of the experiment UUID concatenated with tries
+        identifier = hashlib.sha256(f"{self.id}{tries}".encode()).hexdigest()[:5]
+        # Check if the identifier is already in use
+        if Experiment.objects.filter(identifier=identifier).exists():
+            tries += 1
+            return self.create_identifier()
+        return identifier
+    
+    def save(self, *args, **kwargs):
+        if not self.identifier:
+            self.identifier = self.create_identifier()
+        super().save(*args, **kwargs)
 
 
 class UserProfile(BaseModel):
