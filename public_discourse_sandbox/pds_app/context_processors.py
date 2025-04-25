@@ -1,4 +1,6 @@
 from .models import DigitalTwin
+from django.contrib.auth.models import User
+from public_discourse_sandbox.pds_app.models import Experiment
 
 def active_bots(request):
     """
@@ -16,3 +18,18 @@ def active_bots(request):
         return {
             'active_bots': []
         }
+
+def user_experiments(request):
+    """
+    Context processor that adds the user's experiments to the template context.
+    Returns an empty list if user is not authenticated.
+    """
+    if not request.user.is_authenticated:
+        return {'user_experiments': []}
+    
+    # Get all experiments where the user has a UserProfile
+    experiments = Experiment.objects.filter(
+        userprofile__user=request.user
+    ).distinct().order_by('name')
+    
+    return {'user_experiments': experiments}
