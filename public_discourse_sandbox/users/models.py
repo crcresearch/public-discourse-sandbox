@@ -1,16 +1,40 @@
 from typing import ClassVar
 
 from django.contrib.auth.models import AbstractUser
+from django.db.models import BooleanField
 from django.db.models import CharField
 from django.db.models import EmailField
-from django.db.models import BooleanField
+
+# BaseModel imports
+from django.db.models import Model
+from django.db.models import DateTimeField
+from django.db.models import UUIDField
+import uuid
+# End of BaseModel imports
+
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from .managers import UserManager
 
 
-class User(AbstractUser):
+# Create your models here.
+class BaseModel(Model):
+    """
+    Base model that should be used for all other records in this app.
+    Creates a UUID as the main ID to avoid sequential ID generation.
+    Also adds a created date and last modified meta fields.
+    """
+
+    id = UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_date = DateTimeField(auto_now_add=True)
+    last_modified = DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
+class User(AbstractUser, BaseModel):
     """
     Default custom user model for Public Discourse Sandbox.
     If adding fields that need to be filled at user signup,
@@ -23,7 +47,11 @@ class User(AbstractUser):
     last_name = None  # type: ignore[assignment]
     email = EmailField(_("email address"), unique=True)
     username = None  # type: ignore[assignment]
-    is_researcher = BooleanField(_("is researcher"), default=False, help_text=_("Designates whether this user is a researcher."))
+    is_researcher = BooleanField(
+        _("is researcher"),
+        default=False,
+        help_text=_("Designates whether this user is a researcher."),
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
