@@ -12,6 +12,7 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="pages/landing.html"), name="landing"),
     path("about/", TemplateView.as_view(template_name="pages/about.html"), name="about"),
     # URLs with experiment identifier
+    path("<str:experiment_identifier>/about/", TemplateView.as_view(template_name="pages/about.html"), name="about_with_experiment"),
     path("<str:experiment_identifier>/home/", HomeView.as_view(), name="home_with_experiment"),
     path("<str:experiment_identifier>/explore/", ExploreView.as_view(), name="explore_with_experiment"),
     path("<str:experiment_identifier>/create-comment/", create_comment, name="create_comment_with_experiment"),

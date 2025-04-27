@@ -45,7 +45,7 @@
         </li>
         {% endif %}
         <li>
-            <a href="{% url 'about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">
+            <a href="{% if experiment %}{% url 'about_with_experiment' experiment.identifier %}{% else %}{% url 'about' %}{% endif %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">
                 <i class="ri-information-line"></i>
                 About
             </a>
