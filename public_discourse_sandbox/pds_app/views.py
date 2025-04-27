@@ -78,9 +78,7 @@ class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        if self.experiment:
-            return get_active_posts().filter(experiment=self.experiment)
-        return get_active_posts()
+        return get_active_posts(experiment=self.experiment)
 
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
