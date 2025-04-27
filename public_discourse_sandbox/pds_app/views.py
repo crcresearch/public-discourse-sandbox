@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from .forms import PostForm
 from .models import Post
 from .mixins import ExperimentContextMixin
@@ -81,3 +81,8 @@ class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
         if self.experiment:
             return get_active_posts().filter(experiment=self.experiment)
         return get_active_posts()
+
+
+class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
+    """About page view that displays information about the application."""
+    template_name = 'pages/about.html'

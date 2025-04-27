@@ -2,7 +2,7 @@ from django.urls import path
 from django.views.generic import TemplateView
 
 # Import views using absolute import path for Celery compatibility
-from public_discourse_sandbox.pds_app.views import HomeView, ExploreView
+from public_discourse_sandbox.pds_app.views import HomeView, ExploreView, AboutView
 from public_discourse_sandbox.pds_app.api import (
     create_comment, get_post_replies,
     delete_post, ban_user, unban_user
@@ -10,9 +10,9 @@ from public_discourse_sandbox.pds_app.api import (
 
 urlpatterns = [
     path("", TemplateView.as_view(template_name="pages/landing.html"), name="landing"),
-    path("about/", TemplateView.as_view(template_name="pages/about.html"), name="about"),
+    path("about/", AboutView.as_view(), name="about"),
     # URLs with experiment identifier
-    path("<str:experiment_identifier>/about/", TemplateView.as_view(template_name="pages/about.html"), name="about_with_experiment"),
+    path("<str:experiment_identifier>/about/", AboutView.as_view(), name="about_with_experiment"),
     path("<str:experiment_identifier>/home/", HomeView.as_view(), name="home_with_experiment"),
     path("<str:experiment_identifier>/explore/", ExploreView.as_view(), name="explore_with_experiment"),
     path("<str:experiment_identifier>/create-comment/", create_comment, name="create_comment_with_experiment"),
