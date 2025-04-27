@@ -96,8 +96,27 @@
                         }
                         newPath = '/' + pathParts.join('/');
                     }
-                    
-                    window.location.href = newPath;
+
+                    // Update the user's last_accessed experiment
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch('/api/update-last-accessed/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                        },
+                        body: JSON.stringify({
+                            experiment_identifier: selectedIdentifier
+                        }),
+                        credentials: 'same-origin'
+                    }).then(() => {
+                        // Navigate to the new URL after updating last_accessed
+                        window.location.href = newPath;
+                    }).catch(error => {
+                        console.error('Error updating last accessed experiment:', error);
+                        // Still navigate even if the update fails
+                        window.location.href = newPath;
+                    });
                 });
             }
         });
