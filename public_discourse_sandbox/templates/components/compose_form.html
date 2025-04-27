@@ -1,12 +1,12 @@
-{% if not user.userprofile.is_banned %}
+{% if not user_profile.is_banned %}
 <!-- Post form -->
 <div class="compose-area">
-    <form method="post" action="{% url 'home' %}">
+    <form method="post" action="{% if experiment %}{% url 'home_with_experiment' experiment.identifier %}{% else %}{% url 'home' %}{% endif %}">
         {% csrf_token %}
         <div class="compose-content">
             <div class="user-avatar">
-                {% if user.userprofile.profile_picture %}
-                    <img src="{{ user.userprofile.profile_picture.url }}" alt="{{ user.username }}'s avatar" class="avatar-img">
+                {% if user_profile.profile_picture %}
+                    <img src="{{ user_profile.profile_picture.url }}" alt="{{ user_profile.username }}'s avatar" class="avatar-img">
                 {% else %}
                     <i class="ri-user-3-line"></i>
                 {% endif %}

@@ -1,6 +1,18 @@
 {% block right_content %}
       <div class="right-sidebar">
         {% if user.is_authenticated %}
+            <!-- Experiment Selection Dropdown -->
+            <div class="trending-section">
+                <h2>Discourses</h2>
+                <select id="experiment-dropdown" class="form-select">
+                    {% for experiment in user_experiments %}
+                        <option value="{{ experiment.identifier }}" {% if experiment.identifier == current_experiment_identifier %}selected{% endif %}>{{ experiment.name }}</option>
+                    {% empty %}
+                        <option value="" disabled>No experiments available</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="trending-section">
                 <h2>Trending</h2>
                 {% if trending_topics %}
@@ -47,4 +59,67 @@
         {% endif %}
     </div>
 
+    {% block inline_javascript %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const experimentDropdown = document.getElementById('experiment-dropdown');
+            if (experimentDropdown) {
+                experimentDropdown.addEventListener('change', function() {
+                    const selectedIdentifier = this.value;
+                    const currentPath = window.location.pathname;
+                    const pathParts = currentPath.split('/').filter(Boolean); // Remove empty strings
+                    
+                    // Define our URL patterns
+                    const namespacePatterns = ['users', 'api', 'accounts'];
+                    const isNamespaced = namespacePatterns.includes(pathParts[0]);
+                    
+                    let newPath;
+                    
+                    if (isNamespaced) {
+                        // For namespaced URLs, the experiment identifier should be at index 1
+                        if (pathParts[1] && pathParts[1].length === 5) {
+                            // Replace existing identifier
+                            pathParts[1] = selectedIdentifier;
+                        } else {
+                            // Insert identifier after namespace
+                            pathParts.splice(1, 0, selectedIdentifier);
+                        }
+                        newPath = '/' + pathParts.join('/');
+                    } else {
+                        // For non-namespaced URLs, the experiment identifier should be at index 0
+                        if (pathParts[0] && pathParts[0].length === 5) {
+                            // Replace existing identifier
+                            pathParts[0] = selectedIdentifier;
+                        } else {
+                            // Add identifier at the beginning
+                            pathParts.unshift(selectedIdentifier);
+                        }
+                        newPath = '/' + pathParts.join('/');
+                    }
+
+                    // Update the user's last_accessed experiment
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch('/api/update-last-accessed/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                        },
+                        body: JSON.stringify({
+                            experiment_identifier: selectedIdentifier
+                        }),
+                        credentials: 'same-origin'
+                    }).then(() => {
+                        // Navigate to the new URL after updating last_accessed
+                        window.location.href = newPath;
+                    }).catch(error => {
+                        console.error('Error updating last accessed experiment:', error);
+                        // Still navigate even if the update fails
+                        window.location.href = newPath;
+                    });
+                });
+            }
+        });
+    </script>
+    {% endblock %}
 {% endblock %}
