@@ -9,6 +9,7 @@ class ExperimentContextMixin:
     Adds experiment context to the view and verifies user access.
     If no experiment identifier is provided in the URL, uses the user's last_accessed experiment
     and redirects to the URL with the experiment identifier.
+    If an invalid experiment identifier is provided, redirects to the user's last_accessed experiment.
     """
     def setup(self, request, *args, **kwargs):
         super().setup(request, *args, **kwargs)
@@ -19,7 +20,21 @@ class ExperimentContextMixin:
         if request.user.is_authenticated:
             # First try to get experiment from URL
             if 'experiment_identifier' in kwargs:
-                self.experiment = get_object_or_404(Experiment, identifier=kwargs['experiment_identifier'])
+                try:
+                    self.experiment = Experiment.objects.get(identifier=kwargs['experiment_identifier'])
+                except Experiment.DoesNotExist:
+                    # If experiment doesn't exist, use last_accessed
+                    if hasattr(request.user, 'last_accessed') and request.user.last_accessed:
+                        self.experiment = request.user.last_accessed
+                        self.should_redirect = True
+                    else:
+                        # If no last_accessed, try to get the user's first available experiment
+                        user_profile = request.user.userprofile_set.first()
+                        if user_profile:
+                            self.experiment = user_profile.experiment
+                            self.should_redirect = True
+                        else:
+                            raise PermissionDenied("You do not have access to any experiments")
             # If no identifier in URL, try to get from user's last_accessed
             elif hasattr(request.user, 'last_accessed') and request.user.last_accessed:
                 self.experiment = request.user.last_accessed

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, TemplateView
+from django.views.generic import ListView, TemplateView, View
 from .forms import PostForm
 from .models import Post
 from .mixins import ExperimentContextMixin
@@ -28,6 +28,22 @@ def get_active_posts(experiment=None):
         post.comment_count = post.get_comment_count()
     
     return posts
+
+
+class LandingView(View):
+    """
+    Landing page view that redirects authenticated users to their home page
+    with their last_accessed experiment.
+    """
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            # If user has a last_accessed experiment, redirect to home with that experiment
+            if hasattr(request.user, 'last_accessed') and request.user.last_accessed:
+                return redirect('home_with_experiment', experiment_identifier=request.user.last_accessed.identifier)
+            # Otherwise, redirect to home which will use ExperimentContextMixin to find an experiment
+            return redirect('home')
+        # For unauthenticated users, show the landing page
+        return render(request, 'pages/landing.html')
 
 
 class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
