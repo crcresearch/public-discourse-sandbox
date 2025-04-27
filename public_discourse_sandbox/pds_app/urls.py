@@ -26,7 +26,7 @@ urlpatterns = [
     # URLs without experiment identifier (will use last_accessed)
     path("home/", HomeView.as_view(), name="home"),
     path("explore/", ExploreView.as_view(), name="explore"),
-    path("create-comment/", create_comment, name="create_comment"),
+    # path("create-comment/", create_comment, name="create_comment"),  # Removed as it requires experiment_identifier
     path("get-replies/<uuid:post_id>/", get_post_replies, name="get_replies"),
     path("api/posts/<uuid:post_id>/delete/", delete_post, name="delete_post"),
     path("api/users/<uuid:user_profile_id>/ban/", ban_user, name="ban_user"),

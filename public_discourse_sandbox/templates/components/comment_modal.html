@@ -127,7 +127,7 @@ async function handleReplySubmit(e) {
     const parentId = form.querySelector('[name="parent_post_id"]').value;
     
     try {
-        const response = await fetch('{% url "create_comment" %}', {
+        const response = await fetch('{% url "create_comment_with_experiment" experiment_identifier=experiment.identifier %}', {
             method: 'POST',
             body: formData,
             headers: {
