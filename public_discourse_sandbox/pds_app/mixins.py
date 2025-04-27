@@ -55,8 +55,9 @@ class ExperimentContextMixin:
         
         # If we should redirect and we have an experiment, redirect to the URL with the identifier
         if self.should_redirect and self.experiment:
-            # Get the current URL name
+            # Get the current URL name and namespace
             current_url_name = request.resolver_match.url_name
+            current_namespace = request.resolver_match.namespace
             
             # Map the current URL name to its "with_experiment" version
             url_name_mapping = {
@@ -67,6 +68,8 @@ class ExperimentContextMixin:
                 'delete_post': 'delete_post_with_experiment',
                 'ban_user': 'ban_user_with_experiment',
                 'unban_user': 'unban_user_with_experiment',
+                'detail': 'detail_with_experiment',
+                'about': 'about_with_experiment',
             }
             
             # Get the new URL name, defaulting to the current one if not in mapping
@@ -75,6 +78,10 @@ class ExperimentContextMixin:
             # Get the URL parameters
             url_kwargs = request.resolver_match.kwargs.copy()
             url_kwargs['experiment_identifier'] = self.experiment.identifier
+            
+            # If we have a namespace, use it in the reverse call
+            if current_namespace:
+                new_url_name = f"{current_namespace}:{new_url_name}"
             
             # Redirect to the new URL
             return redirect(reverse(new_url_name, kwargs=url_kwargs))

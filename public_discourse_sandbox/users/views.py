@@ -8,12 +8,20 @@ from django.views.generic import RedirectView
 from django.views.generic import UpdateView
 
 from public_discourse_sandbox.users.models import User
+from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
 
 
-class UserDetailView(LoginRequiredMixin, DetailView):
+class UserDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
     model = User
     slug_field = "id"
     slug_url_kwarg = "id"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add the experiment identifier to the context for the template
+        if self.experiment:
+            context['experiment_identifier'] = self.experiment.identifier
+        return context
 
 
 user_detail_view = UserDetailView.as_view()
