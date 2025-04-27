@@ -37,11 +37,17 @@ def user_experiments(request):
     Returns an empty list if user is not authenticated.
     """
     if not request.user.is_authenticated:
-        return {'user_experiments': []}
+        return {'user_experiments': [], 'current_experiment_identifier': None}
     
     # Get all experiments where the user has a UserProfile
     experiments = Experiment.objects.filter(
         userprofile__user=request.user
     ).distinct().order_by('name')
     
-    return {'user_experiments': experiments}
+    # Get the current experiment identifier from the URL
+    current_experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    
+    return {
+        'user_experiments': experiments,
+        'current_experiment_identifier': current_experiment_identifier
+    }

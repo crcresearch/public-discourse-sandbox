@@ -6,7 +6,7 @@
                 <h2>Discourses</h2>
                 <select id="experiment-dropdown" class="form-select">
                     {% for experiment in user_experiments %}
-                        <option value="{{ experiment.identifier }}">{{ experiment.name }}</option>
+                        <option value="{{ experiment.identifier }}" {% if experiment.identifier == current_experiment_identifier %}selected{% endif %}>{{ experiment.name }}</option>
                     {% empty %}
                         <option value="" disabled>No experiments available</option>
                     {% endfor %}
