@@ -5,13 +5,67 @@ from .models import Experiment, UserProfile
 
 class ExperimentContextMixin:
     """
-    Mixin to handle experiment context in views.
-    Adds experiment context to the view and verifies user access.
-    If no experiment identifier is provided in the URL, uses the user's last_accessed experiment
-    and redirects to the URL with the experiment identifier.
-    If an invalid experiment identifier is provided, redirects to the user's last_accessed experiment.
+    A Django mixin that handles experiment context and access control for multi-tenant views.
+    
+    This mixin is central to the application's multi-tenant architecture, where each experiment
+    acts as a tenant. It manages experiment context, verifies user access, and handles
+    redirections when necessary.
+
+    Key Features:
+    - Automatically determines the current experiment from URL or user's last_accessed
+    - Verifies user access to the experiment
+    - Handles redirections to experiment-specific URLs
+    - Updates user's last_accessed experiment
+    - Adds experiment and user_profile to template context
+
+    Usage:
+        class MyView(ExperimentContextMixin, View):
+            def get(self, request, *args, **kwargs):
+                # self.experiment and self.user_profile are available here
+                pass
+
+    URL Pattern Requirements:
+    - For experiment-specific views, include 'experiment_identifier' in URL pattern
+    - For non-experiment views, the mixin will use last_accessed experiment
+
+    Template Context:
+    - experiment: The current Experiment instance
+    - user_profile: The UserProfile instance for current user in this experiment
+    - experiment_identifier: The identifier of the current experiment
+
+    Redirection Behavior:
+    1. If URL has experiment_identifier:
+       - Valid identifier: Uses that experiment
+       - Invalid identifier: Redirects to last_accessed experiment
+    2. If URL has no experiment_identifier:
+       - Uses last_accessed experiment and redirects to experiment-specific URL
+    3. If no last_accessed experiment:
+       - Uses first available experiment and redirects
+
+    Permission Handling:
+    - Raises PermissionDenied if:
+      - User has no access to any experiments
+      - User has no profile in the selected experiment
+
+    Example URL Patterns:
+        path("<str:experiment_identifier>/home/", HomeView.as_view(), name="home_with_experiment")
+        path("home/", HomeView.as_view(), name="home")  # Will use last_accessed
     """
     def setup(self, request, *args, **kwargs):
+        """
+        Initialize experiment context and verify access.
+        
+        This method is called before the view's dispatch method. It:
+        1. Determines the current experiment
+        2. Verifies user access
+        3. Sets up redirection if needed
+        4. Updates last_accessed experiment
+        
+        Args:
+            request: The current request object
+            *args: Additional positional arguments
+            **kwargs: Additional keyword arguments, including experiment_identifier if present
+        """
         super().setup(request, *args, **kwargs)
         self.experiment = None
         self.should_redirect = False
@@ -59,6 +113,18 @@ class ExperimentContextMixin:
                 request.user.save()
 
     def get_context_data(self, **kwargs):
+        """
+        Add experiment context to template context.
+        
+        This method adds the current experiment and user profile to the template context,
+        making them available in templates.
+        
+        Args:
+            **kwargs: Additional context data
+            
+        Returns:
+            dict: Updated context with experiment and user_profile
+        """
         context = super().get_context_data(**kwargs)
         if self.experiment:
             context['experiment'] = self.experiment
@@ -66,6 +132,22 @@ class ExperimentContextMixin:
         return context
 
     def dispatch(self, request, *args, **kwargs):
+        """
+        Handle request dispatch and redirection.
+        
+        This method:
+        1. Calls the parent dispatch method
+        2. Handles redirection to experiment-specific URLs if needed
+        3. Returns the appropriate response
+        
+        Args:
+            request: The current request object
+            *args: Additional positional arguments
+            **kwargs: Additional keyword arguments
+            
+        Returns:
+            HttpResponse: The response to send to the client
+        """
         response = super().dispatch(request, *args, **kwargs)
         
         # If we should redirect and we have an experiment, redirect to the URL with the identifier
