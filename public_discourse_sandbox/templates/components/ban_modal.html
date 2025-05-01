@@ -1,6 +1,15 @@
 {% load static %}
 
-<div id="banModal" class="modal" style="display: none;">
+{# 
+  Note: We use a valid UUID format (00000000-0000-0000-0000-000000000000) as a placeholder because:
+  1. The URL pattern expects a UUID type parameter: <uuid:user_profile_id>
+  2. Django's URL resolver validates the format before generating the URL
+  3. The pattern [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} requires this exact format
+  4. We replace this placeholder with the actual UUID when making the request
+#}
+<div id="banModal" class="modal" style="display: none;" 
+     data-ban-url="{% url 'ban_user_with_experiment' experiment.identifier '00000000-0000-0000-0000-000000000000' %}"
+     data-unban-url="{% url 'unban_user_with_experiment' experiment.identifier '00000000-0000-0000-0000-000000000000' %}">
   <div class="modal-content">
     <div class="popup-header">
       <button type="button" class="close-popup" onclick="closeBanModal()">
@@ -62,10 +71,14 @@
       if (!currentProfileId || !currentAction) return;
       
       try {
-        const response = await makeRequest(
-          `/api/users/${currentProfileId}/${currentAction}/`,
-          'POST'
-        );
+        const baseUrl = currentAction === 'ban' 
+          ? banModal.dataset.banUrl
+          : banModal.dataset.unbanUrl;
+        
+        // Replace the UUID placeholder with the actual UUID
+        const url = baseUrl.replace('00000000-0000-0000-0000-000000000000', currentProfileId);
+        
+        const response = await makeRequest(url, 'POST');
         
         if (response.status === 'success') {
           closeBanModal();

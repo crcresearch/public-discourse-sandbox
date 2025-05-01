@@ -99,7 +99,7 @@
 
                     // Update the user's last_accessed experiment
                     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                    fetch('/api/update-last-accessed/', {
+                    fetch('{% url "update_last_accessed" %}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
