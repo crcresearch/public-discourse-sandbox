@@ -12,32 +12,32 @@
           {% csrf_token %}
           <div class="mb-3">
             <label for="display_name" class="form-label">Display Name</label>
-            <input type="text" class="form-control" id="display_name" name="display_name" value="{{ user_profile.display_name }}" required>
+            <input type="text" class="form-control" id="display_name" name="display_name" value="{{ viewed_profile.display_name }}" required>
           </div>
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" value="{{ user_profile.username }}" required>
+            <input type="text" class="form-control" id="username" name="username" value="{{ viewed_profile.username }}" required>
             <div class="form-text">This will be your unique identifier in the experiment.</div>
           </div>
           <div class="mb-3">
             <label for="bio" class="form-label">Bio</label>
-            <textarea class="form-control" id="bio" name="bio" rows="4">{{ user_profile.bio }}</textarea>
+            <textarea class="form-control" id="bio" name="bio" rows="4">{{ viewed_profile.bio }}</textarea>
           </div>
           <div class="mb-3">
             <label for="profile_picture" class="form-label">Profile Picture</label>
             <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
-            {% if user_profile.profile_picture %}
+            {% if viewed_profile.profile_picture %}
               <div class="mt-2">
-                <small>Current: {{ user_profile.profile_picture.name }}</small>
+                <small>Current: {{ viewed_profile.profile_picture.name }}</small>
               </div>
             {% endif %}
           </div>
           <div class="mb-3">
             <label for="banner_picture" class="form-label">Banner Picture</label>
             <input type="file" class="form-control" id="banner_picture" name="banner_picture" accept="image/*">
-            {% if user_profile.banner_picture %}
+            {% if viewed_profile.banner_picture %}
               <div class="mt-2">
-                <small>Current: {{ user_profile.banner_picture.name }}</small>
+                <small>Current: {{ viewed_profile.banner_picture.name }}</small>
               </div>
             {% endif %}
           </div>
