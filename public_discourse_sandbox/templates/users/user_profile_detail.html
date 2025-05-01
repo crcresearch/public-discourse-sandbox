@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  User Profile: {{ user_profile.display_name }}
+{% endblock title %}
+
+{% block content %}
+  {% csrf_token %}
+  <!-- Left Sidebar -->
+  {% include 'pages/left_nav.html' %}
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Profile Header -->
+    <div class="profile-header">
+      {% if user_profile.banner_picture %}
+        <img src="{{ user_profile.banner_picture.url }}" alt="Banner" class="banner-image">
+      {% else %}
+        <div class="banner-placeholder"></div>
+      {% endif %}
+      
+      <div class="profile-info">
+        <div class="profile-picture">
+          {% if user_profile.profile_picture %}
+            <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture">
+          {% else %}
+            <div class="avatar-placeholder">
+              <i class="ri-user-line"></i>
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="profile-details">
+          <h1>{{ user_profile.display_name }}</h1>
+          <p class="username">@{{ user_profile.username }}</p>
+          {% if user_profile.bio %}
+            <p class="bio">{{ user_profile.bio }}</p>
+          {% endif %}
+          
+          <div class="profile-stats">
+            <span>{{ user_profile.num_followers }} Followers</span>
+            <span>{{ user_profile.num_following }} Following</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Actions -->
+    {% if user_profile.user == request.user %}
+      <div class="profile-actions">
+        <a href="{% url 'users:update' %}" class="btn btn-primary">Edit Profile</a>
+      </div>
+    {% endif %}
+
+    <!-- User Status -->
+    {% if user_profile.is_banned %}
+      <div class="alert alert-warning mt-4">
+        <h4>Account Suspended</h4>
+        <p>This account has been suspended for violating community guidelines.</p>
+      </div>
+    {% endif %}
+
+    <!-- User Roles -->
+    {% if user_profile.is_moderator %}
+      <div class="badge badge-primary">Moderator</div>
+    {% endif %}
+    {% if user_profile.is_collaborator %}
+      <div class="badge badge-secondary">Collaborator</div>
+    {% endif %}
+    {% if user_profile.is_digital_twin %}
+      <div class="badge badge-info">Digital Twin</div>
+    {% endif %}
+  </div>
+{% endblock content %} 

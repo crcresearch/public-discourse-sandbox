@@ -1401,3 +1401,106 @@ a.user-avatar {
     text-align: right;
     float: right;
 }
+
+/* ==========================================================================
+   User Profile Page Styles
+   ========================================================================== */
+
+/* Profile Header */
+.profile-header {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.banner-image,
+.banner-placeholder {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: #f0f0f0;
+}
+
+.profile-info {
+    position: relative;
+    padding: 0 1rem;
+    margin-top: -50px;
+}
+
+.profile-picture {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 4px solid white;
+    background-color: #f0f0f0;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.profile-picture img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #666;
+}
+
+.profile-details h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.username {
+    color: #666;
+    margin: 0.25rem 0;
+}
+
+.bio {
+    margin: 1rem 0;
+    color: #333;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.profile-stats span {
+    color: #666;
+}
+
+.profile-actions {
+    margin: 1rem 0;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.badge-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}

@@ -6,9 +6,11 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView
 from django.views.generic import RedirectView
 from django.views.generic import UpdateView
+from django.shortcuts import get_object_or_404
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
+from public_discourse_sandbox.pds_app.models import UserProfile
 
 
 class UserDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
@@ -52,3 +54,27 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
 
 
 user_redirect_view = UserRedirectView.as_view()
+
+
+class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
+    """
+    View for displaying a user's profile within a specific experiment context.
+    This view requires both a user ID and an experiment identifier in the URL.
+    """
+    model = UserProfile
+    template_name = 'users/user_profile_detail.html'
+    context_object_name = 'user_profile'
+    
+    def get_object(self, queryset=None):
+        """
+        Get the UserProfile object for the specified user and experiment.
+        """
+        user_id = self.kwargs.get('pk')
+        user = get_object_or_404(User, id=user_id)
+        return get_object_or_404(
+            UserProfile,
+            user=user,
+            experiment=self.experiment
+        )
+
+user_profile_detail_view = UserProfileDetailView.as_view()
