@@ -92,22 +92,21 @@ def delete_post(request, post_id):
 
 @login_required
 @ensure_csrf_cookie
-def ban_user(request, experiment_identifier, user_profile_id):
+def ban_user(request, user_profile_id):
     """Handle banning of users."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
     
     try:
-        experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
         # Get the target user profile
-        target_profile = get_object_or_404(UserProfile, id=user_profile_id, experiment=experiment)
+        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
         
         # Check if the requesting user is a moderator in the same experiment
         try:
-            mod_profile = request.user.userprofile
-            if not (mod_profile.experiment == experiment and mod_profile.is_moderator):
+            mod_profile = request.user.userprofile_set.get(experiment=target_profile.experiment)
+            if not mod_profile.is_experiment_moderator():
                 return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        except AttributeError:
+        except UserProfile.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         
         # Ban the user
@@ -120,22 +119,21 @@ def ban_user(request, experiment_identifier, user_profile_id):
 
 @login_required
 @ensure_csrf_cookie
-def unban_user(request, experiment_identifier, user_profile_id):
+def unban_user(request, user_profile_id):
     """Handle unbanning of users."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
     
     try:
-        experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
         # Get the target user profile
-        target_profile = get_object_or_404(UserProfile, id=user_profile_id, experiment=experiment)
+        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
         
         # Check if the requesting user is a moderator in the same experiment
         try:
-            mod_profile = request.user.userprofile
-            if not (mod_profile.experiment == experiment and mod_profile.is_moderator):
+            mod_profile = request.user.userprofile_set.get(experiment=target_profile.experiment)
+            if not mod_profile.is_experiment_moderator():
                 return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        except AttributeError:
+        except UserProfile.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         
         # Unban the user

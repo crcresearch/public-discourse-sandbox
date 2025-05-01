@@ -29,6 +29,20 @@
             <span>Edit Profile</span>
           </button>
         </div>
+      {% elif is_moderator and not viewed_profile.is_banned %}
+        <div class="edit-profile-button-container">
+          <button type="button" class="post-button bg-danger text-white" onclick="banUser('{{ viewed_profile.id }}')">
+            <i class="ri-user-unfollow-line"></i>
+            <span>Ban User</span>
+          </button>
+        </div>
+      {% elif is_moderator and viewed_profile.is_banned %}
+        <div class="edit-profile-button-container">
+          <button type="button" class="post-button bg-success text-white" onclick="unbanUser('{{ viewed_profile.id }}')">
+            <i class="ri-user-follow-line"></i>
+            <span>Unban User</span>
+          </button>
+        </div>
       {% endif %}
       
       <div class="profile-info">
@@ -90,6 +104,7 @@
 {% endblock content %}
 
 {% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
 <script>
   // Handle form submission
   document.getElementById('profileEditForm').addEventListener('submit', function(e) {

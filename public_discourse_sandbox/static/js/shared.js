@@ -36,11 +36,35 @@ async function banUser(userProfileId) {
     }
     
     try {
-        await makeRequest(`/api/users/${userProfileId}/ban/`, 'POST');
-        // Refresh the page to reflect the changes
-        window.location.reload();
+        const response = await makeRequest(`/api/users/${userProfileId}/ban/`, 'POST');
+        if (response.status === 'success') {
+            showToast('success', 'User has been banned successfully');
+            window.location.reload();
+        } else {
+            showToast('error', response.message || 'Failed to ban user');
+        }
     } catch (error) {
         console.error('Error:', error);
-        alert(error.message || 'Failed to ban user');
+        showToast('error', error.message || 'An error occurred while banning the user');
+    }
+}
+
+// Function to unban a user
+async function unbanUser(userProfileId) {
+    if (!confirm('Are you sure you want to unban this user?')) {
+        return;
+    }
+    
+    try {
+        const response = await makeRequest(`/api/users/${userProfileId}/unban/`, 'POST');
+        if (response.status === 'success') {
+            showToast('success', 'User has been unbanned successfully');
+            window.location.reload();
+        } else {
+            showToast('error', response.message || 'Failed to unban user');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('error', error.message || 'An error occurred while unbanning the user');
     }
 } 
