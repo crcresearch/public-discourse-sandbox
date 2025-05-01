@@ -1,0 +1,96 @@
+{% load static %}
+
+<div id="editProfileModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="popup-header">
+      <button type="button" class="close-popup" onclick="closeEditProfileModal()">
+        <i class="ri-close-line"></i>
+      </button>
+      <h2>Edit Profile</h2>
+    </div>
+    <div class="modal-body">
+      <form id="editProfileForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="display_name">Display Name</label>
+          <input type="text" id="display_name" name="display_name" value="{{ viewed_profile.display_name }}" required>
+        </div>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" value="{{ viewed_profile.username }}" required>
+        </div>
+        <div class="form-group">
+          <label for="bio">Bio</label>
+          <textarea id="bio" name="bio">{{ viewed_profile.bio }}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="profile_picture">Profile Picture</label>
+          <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+          {% if viewed_profile.profile_picture %}
+            <div class="current-image">
+              <img src="{{ viewed_profile.profile_picture.url }}" alt="Current Profile Picture">
+            </div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label for="banner_picture">Banner Picture</label>
+          <input type="file" id="banner_picture" name="banner_picture" accept="image/*">
+          {% if viewed_profile.banner_picture %}
+            <div class="current-image">
+              <img src="{{ viewed_profile.banner_picture.url }}" alt="Current Banner Picture">
+            </div>
+          {% endif %}
+        </div>
+        <div class="form-actions">
+          <button type="button" class="post-button" onclick="closeEditProfileModal()">Cancel</button>
+          <button type="submit" class="post-button bg-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'flex';
+  }
+
+  function closeEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('editProfileModal');
+    const form = document.getElementById('editProfileForm');
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeEditProfileModal();
+      }
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      
+      try {
+        const response = await fetch('/api/users/profile/update/', {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          console.error('Error updating profile');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+  });
+</script> 

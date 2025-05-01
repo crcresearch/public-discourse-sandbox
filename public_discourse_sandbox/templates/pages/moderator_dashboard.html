@@ -62,7 +62,7 @@
         {% if reported_posts %}
           <div class="posts-list">
             {% for post in reported_posts %}
-              <div class="post-card">
+              <div class="post-card" data-post-id="{{ post.id }}">
                 <div class="post-header">
                   <span class="username">@{{ post.user_profile.username }}</span>
                   <span class="timestamp">{{ post.created_date|timesince }} ago</span>
@@ -92,54 +92,23 @@
   
   <!-- Right Sidebar -->
   {% include 'pages/right_content.html' %}
+
+  <!-- Ban/Unban Confirmation Modal -->
+  {% include 'components/ban_modal.html' %}
+
+  <!-- Delete Confirmation Modal -->
+  {% include 'components/delete_modal.html' %}
 {% endblock content %}
 
 {% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
 <script>
   function unbanUser(userId) {
-    if (confirm('Are you sure you want to unban this user?')) {
-      fetch(`/api/users/${userId}/unban/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          window.location.reload();
-        } else {
-          alert('Error: ' + data.message);
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while unbanning the user.');
-      });
-    }
+    showBanModal(userId, 'unban');
   }
   
   function deletePost(postId) {
-    if (confirm('Are you sure you want to delete this post?')) {
-      fetch(`/api/posts/${postId}/delete/`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          window.location.reload();
-        } else {
-          alert('Error: ' + data.message);
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while deleting the post.');
-      });
-    }
+    showDeleteModal(postId);
   }
 </script>
 {% endblock inline_javascript %} 

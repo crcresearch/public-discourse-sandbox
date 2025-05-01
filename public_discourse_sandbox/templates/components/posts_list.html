@@ -79,18 +79,10 @@
 {% include 'components/comment_modal.html' %}
 
 <!-- Delete Confirmation Modal -->
-<div id="delete-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 320px;">
-        <div class="modal-body" style="overflow: visible;">
-            <h2>Delete post?</h2>
-            <p class="text-secondary">This can't be undone and it will be removed from your profile, the timeline of any accounts that follow you, and from search results.</p>
-            <div class="form-actions" style="flex-direction: column; gap: 12px;">
-                <button id="confirm-delete" class="post-button delete modal-button">Delete</button>
-                <button id="cancel-delete" class="post-button modal-button">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'components/delete_modal.html' %}
+
+<!-- Ban User Modal -->
+{% include 'components/ban_modal.html' %}
 
 <script src="{% static 'js/shared.js' %}"></script>
 <script>
@@ -170,23 +162,7 @@ function deletePost(postId) {
 }
 
 async function banUser(userId) {
-    if (!confirm('Are you sure you want to ban this user?')) {
-        return;
-    }
-    
-    try {
-        const response = await makeRequest(`/api/users/${userId}/ban/`, 'POST');
-        if (response.ok) {
-            showToast('success', 'User has been banned successfully');
-            // Reload the page to reflect the changes
-            window.location.reload();
-        } else {
-            showToast('error', 'Failed to ban user');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showToast('error', 'An error occurred while banning the user');
-    }
+    showBanModal(userId, 'ban');
 }
 
 </script>

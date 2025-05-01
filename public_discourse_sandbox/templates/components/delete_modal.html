@@ -1,0 +1,70 @@
+{% load static %}
+
+<div id="delete-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="popup-header">
+      <button type="button" class="close-popup" onclick="closeDeleteModal()">
+        <i class="ri-close-line"></i>
+      </button>
+      <h2>Delete Post</h2>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete this post? This action cannot be undone.</p>
+      <div class="form-actions">
+        <button type="button" class="post-button" id="cancel-delete">Cancel</button>
+        <button type="button" class="post-button bg-danger" id="confirm-delete">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var currentPostId = null;
+  var deleteModal = document.getElementById('delete-modal');
+
+  function showDeleteModal(postId) {
+    currentPostId = postId;
+    deleteModal.style.display = 'flex';
+  }
+
+  function closeDeleteModal() {
+    deleteModal.style.display = 'none';
+    currentPostId = null;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!deleteModal) return;
+
+    // Close modal when clicking outside
+    deleteModal.addEventListener('click', function(e) {
+      if (e.target === deleteModal) {
+        closeDeleteModal();
+      }
+    });
+
+    // Set up event listeners for the delete modal
+    document.getElementById('confirm-delete')?.addEventListener('click', async function() {
+      if (!currentPostId) return;
+      
+      try {
+        const response = await makeRequest(
+          `/api/posts/${currentPostId}/delete/`,
+          'POST'
+        );
+        
+        if (response.status === 'success') {
+          const postElement = document.querySelector(`[data-post-id="${currentPostId}"]`);
+          if (postElement) {
+            postElement.remove();
+          }
+          closeDeleteModal();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('error', 'Failed to delete post');
+      }
+    });
+
+    document.getElementById('cancel-delete')?.addEventListener('click', closeDeleteModal);
+  });
+</script> 
