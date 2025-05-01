@@ -1,12 +1,5 @@
 {% load static %}
 
-{# 
-  Note: We use a valid UUID format (00000000-0000-0000-0000-000000000000) as a placeholder because:
-  1. The URL pattern expects a UUID type parameter: <uuid:post_id>
-  2. Django's URL resolver validates the format before generating the URL
-  3. The pattern [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} requires this exact format
-  4. We replace this placeholder with the actual UUID when making the request
-#}
 <div id="delete-modal" class="modal" style="display: none;" 
      data-delete-url="{% url 'delete_post' '00000000-0000-0000-0000-000000000000' %}">
   <div class="modal-content">
@@ -27,6 +20,13 @@
 </div>
 
 <script>
+  /*
+   * Note: We use a valid UUID format (00000000-0000-0000-0000-000000000000) as a placeholder because:
+   * 1. The URL pattern expects a UUID type parameter: <uuid:post_id>
+   * 2. Django's URL resolver validates the format before generating the URL
+   * 3. The pattern [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} requires this exact format
+   * 4. We replace this placeholder with the actual UUID when making the request
+   */
   var currentPostId = null;
   var deleteModal = document.getElementById('delete-modal');
 
