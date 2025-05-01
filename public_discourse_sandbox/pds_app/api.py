@@ -47,7 +47,6 @@ def create_comment(request, experiment_identifier):
 def get_post_replies(request, post_id):
     """Get replies for a specific post."""
     try:
-
         # Filter replies that are not deleted and not from banned users
         replies = Post.objects.filter(
             parent_post__id=post_id,
@@ -58,6 +57,7 @@ def get_post_replies(request, post_id):
 
         replies_data = [{
             'id': str(reply.id),  # Convert UUID to string
+            'user_id': str(reply.user_profile.user.id),  # Add user ID
             'username': reply.user_profile.username,
             'display_name': reply.user_profile.display_name,
             'content': reply.content,
