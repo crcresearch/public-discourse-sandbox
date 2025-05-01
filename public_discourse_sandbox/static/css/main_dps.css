@@ -1420,6 +1420,19 @@ a.user-avatar {
     background-color: #f0f0f0;
 }
 
+/* Edit Profile Button */
+.edit-profile-button-container {
+    position: absolute;
+    top: 220px; /* Just below the banner */
+    right: 20px;
+    z-index: 10;
+}
+
+.edit-profile-button-container .post-button {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
 .profile-info {
     position: relative;
     padding: 0 1rem;

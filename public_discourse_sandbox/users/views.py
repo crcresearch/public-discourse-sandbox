@@ -7,6 +7,10 @@ from django.views.generic import DetailView
 from django.views.generic import RedirectView
 from django.views.generic import UpdateView
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+from django.views import View
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
@@ -78,3 +82,53 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         )
 
 user_profile_detail_view = UserProfileDetailView.as_view()
+
+
+@method_decorator(require_POST, name='dispatch')
+class UpdateProfileView(LoginRequiredMixin, ExperimentContextMixin, View):
+    """
+    View for handling profile updates via AJAX.
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            user_profile = request.user.userprofile_set.get(experiment=self.experiment)
+            
+            # Update profile fields
+            if 'display_name' in request.POST:
+                user_profile.display_name = request.POST['display_name']
+            if 'username' in request.POST:
+                # Check if username is already taken in this experiment
+                if UserProfile.objects.filter(
+                    experiment=self.experiment,
+                    username=request.POST['username']
+                ).exclude(id=user_profile.id).exists():
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'This username is already taken in this experiment'
+                    }, status=400)
+                user_profile.username = request.POST['username']
+            if 'bio' in request.POST:
+                user_profile.bio = request.POST['bio']
+            
+            # Handle profile picture
+            if 'profile_picture' in request.FILES:
+                user_profile.profile_picture = request.FILES['profile_picture']
+            
+            # Handle banner picture
+            if 'banner_picture' in request.FILES:
+                user_profile.banner_picture = request.FILES['banner_picture']
+            
+            user_profile.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Profile updated successfully'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+
+update_profile_view = UpdateProfileView.as_view()
