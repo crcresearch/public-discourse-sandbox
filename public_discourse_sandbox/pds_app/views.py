@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View
 from .forms import PostForm
-from .models import Post
+from .models import Post, UserProfile
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
 
@@ -100,3 +100,40 @@ class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
     """About page view that displays information about the application."""
     template_name = 'pages/about.html'
+
+
+class ModeratorDashboardView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
+    """
+    Example view that demonstrates all three moderator permission approaches working together.
+    """
+    template_name = 'pages/moderator_dashboard.html'
+    
+    def get(self, request, *args, **kwargs):
+        # 1. Using the mixin's check_moderator_permission method
+        self.check_moderator_permission()
+        
+        # 2. Using the model method directly
+        user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
+        if not user_profile.is_experiment_moderator():
+            raise PermissionDenied("You do not have moderator permissions for this experiment.")
+            
+        return super().get(request, *args, **kwargs)
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # 3. The context processor automatically adds is_moderator to the context
+        # 4. The mixin also adds is_moderator to the context
+        # Both will be True at this point because we've already checked permissions
+        
+        # Add some moderator-specific data
+        context['banned_users'] = UserProfile.objects.filter(
+            experiment=self.experiment,
+            is_banned=True
+        )
+        context['reported_posts'] = Post.objects.filter(
+            experiment=self.experiment,
+            is_deleted=False
+        ).order_by('-created_date')[:10]
+        
+        return context

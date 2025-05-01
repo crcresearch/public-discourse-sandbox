@@ -75,6 +75,20 @@ class UserProfile(BaseModel):
     def __str__(self):
         bot_status = " (Digital Twin)" if self.is_digital_twin else ""
         return f"{self.username}{bot_status}"
+        
+    def is_experiment_moderator(self):
+        """
+        Check if this user profile has moderator permissions for the experiment.
+        A user is considered a moderator if they:
+        1. Own the experiment (are the creator)
+        2. Are a collaborator
+        3. Have the is_moderator flag set
+        """
+        return (
+            self.experiment.creator == self.user or  # User owns the experiment
+            self.is_collaborator or  # User is a collaborator
+            self.is_moderator  # User has moderator flag
+        )
 
 
 class UndeletedPostManager(models.Manager):

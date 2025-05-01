@@ -112,41 +112,37 @@ class ExperimentContextMixin:
                 request.user.last_accessed = self.experiment
                 request.user.save()
 
+    def is_moderator(self, user, experiment):
+        """
+        Check if a user has moderator permissions for an experiment.
+        Uses the UserProfile's is_experiment_moderator method.
+        """
+        if not user.is_authenticated:
+            return False
+            
+        user_profile = user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            return False
+            
+        return user_profile.is_experiment_moderator()
+        
+    def check_moderator_permission(self):
+        """
+        Check if the current user has moderator permissions.
+        Raises PermissionDenied if not a moderator.
+        """
+        if not self.is_moderator(self.request.user, self.experiment):
+            raise PermissionDenied("You do not have moderator permissions for this experiment.")
+            
     def get_context_data(self, **kwargs):
         """
-        Add experiment context to template context.
-        
-        This method adds the current experiment and user profiles to the template context,
-        making them available in templates.
-        
-        The user profiles are handled specially to maintain both:
-        - current_user_profile: The profile of the currently logged-in user (used in left nav, etc.)
-        - user_profile: The profile being viewed (used in profile pages)
-        
-        Example Use Case:
-        - When viewing a user's profile page (e.g., /users/00000/1a8336c2-8573-4310-8dab-cc24e0e8f643/):
-          1. UserProfileDetailView gets the requested user's profile and sets it as user_profile
-          2. This mixin adds the current user's profile as current_user_profile
-          3. Template shows the requested user's profile information
-          4. Left nav shows the current user's information
-        
-        - When viewing the home page:
-          1. No view sets user_profile in context
-          2. This mixin adds the current user's profile as current_user_profile
-          3. Template shows the current user's information
-          4. Left nav shows the current user's information
-        
-        Args:
-            **kwargs: Additional context data
-            
-        Returns:
-            dict: Updated context with experiment and user profiles
+        Add experiment and moderator context to template context.
         """
         context = super().get_context_data(**kwargs)
         if self.experiment:
             context['experiment'] = self.experiment
-            # Always add current user's profile as current_user_profile
             context['current_user_profile'] = self.user_profile
+            context['is_moderator'] = self.is_moderator(self.request.user, self.experiment)
         return context
 
     def dispatch(self, request, *args, **kwargs):
@@ -202,3 +198,44 @@ class ExperimentContextMixin:
             return redirect(reverse(new_url_name, kwargs=url_kwargs))
         
         return response 
+
+class ModeratorPermissionMixin:
+    """
+    Mixin that provides moderator permission checking for views.
+    A user is considered a moderator if they:
+    1. Own the experiment (are the creator)
+    2. Are a collaborator
+    3. Have the is_moderator flag set
+    """
+    def is_moderator(self, user, experiment):
+        """
+        Check if a user has moderator permissions for an experiment.
+        """
+        if not user.is_authenticated:
+            return False
+            
+        user_profile = user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            return False
+            
+        return (
+            experiment.creator == user or  # User owns the experiment
+            user_profile.is_collaborator or  # User is a collaborator
+            user_profile.is_moderator  # User has moderator flag
+        )
+        
+    def check_moderator_permission(self):
+        """
+        Check if the current user has moderator permissions.
+        Raises PermissionDenied if not a moderator.
+        """
+        if not self.is_moderator(self.request.user, self.experiment):
+            raise PermissionDenied("You do not have moderator permissions for this experiment.")
+            
+    def get_context_data(self, **kwargs):
+        """
+        Add is_moderator to template context.
+        """
+        context = super().get_context_data(**kwargs)
+        context['is_moderator'] = self.is_moderator(self.request.user, self.experiment)
+        return context 

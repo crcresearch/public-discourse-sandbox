@@ -27,7 +27,7 @@
                             <span class="dot">·</span>
                             <span class="time">{{ post.created_date|timesince }}</span>
                         </div>
-                        {% if post.user_profile.user == request.user or request.user.userprofile.is_moderator %}
+                        {% if post.user_profile.user == request.user or is_moderator %}
                             <div class="post-menu">
                                 <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
                                     <i class="ri-more-fill"></i>
@@ -36,11 +36,11 @@
                                     <button onclick="deletePost('{{ post.id }}')" class="post-menu-item">
                                         <i class="ri-delete-bin-line"></i> Delete
                                     </button>
-                                    <!-- {% if request.user.userprofile.is_moderator %}
+                                    {% if is_moderator %}
                                     <button onclick="banUser('{{ post.user_profile.id }}')" class="post-menu-item">
                                         <i class="ri-user-unfollow-line"></i> Ban User
                                     </button>
-                                    {% endif %} -->
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endif %}

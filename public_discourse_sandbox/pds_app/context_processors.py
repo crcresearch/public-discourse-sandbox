@@ -51,3 +51,27 @@ def user_experiments(request):
         'user_experiments': experiments,
         'current_experiment_identifier': current_experiment_identifier
     }
+
+def is_moderator(request):
+    """
+    Context processor that adds is_moderator flag to all templates.
+    Uses the UserProfile's is_experiment_moderator method.
+    """
+    if not request.user.is_authenticated:
+        return {'is_moderator': False}
+    
+    # Get the current experiment from the URL or session
+    experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    if not experiment_identifier:
+        return {'is_moderator': False}
+    
+    try:
+        experiment = Experiment.objects.get(identifier=experiment_identifier)
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        
+        if not user_profile:
+            return {'is_moderator': False}
+            
+        return {'is_moderator': user_profile.is_experiment_moderator()}
+    except Experiment.DoesNotExist:
+        return {'is_moderator': False}

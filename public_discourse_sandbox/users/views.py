@@ -67,7 +67,7 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
     """
     model = UserProfile
     template_name = 'users/user_profile_detail.html'
-    context_object_name = 'user_profile'
+    context_object_name = 'viewed_profile'
     
     def get_object(self, queryset=None):
         """
@@ -80,6 +80,22 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
             user=user,
             experiment=self.experiment
         )
+        
+    def get_context_data(self, **kwargs):
+        """
+        Add experiment and profile context to template context.
+        """
+        context = super().get_context_data(**kwargs)
+        # The ExperimentContextMixin already adds:
+        # - experiment
+        # - current_user_profile (the current user's profile in this experiment)
+        # - is_moderator (current user's moderator status)
+        
+        # Add the viewed profile's role information
+        context['viewed_profile'] = self.object
+        context['is_creator'] = self.object.user == self.experiment.creator
+        
+        return context
 
 user_profile_detail_view = UserProfileDetailView.as_view()
 
