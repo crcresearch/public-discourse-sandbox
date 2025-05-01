@@ -1440,8 +1440,8 @@ a.user-avatar {
 }
 
 .profile-picture {
-    width: 100px;
-    height: 100px;
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
     border: 4px solid white;
     background-color: #f0f0f0;
@@ -1471,9 +1471,16 @@ a.user-avatar {
     font-weight: bold;
 }
 
+.username-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0.25rem 0;
+}
+
 .username {
     color: #666;
-    margin: 0.25rem 0;
+    margin: 0;
 }
 
 .bio {
@@ -1496,11 +1503,14 @@ a.user-avatar {
 }
 
 .badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
-    margin-right: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 .badge-primary {

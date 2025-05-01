@@ -44,7 +44,18 @@
         
         <div class="profile-details">
           <h1>{{ user_profile.display_name }}</h1>
-          <p class="username">@{{ user_profile.username }}</p>
+          <div class="username-container">
+            <p class="username">@{{ user_profile.username }}</p>
+            {% if user_profile.is_moderator %}
+              <div class="badge badge-primary">Moderator</div>
+            {% endif %}
+            {% if user_profile.is_collaborator %}
+              <div class="badge badge-secondary">Collaborator</div>
+            {% endif %}
+            {% if user_profile.is_digital_twin %}
+              <div class="badge badge-info">Digital Twin</div>
+            {% endif %}
+          </div>
           {% if user_profile.bio %}
             <p class="bio">{{ user_profile.bio }}</p>
           {% endif %}
@@ -64,18 +75,10 @@
         <p>This account has been suspended for violating community guidelines.</p>
       </div>
     {% endif %}
-
-    <!-- User Roles -->
-    {% if user_profile.is_moderator %}
-      <div class="badge badge-primary">Moderator</div>
-    {% endif %}
-    {% if user_profile.is_collaborator %}
-      <div class="badge badge-secondary">Collaborator</div>
-    {% endif %}
-    {% if user_profile.is_digital_twin %}
-      <div class="badge badge-info">Digital Twin</div>
-    {% endif %}
   </div>
+
+  <!-- Right Sidebar -->
+  {% include 'pages/right_content.html' %}
 
   <!-- Profile Edit Modal -->
   {% if user_profile.user == request.user %}
