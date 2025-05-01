@@ -9,15 +9,15 @@
     <a href="{% if experiment %}{% url 'users:detail_with_experiment' experiment.identifier request.user.id %}{% else %}{% url 'users:detail' request.user.id %}{% endif %}" class="my-account-link {% if '/users/' in request.path %}active{% endif %}">
         <div class="my-account-content">
             <div class="my-account-photo">
-                {% if user_profile.profile_picture %}
-                    <img src="{{ user_profile.profile_picture.url }}" alt="Profile">
+                {% if current_user_profile.profile_picture %}
+                    <img src="{{ current_user_profile.profile_picture.url }}" alt="Profile">
                 {% else %}
                     <i class="ri-user-3-line"></i>
                 {% endif %}
             </div>
             <div class="my-account-info">
-                <span class="my-account-name">{{ user_profile.display_name }}</span>
-                <span class="my-account-username">@{{ user_profile.username }}</span>
+                <span class="my-account-name">{{ current_user_profile.display_name }}</span>
+                <span class="my-account-username">@{{ current_user_profile.username }}</span>
             </div>
             <i class="ri-arrow-right-s-line account-arrow"></i>
         </div>

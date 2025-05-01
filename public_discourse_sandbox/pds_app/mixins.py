@@ -116,19 +116,37 @@ class ExperimentContextMixin:
         """
         Add experiment context to template context.
         
-        This method adds the current experiment and user profile to the template context,
+        This method adds the current experiment and user profiles to the template context,
         making them available in templates.
+        
+        The user profiles are handled specially to maintain both:
+        - current_user_profile: The profile of the currently logged-in user (used in left nav, etc.)
+        - user_profile: The profile being viewed (used in profile pages)
+        
+        Example Use Case:
+        - When viewing a user's profile page (e.g., /users/00000/1a8336c2-8573-4310-8dab-cc24e0e8f643/):
+          1. UserProfileDetailView gets the requested user's profile and sets it as user_profile
+          2. This mixin adds the current user's profile as current_user_profile
+          3. Template shows the requested user's profile information
+          4. Left nav shows the current user's information
+        
+        - When viewing the home page:
+          1. No view sets user_profile in context
+          2. This mixin adds the current user's profile as current_user_profile
+          3. Template shows the current user's information
+          4. Left nav shows the current user's information
         
         Args:
             **kwargs: Additional context data
             
         Returns:
-            dict: Updated context with experiment and user_profile
+            dict: Updated context with experiment and user profiles
         """
         context = super().get_context_data(**kwargs)
         if self.experiment:
             context['experiment'] = self.experiment
-            context['user_profile'] = self.user_profile
+            # Always add current user's profile as current_user_profile
+            context['current_user_profile'] = self.user_profile
         return context
 
     def dispatch(self, request, *args, **kwargs):
