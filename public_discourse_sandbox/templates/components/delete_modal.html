@@ -1,6 +1,14 @@
 {% load static %}
 
-<div id="delete-modal" class="modal" style="display: none;">
+{# 
+  Note: We use a valid UUID format (00000000-0000-0000-0000-000000000000) as a placeholder because:
+  1. The URL pattern expects a UUID type parameter: <uuid:post_id>
+  2. Django's URL resolver validates the format before generating the URL
+  3. The pattern [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} requires this exact format
+  4. We replace this placeholder with the actual UUID when making the request
+#}
+<div id="delete-modal" class="modal" style="display: none;" 
+     data-delete-url="{% url 'delete_post' '00000000-0000-0000-0000-000000000000' %}">
   <div class="modal-content">
     <div class="popup-header">
       <button type="button" class="close-popup" onclick="closeDeleteModal()">
@@ -47,10 +55,11 @@
       if (!currentPostId) return;
       
       try {
-        const response = await makeRequest(
-          `/api/posts/${currentPostId}/delete/`,
-          'POST'
-        );
+        const baseUrl = deleteModal.dataset.deleteUrl;
+        // Replace the UUID placeholder with the actual UUID
+        const url = baseUrl.replace('00000000-0000-0000-0000-000000000000', currentPostId);
+        
+        const response = await makeRequest(url, 'DELETE');
         
         if (response.status === 'success') {
           const postElement = document.querySelector(`[data-post-id="${currentPostId}"]`);
@@ -61,7 +70,6 @@
         }
       } catch (error) {
         console.error('Error:', error);
-        showToast('error', 'Failed to delete post');
       }
     });
 
