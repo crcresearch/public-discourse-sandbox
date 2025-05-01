@@ -24,7 +24,7 @@
       <!-- Edit Profile Button -->
       {% if viewed_profile.user == request.user %}
         <div class="edit-profile-button-container">
-          <button type="button" class="post-button" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+          <button type="button" class="post-button" onclick="showEditProfileModal()">
             <i class="ri-edit-line"></i>
             <span>Edit Profile</span>
           </button>
@@ -103,105 +103,9 @@
   {% endif %}
 
   <!-- Ban/Unban Confirmation Modal -->
-  <div class="modal fade" id="banModal" tabindex="-1" aria-labelledby="banModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="banModalLabel">Confirm Action</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p id="banModalMessage"></p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn" id="confirmBanBtn">Confirm</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  {% include 'components/ban_modal.html' %}
 {% endblock content %}
 
 {% block inline_javascript %}
 <script src="{% static 'js/shared.js' %}"></script>
-<script>
-  // Global variables for ban modal
-  var currentProfileId = null;
-  var currentAction = null;
-  var banModal = null;
-
-  // Initialize modal when DOM is loaded
-  document.addEventListener('DOMContentLoaded', function() {
-    banModal = new bootstrap.Modal(document.getElementById('banModal'));
-
-    // Handle form submission - only if form exists
-    const profileEditForm = document.getElementById('profileEditForm');
-    if (profileEditForm) {
-      profileEditForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        fetch('{% url "users:update_profile" experiment.identifier %}', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Reload the page to show updated profile
-            window.location.reload();
-          } else {
-            // Show error message
-            alert('Error updating profile: ' + data.error);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred while updating your profile.');
-        });
-      });
-    }
-  });
-
-  function showBanModal(profileId, action) {
-    currentProfileId = profileId;
-    currentAction = action;
-    const modal = document.getElementById('banModal');
-    const message = document.getElementById('banModalMessage');
-    const confirmBtn = document.getElementById('confirmBanBtn');
-    
-    if (action === 'ban') {
-      message.textContent = 'Are you sure you want to ban this user? This will prevent them from posting or interacting with content.';
-      confirmBtn.className = 'btn btn-danger';
-      confirmBtn.textContent = 'Ban User';
-    } else {
-      message.textContent = 'Are you sure you want to unban this user? They will regain the ability to post and interact with content.';
-      confirmBtn.className = 'btn btn-success';
-      confirmBtn.textContent = 'Unban User';
-    }
-    
-    banModal.show();
-  }
-
-  document.getElementById('confirmBanBtn').addEventListener('click', async function() {
-    if (!currentProfileId || !currentAction) return;
-    
-    try {
-      const response = await makeRequest(
-        `/api/users/${currentProfileId}/${currentAction}/`,
-        'POST'
-      );
-      
-      if (response.status === 'success') {
-        banModal.hide();
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  });
-</script>
 {% endblock inline_javascript %} 
