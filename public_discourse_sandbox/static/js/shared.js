@@ -59,12 +59,10 @@ function handleFollow(userProfileId) {
 /**
  * Makes hashtags in text content clickable by converting them to links.
  * @param {HTMLElement} container - The container element to search for text content
- * @param {Object} urls - Object containing the URLs to use
- * @param {string} urls.explore - URL for the explore page
- * @param {string} urls.exploreWithExperiment - URL for the explore page with experiment
+ * @param {string} baseUrl - The base URL to use for hashtag links
  * @param {string} queryParam - The query parameter name to use (default: 'hashtag')
  */
-function makeHashtagsClickable(container, urls, queryParam = 'hashtag') {
+function makeHashtagsClickable(container, baseUrl = '', queryParam = 'hashtag') {
     // Find all elements with text content that might contain hashtags
     const textElements = container.querySelectorAll('.post-text, .comment-text, .reply-text');
     
@@ -74,8 +72,8 @@ function makeHashtagsClickable(container, urls, queryParam = 'hashtag') {
     
     // Determine the base URL for hashtag links
     const exploreUrl = experimentIdentifier 
-        ? urls.exploreWithExperiment.replace('0', experimentIdentifier)
-        : urls.explore;
+        ? `/${experimentIdentifier}/explore/`
+        : '/explore/';
     
     textElements.forEach(element => {
         // Get the text content and preserve any existing HTML
@@ -99,23 +97,15 @@ function makeHashtagsClickable(container, urls, queryParam = 'hashtag') {
 
 // Initialize hashtag clickability when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Get URLs from data attributes
+    // Make hashtags clickable in the main content
     const mainContent = document.querySelector('.main-content');
     if (mainContent) {
-        const urls = {
-            explore: mainContent.dataset.exploreUrl || '',
-            exploreWithExperiment: mainContent.dataset.exploreWithExperimentUrl || ''
-        };
-        makeHashtagsClickable(mainContent, urls);
+        makeHashtagsClickable(mainContent);
     }
     
     // Make hashtags clickable in modals
     const modals = document.querySelectorAll('.modal-content');
     modals.forEach(modal => {
-        const urls = {
-            explore: modal.dataset.exploreUrl || '',
-            exploreWithExperiment: modal.dataset.exploreWithExperimentUrl || ''
-        };
-        makeHashtagsClickable(modal, urls);
+        makeHashtagsClickable(modal);
     });
 });

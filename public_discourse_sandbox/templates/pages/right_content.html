@@ -20,7 +20,7 @@
                         {% for hashtag in trending_hashtags %}
                             <div class="trending-topic">
                                 <div class="topic-meta">
-                                    <div class="topic-name">#{{ hashtag.tag }}</div>
+                                    <a href="{% if experiment %}{% url 'explore_with_experiment' experiment.identifier %}?hashtag={{ hashtag.tag }}{% else %}{% url 'explore' %}?hashtag={{ hashtag.tag }}{% endif %}" class="topic-name hashtag">#{{ hashtag.tag }}</a>
                                     <!-- <div class="topic-count">{{ hashtag.count }} {% if hashtag.count == 1 %}post{% else %}posts{% endif %}</div> -->
                                 </div>
                             </div>

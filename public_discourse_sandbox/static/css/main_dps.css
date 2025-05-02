@@ -473,8 +473,9 @@ a.user-avatar {
 
 /* Hashtag styling */
 .hashtag {
-    color: rgb(29, 155, 240);
+    color: var(--nd-blue);
     text-decoration: none;
+    transition: color 0.2s ease;
 }
 
 .hashtag:hover {
@@ -1807,4 +1808,40 @@ Profile Tabs Custom Styling
 .hashtag-filter .hashtag {
     font-weight: 600;
     color: var(--nd-blue);
+}
+
+/* Trending Topics */
+.trending-topics {
+    display: flex;
+    flex-direction: column;
+}
+
+.trending-topic {
+    background-color: var(--search-bg);
+    transition: background-color 0.2s ease;
+}
+
+.trending-topic:hover {
+    background-color: var(--hover-bg);
+}
+
+.topic-meta {
+    display: flex;
+    align-items: center;
+}
+
+.topic-name {
+    font-weight: 600;
+    color: var(--nd-blue);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.topic-name:hover {
+    text-decoration: underline;
+}
+
+.topic-count {
+    color: var(--secondary-text);
+    font-size: 13px;
 }
