@@ -132,8 +132,6 @@ class Post(BaseModel):
         """
         Returns a list of hashtags for this post.
         """
-        print("--------------------------------")
-        print("Parsing hashtags for post: ", self.id)
         if self.content:
             # Process hashtags
             for word in self.content.split():
