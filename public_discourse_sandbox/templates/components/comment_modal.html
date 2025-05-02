@@ -213,7 +213,7 @@ function renderReplies(replies) {
                         <i class="ri-more-fill"></i>
                     </button>
                     <div id="post-menu-${reply.id}" class="post-menu-dropdown" style="display: none;">
-                        <button onclick="showDeleteModal('${reply.id}')" class="post-menu-item">
+                        <button onclick="document.querySelector('.reply-item[data-reply-id=\\'${reply.id}\\']').style.display = 'none'; showDeleteModal('${reply.id}')" class="post-menu-item">
                             <i class="ri-delete-bin-line"></i> Delete
                         </button>
                     </div>
