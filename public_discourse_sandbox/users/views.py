@@ -14,7 +14,7 @@ from django.views import View
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
-from public_discourse_sandbox.pds_app.models import UserProfile
+from public_discourse_sandbox.pds_app.models import UserProfile, SocialNetwork, Post
 
 
 class UserDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
@@ -94,6 +94,13 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         # Add the viewed profile's role information
         context['viewed_profile'] = self.object
         context['is_creator'] = self.object.user == self.experiment.creator
+
+        # Add follower and following counts
+        context['follower_count'] = SocialNetwork.objects.filter(target_node=self.object).count()
+        context['following_count'] = SocialNetwork.objects.filter(source_node=self.object).count()
+
+        # Add posts by this user (not deleted, ordered by newest first)
+        context['user_posts'] = Post.all_objects.filter(user_profile=self.object, is_deleted=False).order_by('-created_date')
         
         return context
 

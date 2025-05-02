@@ -78,8 +78,14 @@
           {% endif %}
           
           <div class="profile-stats">
-            <span>{{ viewed_profile.num_followers }} Followers</span>
-            <span>{{ viewed_profile.num_following }} Following</span>
+            <span>{{ follower_count }} Followers</span>
+            <span>{{ following_count }} Following</span>
+          </div>
+
+          <!-- User's Posts List -->
+          <div class="user-posts-list mt-4">
+            <h3>Posts</h3>
+            {% include 'components/posts_list.html' with posts=user_posts %}
           </div>
         </div>
       </div>
