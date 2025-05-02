@@ -82,6 +82,7 @@ def trending_hashtags(request):
     """
     Context processor that adds trending hashtags to the template context.
     Only adds trending hashtags if the user is authenticated and has a current experiment.
+    Returns the top 10 trending hashtags for the current experiment.
     """
     if not request.user.is_authenticated:
         return {'trending_hashtags': []}
@@ -91,8 +92,18 @@ def trending_hashtags(request):
     if not experiment_identifier:
         return {'trending_hashtags': []}
     
-    trending_hashtags = Hashtag.objects.filter(
-        experiment=experiment_identifier
-    ).order_by('-count')
-    
-    return {'trending_hashtags': trending_hashtags}
+    try:
+        experiment = Experiment.objects.get(identifier=experiment_identifier)
+        trending_hashtags = Hashtag.objects.filter(
+            post__experiment=experiment
+        ).annotate(
+            count=Count('post')
+        ).order_by('-count')[:10]
+        
+        return {'trending_hashtags': trending_hashtags}
+    except Experiment.DoesNotExist:
+        return {'trending_hashtags': []}
+    except Exception as e:
+        # Log the error and return empty list
+        print(f"Error in trending_hashtags context processor: {str(e)}")
+        return {'trending_hashtags': []}

@@ -21,14 +21,21 @@
                             <div class="trending-topic">
                                 <div class="topic-meta">
                                     <div class="topic-name">#{{ hashtag.tag }}</div>
-                                    <div class="topic-count">{{ hashtag.count }} {% if hashtag.count == 1 %}post{% else %}posts{% endif %}</div>
                                 </div>
+                            </div>
+                        {% empty %}
+                            <div class="no-trends">
+                                No trending hashtags yet
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
                     <div class="no-trends">
-                        No trending hashtags yet
+                        {% if user.is_authenticated %}
+                            No trending hashtags yet
+                        {% else %}
+                            Sign in to see trending hashtags
+                        {% endif %}
                     </div>
                 {% endif %}
             </div>
