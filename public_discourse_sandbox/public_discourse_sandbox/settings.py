@@ -12,6 +12,7 @@ TEMPLATES = [
                 'public_discourse_sandbox.pds_app.context_processors.active_bots',
                 'public_discourse_sandbox.pds_app.context_processors.user_experiments',
                 'public_discourse_sandbox.pds_app.context_processors.is_moderator',
+                'public_discourse_sandbox.pds_app.context_processors.trending_hashtags',
             ],
         },
     },

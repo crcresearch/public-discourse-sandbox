@@ -1,6 +1,8 @@
 from .models import DigitalTwin
 from django.contrib.auth.models import User
 from public_discourse_sandbox.pds_app.models import Experiment
+from django.db.models import Count
+from .models import Hashtag
 
 def active_bots(request):
     """
@@ -75,3 +77,22 @@ def is_moderator(request):
         return {'is_moderator': user_profile.is_experiment_moderator()}
     except Experiment.DoesNotExist:
         return {'is_moderator': False}
+
+def trending_hashtags(request):
+    """
+    Context processor that adds trending hashtags to the template context.
+    Only adds trending hashtags if the user is authenticated and has a current experiment.
+    """
+    if not request.user.is_authenticated:
+        return {'trending_hashtags': []}
+    
+    # Get the current experiment from the URL or session
+    experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    if not experiment_identifier:
+        return {'trending_hashtags': []}
+    
+    trending_hashtags = Hashtag.objects.filter(
+        experiment=experiment_identifier
+    ).order_by('-count')
+    
+    return {'trending_hashtags': trending_hashtags}
