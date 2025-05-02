@@ -8,8 +8,11 @@ from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
 from django.utils.decorators import method_decorator
 
-def get_active_posts(experiment=None):
-    """Get non-deleted top-level posts with related user data."""
+def get_active_posts(request, experiment=None):
+    """
+    Helper function to get active posts. Used in HomeView and ExploreView.
+    Get non-deleted top-level posts with related user data.
+    """
     posts = Post.objects.filter(
         parent_post__isnull=True,  # Only show top-level posts, not replies
         is_deleted=False  # Only show non-deleted posts
@@ -23,11 +26,17 @@ def get_active_posts(experiment=None):
     posts = posts.select_related(
         'user_profile',
         'user_profile__user'
+    ).prefetch_related(
+        'vote_set'  # Prefetch votes to avoid N+1 queries
     ).order_by('-created_date')
 
-    # Add comment count using the get_comment_count method
+    # Add comment count and vote status using the get_comment_count method
     for post in posts:
         post.comment_count = post.get_comment_count()
+        # Add whether the current user has voted
+        post.has_user_voted = post.vote_set.filter(
+            user_profile__user=request.user
+        ).exists()
     
     return posts
 
@@ -55,7 +64,7 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_active_posts(experiment=self.experiment)
+        return get_active_posts(request=self.request, experiment=self.experiment)
 
     def get_context_data(self, **kwargs):
         """Add the post form to the context."""
@@ -97,7 +106,7 @@ class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_active_posts(experiment=self.experiment)
+        return get_active_posts(request=self.request, experiment=self.experiment)
 
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):

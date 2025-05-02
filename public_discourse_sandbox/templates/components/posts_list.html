@@ -61,9 +61,9 @@
                             <span>0</span>
                         </button>
         
-                        <button class="action-button like-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
-                            <i class="ri-heart-line"></i>
-                            <span>0</span>
+                        <button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}" data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
+                            <i class="{% if post.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+                            <span>{{ post.num_upvotes }}</span>
                         </button>
                     </div>
                 </div>
@@ -120,7 +120,38 @@ function showRepostPopup(postId) {
 }
 
 function handleLike(button, postId) {
-    console.log('handleLike', button, postId);
+    fetch('{% url "like_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId), {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the like count
+            const countSpan = button.querySelector('span');
+            countSpan.textContent = data.upvotes;
+            
+            // Toggle the like button style
+            const icon = button.querySelector('i');
+            if (data.is_liked) {
+                icon.classList.remove('ri-heart-line');
+                icon.classList.add('ri-heart-fill');
+                button.classList.add('liked');
+            } else {
+                icon.classList.remove('ri-heart-fill');
+                icon.classList.add('ri-heart-line');
+                button.classList.remove('liked');
+            }
+        } else {
+            alert(data.message || 'Failed to like post');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while liking the post');
+    });
 }
 
 </script>
