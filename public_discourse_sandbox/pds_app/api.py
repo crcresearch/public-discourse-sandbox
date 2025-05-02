@@ -102,7 +102,10 @@ def ban_user(request, user_profile_id):
     
     try:
         # Get the target user profile
-        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
+        try:
+            target_profile = UserProfile.objects.get(id=user_profile_id)
+        except (UserProfile.DoesNotExist, ValueError):
+            return JsonResponse({'status': 'error', 'message': 'User profile not found'}, status=404)
         
         # Check if the requesting user is a moderator in the same experiment
         try:
