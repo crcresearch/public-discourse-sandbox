@@ -4,10 +4,12 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 from .models import Post, UserProfile, Experiment
+from .decorators import check_banned
 import json
 
 @login_required
 @ensure_csrf_cookie
+@check_banned
 def create_comment(request, experiment_identifier):
     """Handle creation of comments/replies to posts."""
     # used by human users to reply to posts
@@ -22,10 +24,6 @@ def create_comment(request, experiment_identifier):
             experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
             parent_post = Post.objects.get(id=parent_id)
             user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
-            
-            # Check if user is banned
-            if user_profile.is_banned:
-                return JsonResponse({'status': 'error', 'message': 'Your account has been suspended. You cannot create comments at this time.'}, status=403)
             
             comment = Post.objects.create(
                 user_profile=user_profile,
@@ -77,6 +75,7 @@ def get_post_replies(request, post_id):
 
 @login_required
 @ensure_csrf_cookie
+@check_banned
 def delete_post(request, post_id):
     """Delete a post."""
     if request.method != 'DELETE':

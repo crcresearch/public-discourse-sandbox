@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View
 from .forms import PostForm
-from .models import Post, UserProfile
+from .models import Post, UserProfile, Experiment
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
+from .decorators import check_banned
+from django.utils.decorators import method_decorator
 
 def get_active_posts(experiment=None):
     """Get non-deleted top-level posts with related user data."""
@@ -60,17 +62,14 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['form'] = PostForm()
         return context
-
+        
+    @method_decorator(check_banned)
     def post(self, request, *args, **kwargs):
         """Handle post creation."""
         # Get the user's profile for this experiment
         user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
         if not user_profile:
             raise PermissionDenied("You do not have a profile in this experiment")
-            
-        # Check if user is banned
-        if user_profile.is_banned:
-            raise PermissionDenied("Your account has been suspended. You cannot create posts at this time.")
             
         form = PostForm(request.POST)
         if form.is_valid():
