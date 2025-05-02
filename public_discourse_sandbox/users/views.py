@@ -101,6 +101,13 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
 
         # Add posts by this user (not deleted, ordered by newest first)
         context['user_posts'] = Post.all_objects.filter(user_profile=self.object, is_deleted=False).order_by('-created_date')
+
+        # Add whether the current user is following the viewed profile
+        current_user_profile = context.get('current_user_profile')
+        if current_user_profile:
+            context['is_following_viewed_profile'] = SocialNetwork.objects.filter(source_node=current_user_profile, target_node=self.object).exists()
+        else:
+            context['is_following_viewed_profile'] = False
         
         return context
 

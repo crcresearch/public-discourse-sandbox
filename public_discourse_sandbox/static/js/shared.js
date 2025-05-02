@@ -28,3 +28,30 @@ async function makeRequest(url, method, data = null) {
     }
     return response.json();
 }
+
+// Reusable function to handle follow/unfollow actions
+function handleFollow(userProfileId) {
+    makeRequest(
+        `/api/users/${userProfileId}/follow/`,
+        'POST'
+    )
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the follow button state
+            const followButton = document.querySelector(`button[onclick=\"handleFollow('${userProfileId}')\"]`);
+            if (followButton) {
+                if (data.is_following) {
+                    followButton.innerHTML = '<i class="ri-user-unfollow-line"></i> Unfollow';
+                } else {
+                    followButton.innerHTML = '<i class="ri-user-follow-line"></i> Follow';
+                }
+            }
+        } else {
+            alert(data.message || 'An error occurred while following the user');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while following the user');
+    });
+}

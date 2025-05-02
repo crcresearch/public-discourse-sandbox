@@ -29,19 +29,28 @@
             <span>Edit Profile</span>
           </button>
         </div>
-      {% elif is_moderator and not viewed_profile.is_banned %}
-        <div class="edit-profile-button-container">
-          <button type="button" class="post-button bg-danger text-white" onclick="showBanModal('{{ viewed_profile.id }}', 'ban')">
-            <i class="ri-user-unfollow-line"></i>
-            <span>Ban User</span>
+      {% elif viewed_profile.user != request.user %}
+        <div class="edit-profile-button-container" style="display: flex; gap: 0.5rem;">
+          <button type="button" class="post-button" onclick="handleFollow('{{ viewed_profile.id }}')">
+            {% if is_following_viewed_profile %}
+              <i class="ri-user-unfollow-line"></i> Unfollow
+            {% else %}
+              <i class="ri-user-follow-line"></i> Follow
+            {% endif %}
           </button>
-        </div>
-      {% elif is_moderator and viewed_profile.is_banned %}
-        <div class="edit-profile-button-container">
-          <button type="button" class="post-button bg-success text-white" onclick="showBanModal('{{ viewed_profile.id }}', 'unban')">
-            <i class="ri-user-follow-line"></i>
-            <span>Unban User</span>
-          </button>
+          {% if is_moderator %}
+            {% if not viewed_profile.is_banned %}
+              <button type="button" class="post-button bg-danger text-white" onclick="showBanModal('{{ viewed_profile.id }}', 'ban')">
+                <i class="ri-user-unfollow-line"></i>
+                <span>Ban User</span>
+              </button>
+            {% else %}
+              <button type="button" class="post-button bg-success text-white" onclick="showBanModal('{{ viewed_profile.id }}', 'unban')">
+                <i class="ri-user-follow-line"></i>
+                <span>Unban User</span>
+              </button>
+            {% endif %}
+          {% endif %}
         </div>
       {% endif %}
       
