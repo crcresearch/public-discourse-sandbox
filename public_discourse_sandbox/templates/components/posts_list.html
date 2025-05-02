@@ -27,12 +27,12 @@
                             <span class="dot">·</span>
                             <span class="time">{{ post.created_date|timesince }}</span>
                         </div>
-                        {% if post.user_profile.user == request.user or is_moderator %}
-                            <div class="post-menu">
-                                <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
-                                    <i class="ri-more-fill"></i>
-                                </button>
-                                <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+                        <div class="post-menu">
+                            <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
+                                <i class="ri-more-fill"></i>
+                            </button>
+                            <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+                                {% if post.user_profile.user == request.user or is_moderator %}
                                     <button onclick="showDeleteModal('{{ post.id }}')" class="post-menu-item">
                                         <i class="ri-delete-bin-line"></i> Delete
                                     </button>
@@ -41,9 +41,14 @@
                                         <i class="ri-user-unfollow-line"></i> Ban User
                                     </button>
                                     {% endif %} -->
-                                </div>
+                                {% endif %}
+                                {% if post.user_profile.user != request.user %}
+                                    <button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
+                                        <i class="ri-user-follow-line"></i> Follow
+                                    </button>
+                                {% endif %}
                             </div>
-                        {% endif %}
+                        </div>
                     </div>
         
                     <!-- Regular post content -->
@@ -145,6 +150,10 @@ function handleLike(button, postId) {
         console.error('Error:', error);
         alert('An error occurred while liking the post');
     });
+}
+
+function handleFollow(userProfileId) {
+    console.log('Follow user profile:', userProfileId);
 }
 
 </script>
