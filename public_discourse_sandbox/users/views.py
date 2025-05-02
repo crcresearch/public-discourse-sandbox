@@ -101,6 +101,11 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
 
         # Add posts by this user (not deleted, ordered by newest first)
         context['user_posts'] = Post.all_objects.filter(user_profile=self.object, is_deleted=False).order_by('-created_date')
+        # Annotate each post with comment_count and has_user_voted for template compatibility
+        current_user = self.request.user
+        for post in context['user_posts']:
+            post.comment_count = post.get_comment_count()
+            post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
 
         # Add whether the current user is following the viewed profile
         current_user_profile = context.get('current_user_profile')
