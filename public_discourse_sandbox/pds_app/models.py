@@ -128,6 +128,30 @@ class Post(BaseModel):
         """
         return Post.objects.filter(parent_post=self).count()
 
+    def parse_hashtags(self):
+        """
+        Returns a list of hashtags for this post.
+        """
+        print("--------------------------------")
+        print("Parsing hashtags for post: ", self.id)
+        if self.content:
+            # Process hashtags
+            for word in self.content.split():
+                if word.startswith('#'):
+                    hashtag = word[1:]  # Remove the # symbol
+                    print("Hashtag: ", hashtag)
+                    try:
+                        hashtag, created = Hashtag.objects.get_or_create(
+                            tag=hashtag.lower(),
+                            post=self
+                        )
+                    except Exception as e:
+                        print(f"Error processing hashtag {hashtag}: {e}")
+
+    def save(self, *args, **kwargs):
+        self.parse_hashtags()
+        super().save(*args, **kwargs)
+
 
 class Vote(BaseModel):
     """

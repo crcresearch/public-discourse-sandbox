@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Experiment, UserProfile, Post, Vote, SocialNetwork, DigitalTwin
+from .models import Experiment, UserProfile, Post, Vote, SocialNetwork, DigitalTwin, Hashtag, Notification
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
@@ -58,3 +58,23 @@ class DigitalTwinAdmin(admin.ModelAdmin):
     search_fields = ('user_profile__user__username',)
     readonly_fields = ('created_date', 'last_modified', 'last_post')
     raw_id_fields = ('user_profile',)
+
+@admin.register(Hashtag)
+class HashtagAdmin(admin.ModelAdmin):
+    list_display = ('tag', 'post', 'created_date')
+    search_fields = ('tag', 'post__content')
+    list_filter = ('created_date',)
+    readonly_fields = ('created_date', 'last_modified')
+    raw_id_fields = ('post',)
+    date_hierarchy = 'created_date'
+    ordering = ('-created_date',)
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('user_profile', 'event', 'is_read', 'created_date')
+    search_fields = ('user_profile__user__username', 'event', 'content')
+    list_filter = ('is_read', 'event', 'created_date')
+    readonly_fields = ('created_date', 'last_modified')
+    raw_id_fields = ('user_profile',)
+    date_hierarchy = 'created_date'
+    ordering = ('-created_date',)
