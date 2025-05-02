@@ -113,12 +113,9 @@ class ModeratorDashboardView(LoginRequiredMixin, ExperimentContextMixin, Templat
     
     def get(self, request, *args, **kwargs):
         # 1. Using the mixin's check_moderator_permission method
-        self.check_moderator_permission()
-        
-        # 2. Using the model method directly
-        user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
-        if not user_profile.is_experiment_moderator():
-            raise PermissionDenied("You do not have moderator permissions for this experiment.")
+        if not self.is_moderator(request.user, self.experiment):
+            # Redirect to home page if not a moderator
+            return redirect('home_with_experiment', experiment_identifier=self.experiment.identifier)
             
         return super().get(request, *args, **kwargs)
         
