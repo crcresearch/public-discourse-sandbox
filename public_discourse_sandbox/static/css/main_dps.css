@@ -1691,18 +1691,18 @@ a.user-avatar {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.post-card:hover {
+/* .post-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+} */
 
 /* Post content styling */
-.post-content {
+/* .post-content {
     color: var(--text-color);
     font-size: 15px;
     line-height: 1.5;
     white-space: pre-wrap;
-}
+} */
 
 /* User info and timestamp styling */
 .user-info {
