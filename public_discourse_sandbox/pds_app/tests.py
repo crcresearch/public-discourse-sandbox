@@ -10,7 +10,7 @@ User = get_user_model()
 docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app
 """
 
-# Disable MFA middleware for tests
+# Base test class with common middleware settings
 @override_settings(MIDDLEWARE=[
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -24,7 +24,11 @@ docker compose -f docker-compose.local.yml run --rm django python manage.py test
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ])
-class BanUserTests(TestCase):
+class PDSTestCase(TestCase):
+    """Base test class for Public Discourse Sandbox tests."""
+    pass
+
+class BanUserTests(PDSTestCase):
     """
     docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app.tests.BanUserTests
     """
@@ -183,20 +187,7 @@ class BanUserTests(TestCase):
         self.assertFalse(other_profile.is_banned)
 
 
-@override_settings(MIDDLEWARE=[
-    'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
-])
-class PostCreationTests(TestCase):
+class PostCreationTests(PDSTestCase):
     """Test cases for post creation functionality."""
     
     def setUp(self):
@@ -354,4 +345,288 @@ class PostCreationTests(TestCase):
         self.assertIn("You do not have a profile in this experiment", str(response.content))
 
         # No post should be created
-        self.assertFalse(Post.objects.filter(content='Test post content').exists()) 
+        self.assertFalse(Post.objects.filter(content='Test post content').exists())
+
+
+class UserProfileTests(PDSTestCase):
+    """Test cases for user profile functionality."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.experiment = Experiment.objects.create(
+            name='Test Experiment',
+            description='Test Description'
+        )
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123',
+            name='Test User'
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            experiment=self.experiment,
+            username='testuser',
+            display_name='Test User'
+        )
+        self.client = Client()
+
+    def test_profile_creation_on_experiment_join(self):
+        """Test that a profile is created when a user joins an experiment."""
+        new_user = User.objects.create_user(
+            email='new@example.com',
+            password='testpass123',
+            name='New User'
+        )
+        # TODO: Implement test for profile creation on experiment join
+
+    def test_profile_unique_username_per_experiment(self):
+        """Test that usernames must be unique within an experiment."""
+        new_user = User.objects.create_user(
+            email='another@example.com',
+            password='testpass123'
+        )
+        # TODO: Implement test for username uniqueness
+
+    def test_profile_update(self):
+        """Test profile update functionality."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for profile updates
+
+    def test_profile_picture_upload(self):
+        """Test profile picture upload functionality."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for profile picture upload
+
+    def test_profile_bio_length_limits(self):
+        """Test bio character limit validation."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for bio length limits
+
+
+class ExperimentContextTests(PDSTestCase):
+    """Test cases for experiment context handling."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.experiment1 = Experiment.objects.create(
+            name='Experiment 1',
+            description='First Test Experiment'
+        )
+        self.experiment2 = Experiment.objects.create(
+            name='Experiment 2',
+            description='Second Test Experiment'
+        )
+        self.client = Client()
+
+    def test_experiment_context_middleware(self):
+        """Test that experiment context is properly handled by middleware."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for experiment context middleware
+
+    def test_last_accessed_experiment_update(self):
+        """Test that last_accessed experiment is updated correctly."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for last_accessed updates
+
+    def test_experiment_switch(self):
+        """Test switching between experiments."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for experiment switching
+
+    def test_invalid_experiment_handling(self):
+        """Test handling of invalid experiment IDs."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for invalid experiment handling
+
+
+class PostInteractionTests(PDSTestCase):
+    """Test cases for post interactions."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.experiment = Experiment.objects.create(
+            name='Test Experiment',
+            description='Test Description'
+        )
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            experiment=self.experiment,
+            username='testuser',
+            display_name='Test User'
+        )
+        self.post = Post.objects.create(
+            user_profile=self.profile,
+            experiment=self.experiment,
+            content='Test post content'
+        )
+        self.client = Client()
+
+    def test_post_reply_creation(self):
+        """Test creating a reply to a post."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for reply creation
+
+    def test_post_reply_depth_limit(self):
+        """Test that reply nesting depth is properly limited."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for reply depth limits
+
+    def test_post_edit(self):
+        """Test editing a post."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for post editing
+
+    def test_post_soft_delete(self):
+        """Test soft deletion of posts."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for post soft deletion
+
+    def test_post_content_length_limits(self):
+        """Test post content length validation."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for content length limits
+
+
+class ModeratorActionTests(PDSTestCase):
+    """Test cases for moderator actions."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.experiment = Experiment.objects.create(
+            name='Test Experiment',
+            description='Test Description'
+        )
+        self.moderator = User.objects.create_user(
+            email='moderator@example.com',
+            password='testpass123'
+        )
+        self.regular_user = User.objects.create_user(
+            email='user@example.com',
+            password='testpass123'
+        )
+        self.mod_profile = UserProfile.objects.create(
+            user=self.moderator,
+            experiment=self.experiment,
+            username='moderator',
+            display_name='Moderator',
+            is_moderator=True
+        )
+        self.user_profile = UserProfile.objects.create(
+            user=self.regular_user,
+            experiment=self.experiment,
+            username='user',
+            display_name='Regular User'
+        )
+        self.client = Client()
+
+    def test_moderator_post_deletion(self):
+        """Test moderator's ability to delete posts."""
+        self.client.force_login(self.moderator)
+        # TODO: Implement test for moderator post deletion
+
+    def test_moderator_user_ban_duration(self):
+        """Test temporary ban functionality."""
+        self.client.force_login(self.moderator)
+        # TODO: Implement test for temporary bans
+
+    def test_moderator_post_pinning(self):
+        """Test post pinning functionality."""
+        self.client.force_login(self.moderator)
+        # TODO: Implement test for post pinning
+
+    def test_moderator_permission_inheritance(self):
+        """Test moderator permission inheritance in experiments."""
+        self.client.force_login(self.moderator)
+        # TODO: Implement test for permission inheritance
+
+
+class SecurityTests(PDSTestCase):
+    """Test cases for security features."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.experiment = Experiment.objects.create(
+            name='Test Experiment',
+            description='Test Description'
+        )
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            experiment=self.experiment,
+            username='testuser',
+            display_name='Test User'
+        )
+        self.client = Client()
+
+    def test_csrf_protection(self):
+        """Test CSRF protection on forms."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for CSRF protection
+
+    def test_xss_prevention(self):
+        """Test XSS vulnerability prevention."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for XSS prevention
+
+    def test_permission_escalation(self):
+        """Test prevention of permission escalation attempts."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for permission escalation prevention
+
+    def test_file_upload_security(self):
+        """Test file upload security measures."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for file upload security
+
+
+class URLPatternTests(PDSTestCase):
+    """Test cases for URL patterns and routing."""
+    
+    def setUp(self):
+        """Set up test data."""
+        self.experiment = Experiment.objects.create(
+            name='Test Experiment',
+            description='Test Description'
+        )
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            experiment=self.experiment,
+            username='testuser',
+            display_name='Test User'
+        )
+        self.client = Client()
+
+    def test_url_patterns(self):
+        """Test basic URL routing."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for URL routing
+
+    def test_url_name_resolution(self):
+        """Test URL name resolution."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for URL name resolution
+
+    def test_url_parameter_handling(self):
+        """Test URL parameter validation."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for URL parameter handling
+
+    def test_404_handling(self):
+        """Test 404 error handling."""
+        self.client.force_login(self.user)
+        # TODO: Implement test for 404 handling 
