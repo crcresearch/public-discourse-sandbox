@@ -120,32 +120,25 @@ function showRepostPopup(postId) {
 }
 
 function handleLike(button, postId) {
-    fetch('{% url "like_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId), {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => response.json())
+    makeRequest(
+        '{% url "like_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId),
+        'POST'
+    )
     .then(data => {
-        if (data.status === 'success') {
-            // Update the like count
-            const countSpan = button.querySelector('span');
-            countSpan.textContent = data.upvotes;
-            
-            // Toggle the like button style
-            const icon = button.querySelector('i');
-            if (data.is_liked) {
-                icon.classList.remove('ri-heart-line');
-                icon.classList.add('ri-heart-fill');
-                button.classList.add('liked');
-            } else {
-                icon.classList.remove('ri-heart-fill');
-                icon.classList.add('ri-heart-line');
-                button.classList.remove('liked');
-            }
+        // Update the like count
+        const countSpan = button.querySelector('span');
+        countSpan.textContent = data.upvotes;
+        
+        // Toggle the like button style
+        const icon = button.querySelector('i');
+        if (data.is_liked) {
+            icon.classList.remove('ri-heart-line');
+            icon.classList.add('ri-heart-fill');
+            button.classList.add('liked');
         } else {
-            alert(data.message || 'Failed to like post');
+            icon.classList.remove('ri-heart-fill');
+            icon.classList.add('ri-heart-line');
+            button.classList.remove('liked');
         }
     })
     .catch(error => {
