@@ -9,10 +9,15 @@ from .decorators import check_banned
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 
-def get_active_posts(request, experiment=None):
+def get_active_posts(request, experiment=None, hashtag=None):
     """
     Helper function to get active posts. Used in HomeView and ExploreView.
     Get non-deleted top-level posts with related user data.
+    
+    Args:
+        request: The current request object
+        experiment: Optional experiment to filter by
+        hashtag: Optional hashtag to filter by
     """
     posts = Post.objects.filter(
         parent_post__isnull=True,  # Only show top-level posts, not replies
@@ -22,6 +27,10 @@ def get_active_posts(request, experiment=None):
     # Filter by experiment if provided
     if experiment:
         posts = posts.filter(experiment=experiment)
+    
+    # Filter by hashtag if provided
+    if hashtag:
+        posts = posts.filter(hashtag__tag=hashtag.lower())
     
     # Select related data for efficiency
     posts = posts.select_related(
@@ -101,13 +110,24 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
 
 
 class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
-    """Explore page view that displays all posts."""
+    """
+    Explore page view that displays all posts.
+    Supports filtering by hashtag using the 'hashtag' query parameter.
+    """
     model = Post
     template_name = 'pages/explore.html'
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_active_posts(request=self.request, experiment=self.experiment)
+        # Get hashtag from query parameters
+        hashtag = self.request.GET.get('hashtag')
+        return get_active_posts(request=self.request, experiment=self.experiment, hashtag=hashtag)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add the current hashtag filter to the context
+        context['current_hashtag'] = self.request.GET.get('hashtag')
+        return context
 
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):

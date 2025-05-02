@@ -1775,3 +1775,36 @@ Profile Tabs Custom Styling
   background-color: var(--nd-blue);
   border-color: var(--nd-blue) var(--nd-blue) #fff;
 }
+
+/* Hashtag Filter */
+.hashtag-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 16px;
+    background-color: var(--search-bg);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.hashtag-filter-remove {
+    color: var(--secondary-text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.hashtag-filter-remove:hover {
+    background-color: var(--hover-bg);
+}
+
+.hashtag-filter .hashtag {
+    font-weight: 600;
+    color: var(--nd-blue);
+}

@@ -66,9 +66,12 @@
       {% endfor %}
     {% endif %}
     {% block main %}
-      {% block content %}
-        <p>Use this document as a way to quick start any new project.</p>
-      {% endblock content %}
+      <!-- Main Content -->
+      <div class="main-content" 
+           data-explore-url="{% url 'explore' %}"
+           data-explore-with-experiment-url="{% url 'explore_with_experiment' '0' %}">
+          {% block content %}{% endblock %}
+      </div>
     {% endblock main %}
   </div>
   {% endblock body %}
