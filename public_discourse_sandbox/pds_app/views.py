@@ -63,13 +63,17 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
 
     def post(self, request, *args, **kwargs):
         """Handle post creation."""
+        # Get the user's profile for this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
+        if not user_profile:
+            raise PermissionDenied("You do not have a profile in this experiment")
+            
+        # Check if user is banned
+        if user_profile.is_banned:
+            raise PermissionDenied("Your account has been suspended. You cannot create posts at this time.")
+            
         form = PostForm(request.POST)
         if form.is_valid():
-            # Get the user's profile for this experiment
-            user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
-            if not user_profile:
-                raise PermissionDenied("You do not have a profile in this experiment")
-                
             post = Post(
                 user_profile=user_profile,
                 content=form.cleaned_data['content'],

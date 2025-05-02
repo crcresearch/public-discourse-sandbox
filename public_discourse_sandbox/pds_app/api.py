@@ -20,9 +20,13 @@ def create_comment(request, experiment_identifier):
             
         try:
             experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
-            # parent_post = Post.objects.get(id=parent_id, experiment=experiment)
             parent_post = Post.objects.get(id=parent_id)
             user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+            
+            # Check if user is banned
+            if user_profile.is_banned:
+                return JsonResponse({'status': 'error', 'message': 'Your account has been suspended. You cannot create comments at this time.'}, status=403)
+            
             comment = Post.objects.create(
                 user_profile=user_profile,
                 content=content,
