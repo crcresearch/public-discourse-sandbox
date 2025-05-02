@@ -111,12 +111,21 @@
                     <ul class="list-group">
                       {% for follower in followers %}
                         <li class="list-group-item d-flex align-items-center">
-                          {% if follower.profile_picture %}
-                            <img src="{{ follower.profile_picture.url }}" alt="Profile Picture" class="avatar-img me-2" style="width:32px;height:32px;">
-                          {% else %}
-                            <div class="avatar-placeholder me-2" style="width:32px;height:32px;"><i class="ri-user-line"></i></div>
-                          {% endif %}
-                          <a href="{% url 'users:detail' follower.user.id %}"><strong>{{ follower.display_name }}</strong> <span class="text-muted">@{{ follower.username }}</span></a>
+                          <a href="{% url 'users:detail' follower.user.id %}" class="user-avatar me-2">
+                            {% if follower.profile_picture %}
+                              <img src="{{ follower.profile_picture.url }}" alt="Profile Picture">
+                            {% else %}
+                              <div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+                            {% endif %}
+                          </a>
+                          <div>
+                            <a href="{% url 'users:detail' follower.user.id %}" class="user-name" style="text-decoration: none;">
+                              {{ follower.display_name }}
+                            </a>
+                            <a href="{% url 'users:detail' follower.user.id %}" class="user-handle" style="text-decoration: none;">
+                              @{{ follower.username }}
+                            </a>
+                          </div>
                         </li>
                       {% endfor %}
                     </ul>
@@ -132,12 +141,21 @@
                       {% for followee in following %}
                         <li class="list-group-item d-flex align-items-center justify-content-between">
                           <div class="d-flex align-items-center">
-                            {% if followee.profile_picture %}
-                              <img src="{{ followee.profile_picture.url }}" alt="Profile Picture" class="avatar-img me-2" style="width:32px;height:32px;">
-                            {% else %}
-                              <div class="avatar-placeholder me-2" style="width:32px;height:32px;"><i class="ri-user-line"></i></div>
-                            {% endif %}
-                            <a href="{% url 'users:detail' followee.user.id %}"><strong>{{ followee.display_name }}</strong> <span class="text-muted">@{{ followee.username }}</span></a>
+                            <a href="{% url 'users:detail' followee.user.id %}" class="user-avatar me-2">
+                              {% if followee.profile_picture %}
+                                <img src="{{ followee.profile_picture.url }}" alt="Profile Picture">
+                              {% else %}
+                                <div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+                              {% endif %}
+                            </a>
+                            <div>
+                              <a href="{% url 'users:detail' followee.user.id %}" class="user-name" style="text-decoration: none;">
+                                {{ followee.display_name }}
+                              </a>
+                              <a href="{% url 'users:detail' followee.user.id %}" class="user-handle" style="text-decoration: none;">
+                                @{{ followee.username }}
+                              </a>
+                            </div>
                           </div>
                           {% if followee.user != request.user %}
                             <button type="button" class="btn btn-outline-danger btn-sm" onclick="handleFollow('{{ followee.id }}')">

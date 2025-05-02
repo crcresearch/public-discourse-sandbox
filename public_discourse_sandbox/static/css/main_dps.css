@@ -1750,3 +1750,28 @@ a.user-avatar {
     border: 1px solid var(--danger-border-color);
     color: var(--danger-text-color);
 }
+
+/*
+========================================
+Profile Tabs Custom Styling
+- Makes the nav-tabs and active tab match the app's dark blue theme
+- Used for user profile detail page tabs (Posts, Followers, Following)
+========================================
+*/
+.nav-tabs {
+  border-bottom: 2px solid var(--nd-blue);
+}
+.nav-tabs .nav-link {
+  color: var(--nd-blue);
+  background-color: #f8f9fa;
+  border: 1px solid transparent;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  margin-right: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-tabs .nav-link.active, .nav-tabs .nav-link:focus, .nav-tabs .nav-link:hover {
+  color: #fff;
+  background-color: var(--nd-blue);
+  border-color: var(--nd-blue) var(--nd-blue) #fff;
+}
