@@ -1,8 +1,8 @@
 {% load static %}
 
 <div id="banModal" class="modal" style="display: none;" 
-     data-ban-url="{% url 'ban_user_with_experiment' experiment.identifier '00000000-0000-0000-0000-000000000000' %}"
-     data-unban-url="{% url 'unban_user_with_experiment' experiment.identifier '00000000-0000-0000-0000-000000000000' %}">
+     data-ban-url="{% url 'ban_user_with_experiment' '00000000-0000-0000-0000-000000000000' %}"
+     data-unban-url="{% url 'unban_user_with_experiment' '00000000-0000-0000-0000-000000000000' %}">
   <div class="modal-content">
     <div class="popup-header">
       <button type="button" class="close-popup" onclick="closeBanModal()">
