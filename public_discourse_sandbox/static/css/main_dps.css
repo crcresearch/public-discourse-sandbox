@@ -1670,3 +1670,103 @@ a.user-avatar {
   gap: 1rem;
   margin-top: 1rem;
 }
+
+/* ==========================================================================
+   Moderator Dashboard Styles
+   ========================================================================== */
+
+/* Dashboard section styling */
+.dashboard-section {
+    background: var(--background-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Post card styling with hover effects */
+.post-card {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Post content styling */
+.post-content {
+    color: var(--text-color);
+    font-size: 15px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* User info and timestamp styling */
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.timestamp {
+    font-size: 14px;
+}
+
+/* Post action buttons container */
+.post-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Danger button styling with icon alignment */
+.btn-danger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Table styling for banned users list */
+.table-responsive {
+    margin-top: 1rem;
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    background-color: var(--background-color);
+    padding: 12px;
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+/* Alert styling for empty states */
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.alert-info {
+    background-color: var(--info-bg-color);
+    border: 1px solid var(--info-border-color);
+    color: var(--info-text-color);
+}
+
+.alert-danger {
+    background-color: var(--danger-bg-color);
+    border: 1px solid var(--danger-border-color);
+    color: var(--danger-text-color);
+}

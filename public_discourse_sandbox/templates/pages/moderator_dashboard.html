@@ -14,15 +14,7 @@
   <!-- Main Content -->
   <div class="main-content">
     <h1>Moderator Dashboard</h1>
-    
-    <!-- Using context processor's is_moderator -->
-    {% if is_moderator %}
-      <div class="alert alert-success">
-        You have moderator permissions for this experiment.
-      </div>
-    {% endif %}
-    
-    <!-- Using mixin's is_moderator (same as above) -->
+    <!-- Using mixin's is_moderator -->
     {% if is_moderator %}
       <div class="dashboard-section">
         <h2>Banned Users</h2>
@@ -62,30 +54,36 @@
         {% if reported_posts %}
           <div class="posts-list">
             {% for post in reported_posts %}
-              <div class="post-card" data-post-id="{{ post.id }}">
-                <div class="post-header">
-                  <span class="username">@{{ post.user_profile.username }}</span>
-                  <span class="timestamp">{{ post.created_date|timesince }} ago</span>
-                </div>
-                <div class="post-content">
-                  {{ post.content }}
-                </div>
-                <div class="post-actions">
-                  <button class="btn btn-sm btn-danger" 
-                          onclick="deletePost('{{ post.id }}')">
-                    Delete
-                  </button>
+              <div class="post-card card mb-3" data-post-id="{{ post.id }}">
+                <div class="card-body">
+                  <div class="post-header d-flex justify-content-between align-items-center mb-2">
+                    <div class="user-info">
+                      <span class="username fw-bold">@{{ post.user_profile.username }}</span>
+                      <span class="timestamp text-muted ms-2">{{ post.created_date|timesince }} ago</span>
+                    </div>
+                    <div class="post-actions">
+                      <button class="btn btn-sm btn-danger" 
+                              onclick="showDeleteModal('{{ post.id }}')">
+                        <i class="ri-delete-bin-line"></i> Delete
+                      </button>
+                    </div>
+                  </div>
+                  <div class="mod-post-content">
+                    {{ post.content }}
+                  </div>
                 </div>
               </div>
             {% endfor %}
           </div>
         {% else %}
-          <p>No recent posts to moderate.</p>
+          <div class="alert alert-info">
+            <i class="ri-information-line"></i> No recent posts to moderate.
+          </div>
         {% endif %}
       </div>
     {% else %}
       <div class="alert alert-danger">
-        You do not have permission to view this page.
+        <i class="ri-error-warning-line"></i> You do not have permission to view this page.
       </div>
     {% endif %}
   </div>
@@ -105,10 +103,6 @@
 <script>
   function unbanUser(userId) {
     showBanModal(userId, 'unban');
-  }
-  
-  function deletePost(postId) {
-    showDeleteModal(postId);
   }
 </script>
 {% endblock inline_javascript %} 

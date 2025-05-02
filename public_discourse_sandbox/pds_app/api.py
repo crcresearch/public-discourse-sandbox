@@ -83,8 +83,11 @@ def delete_post(request, post_id):
         
     try:
         post = get_object_or_404(Post, id=post_id)
-        # Check if user has permission to delete (either the author or a moderator)
-        if request.user.userprofile_set.filter(experiment=post.experiment, is_moderator=True).exists() or post.user_profile.user == request.user:
+        # Get the user's profile for this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=post.experiment).first()
+        
+        # Check if user has permission to delete (either the author or has moderator permissions)
+        if (user_profile and user_profile.is_experiment_moderator()) or post.user_profile.user == request.user:
             post.is_deleted = True
             post.save()
             return JsonResponse({'status': 'success', 'message': 'Post deleted successfully'})
