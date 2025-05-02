@@ -114,6 +114,14 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         else:
             context['is_following_viewed_profile'] = False
         
+        # Followers: UserProfiles that follow this profile
+        follower_links = SocialNetwork.objects.filter(target_node=self.object)
+        context['followers'] = UserProfile.objects.filter(id__in=follower_links.values_list('source_node', flat=True))
+
+        # Following: UserProfiles that this profile follows
+        following_links = SocialNetwork.objects.filter(source_node=self.object)
+        context['following'] = UserProfile.objects.filter(id__in=following_links.values_list('target_node', flat=True))
+        
         return context
 
 user_profile_detail_view = UserProfileDetailView.as_view()
