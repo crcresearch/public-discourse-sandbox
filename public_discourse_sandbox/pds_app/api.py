@@ -64,7 +64,9 @@ def get_post_replies(request, post_id):
             'display_name': reply.user_profile.display_name,
             'content': reply.content,
             'created_date': reply.created_date.isoformat(),
-            'profile_picture': reply.user_profile.profile_picture.url if reply.user_profile.profile_picture else None
+            'profile_picture': reply.user_profile.profile_picture.url if reply.user_profile.profile_picture else None,
+            'is_author': reply.user_profile.user == request.user,
+            'is_moderator': request.user.groups.filter(name='Moderators').exists()
         } for reply in replies]
         
         return JsonResponse({'status': 'success', 'replies': replies_data})

@@ -1282,6 +1282,7 @@ a.user-avatar {
     margin-top: 10px;
 }
 
+/* Post Menu Styles */
 .post-menu {
     position: relative;
 }
@@ -1343,14 +1344,6 @@ a.user-avatar {
 .post-menu-item i {
     font-size: 1.2em;
     color: var(--nd-blue);
-}
-
-.post-text {
-    color: rgb(15, 20, 25);
-    font-size: 15px;
-    line-height: 20px;
-    white-space: pre-wrap;
-    margin-bottom: 12px;
 }
 
 /* Additional styles specific to delete modal */
