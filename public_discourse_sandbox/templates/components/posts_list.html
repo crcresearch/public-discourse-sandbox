@@ -153,7 +153,29 @@ function handleLike(button, postId) {
 }
 
 function handleFollow(userProfileId) {
-    console.log('Follow user profile:', userProfileId);
+    makeRequest(
+        '{% url "follow_user" user_profile_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', userProfileId),
+        'POST'
+    )
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the follow button state
+            const followButton = document.querySelector(`button[onclick=\"handleFollow('${userProfileId}')\"]`);
+            if (followButton) {
+                if (data.is_following) {
+                    followButton.innerHTML = '<i class="ri-user-unfollow-line"></i> Unfollow';
+                } else {
+                    followButton.innerHTML = '<i class="ri-user-follow-line"></i> Follow';
+                }
+            }
+        } else {
+            alert(data.message || 'An error occurred while following the user');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while following the user');
+    });
 }
 
 </script>

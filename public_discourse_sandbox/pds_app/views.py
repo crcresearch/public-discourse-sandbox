@@ -2,11 +2,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View
 from .forms import PostForm
-from .models import Post, UserProfile, Experiment
+from .models import Post, UserProfile, Experiment, SocialNetwork
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
 from django.utils.decorators import method_decorator
+from django.http import JsonResponse
 
 def get_active_posts(request, experiment=None):
     """
@@ -146,3 +147,53 @@ class ModeratorDashboardView(LoginRequiredMixin, ExperimentContextMixin, Templat
         ).order_by('-created_date')[:10]
         
         return context
+
+
+class FollowView(LoginRequiredMixin, View):
+    """
+    View to handle following/unfollowing users.
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the target user profile from URL parameter
+            target_profile = UserProfile.objects.get(id=kwargs['user_profile_id'])
+            
+            # Get the current user's profile for this experiment
+            user_profile = request.user.userprofile_set.filter(experiment=target_profile.experiment).first()
+            if not user_profile:
+                raise PermissionDenied("You do not have a profile in this experiment")
+            
+            # Check if already following
+            existing_follow = SocialNetwork.objects.filter(
+                source_node=user_profile,
+                target_node=target_profile
+            ).first()
+            
+            if existing_follow:
+                # Unfollow
+                existing_follow.delete()
+                is_following = False
+            else:
+                # Follow
+                SocialNetwork.objects.create(
+                    source_node=user_profile,
+                    target_node=target_profile
+                )
+                is_following = True
+            
+            return JsonResponse({
+                'status': 'success',
+                'is_following': is_following,
+                'follower_count': target_profile.num_followers
+            })
+            
+        except UserProfile.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'User profile not found'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)
