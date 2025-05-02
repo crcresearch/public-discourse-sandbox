@@ -179,4 +179,183 @@ class BanUserTests(TestCase):
         
         # Profile should not be banned
         other_profile.refresh_from_db()
-        self.assertFalse(other_profile.is_banned) 
+        self.assertFalse(other_profile.is_banned)
+
+
+@override_settings(MIDDLEWARE=[
+    'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+])
+class PostCreationTests(TestCase):
+    """Test cases for post creation functionality."""
+    
+    def setUp(self):
+        """Set up test data."""
+        # Create experiment first
+        self.experiment = Experiment.objects.create(
+            name='Test Experiment',
+            description='Test Description'
+        )
+
+        # Create test users
+        self.test_user = User.objects.create_user(
+            email='test@example.com',
+            password='testpass123'
+        )
+        self.test_user.last_accessed = self.experiment
+        self.test_user.save()
+
+        self.banned_user = User.objects.create_user(
+            email='banned@example.com',
+            password='testpass123'
+        )
+        self.banned_user.last_accessed = self.experiment
+        self.banned_user.save()
+
+        # Create user profiles
+        self.test_profile = UserProfile.objects.create(
+            user=self.test_user,
+            experiment=self.experiment,
+            display_name='Test User',
+            username='testuser'
+        )
+        self.banned_profile = UserProfile.objects.create(
+            user=self.banned_user,
+            experiment=self.experiment,
+            is_banned=True,
+            display_name='Banned User',
+            username='banneduser'
+        )
+
+        # Set up test client with AJAX headers
+        self.client = Client(HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        
+    def test_create_post_success(self):
+        """
+        docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app.tests.PostCreationTests.test_create_post_success
+        """
+        # Use force_login to bypass allauth's authentication flow
+        self.client.force_login(self.test_user)
+        
+        # Set the user's last_accessed experiment
+        self.test_user.last_accessed = self.experiment
+        self.test_user.save()
+        
+        # First get the page to get the CSRF token and set up the experiment context
+        response = self.client.get(
+            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier})
+        )
+        self.assertEqual(response.status_code, 200)
+        
+        # Get the CSRF token from the response
+        csrf_token = response.cookies.get('csrftoken')
+        self.assertIsNotNone(csrf_token, "CSRF token not found in response")
+        
+        # Now make the POST request with the CSRF token and experiment identifier
+        response = self.client.post(
+            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier}),
+            {
+                'content': 'Test post content',
+                'csrfmiddlewaretoken': csrf_token.value
+            },
+            follow=True  # Follow the redirect after successful post creation
+        )
+        
+        # The view redirects after successful post creation, so we should get a 200 after following
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Post.objects.filter(content='Test post content').exists())
+        
+        # Verify the post was created with correct attributes
+        post = Post.objects.get(content='Test post content')
+        self.assertEqual(post.user_profile, self.test_profile)
+        self.assertEqual(post.experiment, self.experiment)
+        self.assertEqual(post.depth, 0)
+        self.assertIsNone(post.parent_post)
+        
+        # Verify we were redirected to the correct URL
+        self.assertEqual(response.request['PATH_INFO'], reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier}))
+
+    def test_create_post_invalid_form(self):
+        """
+        docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app.tests.PostCreationTests.test_create_post_invalid_form
+        """
+        self.client.login(email='test@example.com', password='testpass123')
+        response = self.client.post(
+            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier}),
+            {'content': ''},  # Empty content should be invalid
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Post.objects.filter(content='').exists())
+
+    def test_create_post_banned_user(self):
+        """
+        docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app.tests.PostCreationTests.test_create_post_banned_user
+        """
+        self.client.login(email='banned@example.com', password='testpass123')
+        response = self.client.post(
+            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier}),
+            {'content': 'Test post content'},
+            follow=True
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()['status'], 'error')
+        self.assertEqual(response.json()['message'], 'Your account has been suspended. You cannot perform this action at this time.')
+        self.assertFalse(Post.objects.filter(content='Test post content').exists())
+
+    def test_create_post_unauthenticated(self):
+        """
+        docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app.tests.PostCreationTests.test_create_post_unauthenticated
+        """
+        # Create a new client without AJAX headers for this test
+        non_ajax_client = Client()
+        response = non_ajax_client.post(
+            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier}),
+            {'content': 'Test post content'},
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)  # Should redirect to login page
+        self.assertRedirects(response, f"{reverse('account_login')}?next={reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier})}")
+        self.assertFalse(Post.objects.filter(content='Test post content').exists())
+
+    def test_create_post_no_profile(self):
+        """
+        docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app.tests.PostCreationTests.test_create_post_no_profile
+        """
+        # Create a user without a profile
+        no_profile_user = User.objects.create_user(
+            email='noprofile@example.com',
+            password='testpass123'
+        )
+        no_profile_user.last_accessed = self.experiment
+        no_profile_user.save()
+        
+        # Use force_login to bypass allauth's authentication flow
+        self.client.force_login(no_profile_user)
+        
+        # Try to access the home page - should get a 403
+        response = self.client.get(
+            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier})
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("You do not have a profile in this experiment", response.content.decode())
+        
+        # Try to create a post - should also get a 403
+        response = self.client.post(
+            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier}),
+            {'content': 'Test post content'}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("You do not have a profile in this experiment", response.content.decode())
+        
+        # No post should be created
+        self.assertFalse(Post.objects.filter(content='Test post content').exists()) 
