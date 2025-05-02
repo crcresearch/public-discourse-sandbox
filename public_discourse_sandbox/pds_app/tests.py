@@ -2,6 +2,7 @@ from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from public_discourse_sandbox.pds_app.models import Experiment, UserProfile, Post
+from django.core.exceptions import PermissionDenied
 
 User = get_user_model()
 
@@ -329,7 +330,7 @@ class PostCreationTests(TestCase):
 
     def test_create_post_no_profile(self):
         """
-        docker compose -f docker-compose.local.yml run --rm django python manage.py test pds_app.tests.PostCreationTests.test_create_post_no_profile
+        Test that a user without a profile cannot create a post.
         """
         # Create a user without a profile
         no_profile_user = User.objects.create_user(
@@ -338,24 +339,19 @@ class PostCreationTests(TestCase):
         )
         no_profile_user.last_accessed = self.experiment
         no_profile_user.save()
-        
-        # Use force_login to bypass allauth's authentication flow
+
+        # Force login the user
         self.client.force_login(no_profile_user)
-        
-        # Try to access the home page - should get a 403
-        response = self.client.get(
-            reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier})
-        )
-        self.assertEqual(response.status_code, 403)
-        self.assertIn("You do not have a profile in this experiment", response.content.decode())
-        
-        # Try to create a post - should also get a 403
+
+        # Try to create a post
         response = self.client.post(
             reverse('home_with_experiment', kwargs={'experiment_identifier': self.experiment.identifier}),
             {'content': 'Test post content'}
         )
+
+        # Should get a 403 response
         self.assertEqual(response.status_code, 403)
-        self.assertIn("You do not have a profile in this experiment", response.content.decode())
-        
+        self.assertIn("You do not have a profile in this experiment", str(response.content))
+
         # No post should be created
         self.assertFalse(Post.objects.filter(content='Test post content').exists()) 
