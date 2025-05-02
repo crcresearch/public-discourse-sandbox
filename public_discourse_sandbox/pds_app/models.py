@@ -167,3 +167,27 @@ class DigitalTwin(BaseModel):
 
     def __str__(self):
         return self.user_profile.username
+
+
+class Hashtag(BaseModel):
+    """
+    Hashtag model.
+    """
+    tag = models.CharField(max_length=255)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"#{self.tag}, {self.post.id}"
+
+
+class Notification(BaseModel):
+    """
+    Notification model.
+    """
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    event = models.CharField(max_length=255)
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user_profile.username} - {self.event}"
