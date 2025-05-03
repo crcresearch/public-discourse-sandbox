@@ -2,14 +2,23 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View
 from .forms import PostForm
-from .models import Post, UserProfile, Experiment
+from .models import Post, UserProfile, Experiment, SocialNetwork
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
 from django.utils.decorators import method_decorator
+from django.http import JsonResponse
 
-def get_active_posts(experiment=None):
-    """Get non-deleted top-level posts with related user data."""
+def get_active_posts(request, experiment=None, hashtag=None):
+    """
+    Helper function to get active posts. Used in HomeView and ExploreView.
+    Get non-deleted top-level posts with related user data.
+    
+    Args:
+        request: The current request object
+        experiment: Optional experiment to filter by
+        hashtag: Optional hashtag to filter by
+    """
     posts = Post.objects.filter(
         parent_post__isnull=True,  # Only show top-level posts, not replies
         is_deleted=False  # Only show non-deleted posts
@@ -19,15 +28,25 @@ def get_active_posts(experiment=None):
     if experiment:
         posts = posts.filter(experiment=experiment)
     
+    # Filter by hashtag if provided
+    if hashtag:
+        posts = posts.filter(hashtag__tag=hashtag.lower())
+    
     # Select related data for efficiency
     posts = posts.select_related(
         'user_profile',
         'user_profile__user'
+    ).prefetch_related(
+        'vote_set'  # Prefetch votes to avoid N+1 queries
     ).order_by('-created_date')
 
-    # Add comment count using the get_comment_count method
+    # Add comment count and vote status using the get_comment_count method
     for post in posts:
         post.comment_count = post.get_comment_count()
+        # Add whether the current user has voted
+        post.has_user_voted = post.vote_set.filter(
+            user_profile__user=request.user
+        ).exists()
     
     return posts
 
@@ -55,7 +74,7 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_active_posts(experiment=self.experiment)
+        return get_active_posts(request=self.request, experiment=self.experiment)
 
     def get_context_data(self, **kwargs):
         """Add the post form to the context."""
@@ -91,13 +110,24 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
 
 
 class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
-    """Explore page view that displays all posts."""
+    """
+    Explore page view that displays all posts.
+    Supports filtering by hashtag using the 'hashtag' query parameter.
+    """
     model = Post
     template_name = 'pages/explore.html'
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_active_posts(experiment=self.experiment)
+        # Get hashtag from query parameters
+        hashtag = self.request.GET.get('hashtag')
+        return get_active_posts(request=self.request, experiment=self.experiment, hashtag=hashtag)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add the current hashtag filter to the context
+        context['current_hashtag'] = self.request.GET.get('hashtag')
+        return context
 
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
@@ -137,3 +167,53 @@ class ModeratorDashboardView(LoginRequiredMixin, ExperimentContextMixin, Templat
         ).order_by('-created_date')[:10]
         
         return context
+
+
+class FollowView(LoginRequiredMixin, View):
+    """
+    View to handle following/unfollowing users.
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the target user profile from URL parameter
+            target_profile = UserProfile.objects.get(id=kwargs['user_profile_id'])
+            
+            # Get the current user's profile for this experiment
+            user_profile = request.user.userprofile_set.filter(experiment=target_profile.experiment).first()
+            if not user_profile:
+                raise PermissionDenied("You do not have a profile in this experiment")
+            
+            # Check if already following
+            existing_follow = SocialNetwork.objects.filter(
+                source_node=user_profile,
+                target_node=target_profile
+            ).first()
+            
+            if existing_follow:
+                # Unfollow
+                existing_follow.delete()
+                is_following = False
+            else:
+                # Follow
+                SocialNetwork.objects.create(
+                    source_node=user_profile,
+                    target_node=target_profile
+                )
+                is_following = True
+            
+            return JsonResponse({
+                'status': 'success',
+                'is_following': is_following,
+                'follower_count': target_profile.num_followers
+            })
+            
+        except UserProfile.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'User profile not found'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)

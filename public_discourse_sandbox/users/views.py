@@ -14,7 +14,7 @@ from django.views import View
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
-from public_discourse_sandbox.pds_app.models import UserProfile
+from public_discourse_sandbox.pds_app.models import UserProfile, SocialNetwork, Post
 
 
 class UserDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
@@ -94,6 +94,33 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         # Add the viewed profile's role information
         context['viewed_profile'] = self.object
         context['is_creator'] = self.object.user == self.experiment.creator
+
+        # Add follower and following counts
+        context['follower_count'] = SocialNetwork.objects.filter(target_node=self.object).count()
+        context['following_count'] = SocialNetwork.objects.filter(source_node=self.object).count()
+
+        # Add posts by this user (not deleted, ordered by newest first)
+        context['user_posts'] = Post.all_objects.filter(user_profile=self.object, is_deleted=False).order_by('-created_date')
+        # Annotate each post with comment_count and has_user_voted for template compatibility
+        current_user = self.request.user
+        for post in context['user_posts']:
+            post.comment_count = post.get_comment_count()
+            post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+
+        # Add whether the current user is following the viewed profile
+        current_user_profile = context.get('current_user_profile')
+        if current_user_profile:
+            context['is_following_viewed_profile'] = SocialNetwork.objects.filter(source_node=current_user_profile, target_node=self.object).exists()
+        else:
+            context['is_following_viewed_profile'] = False
+        
+        # Followers: UserProfiles that follow this profile
+        follower_links = SocialNetwork.objects.filter(target_node=self.object)
+        context['followers'] = UserProfile.objects.filter(id__in=follower_links.values_list('source_node', flat=True))
+
+        # Following: UserProfiles that this profile follows
+        following_links = SocialNetwork.objects.filter(source_node=self.object)
+        context['following'] = UserProfile.objects.filter(id__in=following_links.values_list('target_node', flat=True))
         
         return context
 

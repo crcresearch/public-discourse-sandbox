@@ -388,7 +388,7 @@ a.user-avatar {
 
 /* post Feed */
 .post-feed {
-    padding-top: 60px;
+    padding-top: 10px;
 }
 
 .post {
@@ -473,8 +473,9 @@ a.user-avatar {
 
 /* Hashtag styling */
 .hashtag {
-    color: rgb(29, 155, 240);
+    color: var(--nd-blue);
     text-decoration: none;
+    transition: color 0.2s ease;
 }
 
 .hashtag:hover {
@@ -1749,4 +1750,98 @@ a.user-avatar {
     background-color: var(--danger-bg-color);
     border: 1px solid var(--danger-border-color);
     color: var(--danger-text-color);
+}
+
+/*
+========================================
+Profile Tabs Custom Styling
+- Makes the nav-tabs and active tab match the app's dark blue theme
+- Used for user profile detail page tabs (Posts, Followers, Following)
+========================================
+*/
+.nav-tabs {
+  border-bottom: 2px solid var(--nd-blue);
+}
+.nav-tabs .nav-link {
+  color: var(--nd-blue);
+  background-color: #f8f9fa;
+  border: 1px solid transparent;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  margin-right: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+.nav-tabs .nav-link.active, .nav-tabs .nav-link:focus, .nav-tabs .nav-link:hover {
+  color: #fff;
+  background-color: var(--nd-blue);
+  border-color: var(--nd-blue) var(--nd-blue) #fff;
+}
+
+/* Hashtag Filter */
+.hashtag-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 16px;
+    background-color: var(--search-bg);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.hashtag-filter-remove {
+    color: var(--secondary-text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.hashtag-filter-remove:hover {
+    background-color: var(--hover-bg);
+}
+
+.hashtag-filter .hashtag {
+    font-weight: 600;
+    color: var(--nd-blue);
+}
+
+/* Trending Topics */
+.trending-topics {
+    display: flex;
+    flex-direction: column;
+}
+
+.trending-topic {
+    background-color: var(--search-bg);
+    transition: background-color 0.2s ease;
+}
+
+.trending-topic:hover {
+    background-color: var(--hover-bg);
+}
+
+.topic-meta {
+    display: flex;
+    align-items: center;
+}
+
+.topic-name {
+    font-weight: 600;
+    color: var(--nd-blue);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.topic-name:hover {
+    text-decoration: underline;
+}
+
+.topic-count {
+    color: var(--secondary-text);
+    font-size: 13px;
 }

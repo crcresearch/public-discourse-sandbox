@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from .models import Post, UserProfile, Experiment
+from .models import Post, UserProfile, Experiment, Vote
 from .decorators import check_banned
 import json
 
@@ -183,5 +183,55 @@ def update_last_accessed(request):
         return JsonResponse({'status': 'success', 'message': 'Last accessed experiment updated'})
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@ensure_csrf_cookie
+@check_banned
+def handle_like(request, post_id):
+    """Handle post likes/unlikes."""
+    try:
+        post = get_object_or_404(Post, id=post_id)
+        user_profile = request.user.userprofile_set.filter(experiment=post.experiment).first()
+        
+        if not user_profile:
+            return JsonResponse({'status': 'error', 'message': 'User profile not found'}, status=404)
+            
+        # Check if user already voted
+        existing_vote = Vote.objects.filter(
+            user_profile=user_profile,
+            post=post
+        ).first()
+        
+        if existing_vote:
+            # Unlike: delete the vote and decrement count
+            existing_vote.delete()
+            post.num_upvotes -= 1
+            post.save()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Post unliked',
+                'is_liked': False,
+                'upvotes': post.num_upvotes
+            })
+        else:
+            # Like: create new vote and increment count
+            Vote.objects.create(
+                user_profile=user_profile,
+                post=post,
+                is_upvote=True
+            )
+            post.num_upvotes += 1
+            post.save()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Post liked',
+                'is_liked': True,
+                'upvotes': post.num_upvotes
+            })
+            
+    except Post.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Post not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

@@ -27,12 +27,12 @@
                             <span class="dot">·</span>
                             <span class="time">{{ post.created_date|timesince }}</span>
                         </div>
-                        {% if post.user_profile.user == request.user or is_moderator %}
-                            <div class="post-menu">
-                                <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
-                                    <i class="ri-more-fill"></i>
-                                </button>
-                                <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+                        <div class="post-menu">
+                            <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
+                                <i class="ri-more-fill"></i>
+                            </button>
+                            <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+                                {% if post.user_profile.user == request.user or is_moderator %}
                                     <button onclick="showDeleteModal('{{ post.id }}')" class="post-menu-item">
                                         <i class="ri-delete-bin-line"></i> Delete
                                     </button>
@@ -41,9 +41,14 @@
                                         <i class="ri-user-unfollow-line"></i> Ban User
                                     </button>
                                     {% endif %} -->
-                                </div>
+                                {% endif %}
+                                {% if post.user_profile.user != request.user %}
+                                    <button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
+                                        <i class="ri-user-follow-line"></i> Follow
+                                    </button>
+                                {% endif %}
                             </div>
-                        {% endif %}
+                        </div>
                     </div>
         
                     <!-- Regular post content -->
@@ -61,9 +66,9 @@
                             <span>0</span>
                         </button>
         
-                        <button class="action-button like-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
-                            <i class="ri-heart-line"></i>
-                            <span>0</span>
+                        <button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}" data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
+                            <i class="{% if post.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+                            <span>{{ post.num_upvotes }}</span>
                         </button>
                     </div>
                 </div>
@@ -113,6 +118,38 @@ function togglePostMenu(postId) {
             document.addEventListener('click', closeMenu);
         }, 0);
     }
+}
+
+function showRepostPopup(postId) {
+    console.log('showRepostPopup', postId);
+}
+
+function handleLike(button, postId) {
+    makeRequest(
+        '{% url "like_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId),
+        'POST'
+    )
+    .then(data => {
+        // Update the like count
+        const countSpan = button.querySelector('span');
+        countSpan.textContent = data.upvotes;
+        
+        // Toggle the like button style
+        const icon = button.querySelector('i');
+        if (data.is_liked) {
+            icon.classList.remove('ri-heart-line');
+            icon.classList.add('ri-heart-fill');
+            button.classList.add('liked');
+        } else {
+            icon.classList.remove('ri-heart-fill');
+            icon.classList.add('ri-heart-line');
+            button.classList.remove('liked');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while liking the post');
+    });
 }
 
 </script>

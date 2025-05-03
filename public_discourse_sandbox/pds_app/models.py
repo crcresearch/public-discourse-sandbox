@@ -128,6 +128,28 @@ class Post(BaseModel):
         """
         return Post.objects.filter(parent_post=self).count()
 
+    def parse_hashtags(self):
+        """
+        Returns a list of hashtags for this post.
+        """
+        if self.content:
+            # Process hashtags
+            for word in self.content.split():
+                if word.startswith('#'):
+                    hashtag = word[1:]  # Remove the # symbol
+                    print("Hashtag: ", hashtag)
+                    try:
+                        hashtag, created = Hashtag.objects.get_or_create(
+                            tag=hashtag.lower(),
+                            post=self
+                        )
+                    except Exception as e:
+                        print(f"Error processing hashtag {hashtag}: {e}")
+
+    def save(self, *args, **kwargs):
+        self.parse_hashtags()
+        super().save(*args, **kwargs)
+
 
 class Vote(BaseModel):
     """
@@ -167,3 +189,27 @@ class DigitalTwin(BaseModel):
 
     def __str__(self):
         return self.user_profile.username
+
+
+class Hashtag(BaseModel):
+    """
+    Hashtag model.
+    """
+    tag = models.CharField(max_length=255)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"#{self.tag}, {self.post.id}"
+
+
+class Notification(BaseModel):
+    """
+    Notification model.
+    """
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    event = models.CharField(max_length=255)
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user_profile.username} - {self.event}"

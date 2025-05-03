@@ -9,10 +9,17 @@ from .tasks import process_digital_twin_response
 def handle_post(sender, instance, created, **kwargs):
     """
     Signal handler for Post model's post_save signal.
-    This will be called whenever a Post is saved.
+    This will be called whenever a Post is saved, but only processes new posts (created=True).
+    For new posts from human users, it triggers digital twin responses.
+    
+    Args:
+        sender: The model class (Post)
+        instance: The actual Post instance being saved
+        created: Boolean indicating if this is a new record (True) or an update (False)
+        **kwargs: Additional keyword arguments
     """
-    # if the post is made by a human user and the depth is 0, then process the post
-    if not instance.user_profile.is_digital_twin and instance.depth == 0:
+    # Only process new posts from human users that are top-level (not replies)
+    if created and not instance.user_profile.is_digital_twin and instance.depth == 0:
         # Get all the active bots for the experiment by filtering through the user_profile relationship
         active_twins = DigitalTwin.objects.filter(
             is_active=True,
