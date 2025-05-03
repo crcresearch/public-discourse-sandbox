@@ -8,7 +8,6 @@ from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
-from django.db import models
 
 def get_active_posts(request, experiment=None, hashtag=None):
     """
@@ -18,9 +17,7 @@ def get_active_posts(request, experiment=None, hashtag=None):
     Args:
         request: The current request object
         experiment: Optional experiment to filter by
-        hashtag: Optional hashtag to filter by. If provided, returns posts that either:
-            - Have the hashtag directly, OR
-            - Have replies containing the hashtag
+        hashtag: Optional hashtag to filter by
     """
     posts = Post.objects.filter(
         parent_post__isnull=True,  # Only show top-level posts, not replies
@@ -31,17 +28,9 @@ def get_active_posts(request, experiment=None, hashtag=None):
     if experiment:
         posts = posts.filter(experiment=experiment)
     
-    # Filter by hashtag if provided - look for posts that either have the hashtag directly
-    # or have replies containing the hashtag
+    # Filter by hashtag if provided
     if hashtag:
-        posts = posts.filter(
-            # Posts that have the hashtag directly OR have replies with the hashtag
-            models.Q(hashtag__tag=hashtag.lower()) |  # Direct hashtag match
-            models.Q(  # Replies containing the hashtag
-                post__hashtag__tag=hashtag.lower(),
-                post__is_deleted=False  # Only count non-deleted replies
-            )
-        ).distinct()  # Use distinct to avoid duplicate posts
+        posts = posts.filter(hashtag__tag=hashtag.lower())
     
     # Select related data for efficiency
     posts = posts.select_related(
