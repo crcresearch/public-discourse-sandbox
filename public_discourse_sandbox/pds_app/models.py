@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -24,6 +25,7 @@ class Experiment(BaseModel):
     Experiment model.
     """
     name = models.CharField(max_length=255)
+    identifier = models.CharField(max_length=5, unique=True)
     description = models.TextField()
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # This defines what user "owns" this experiment
@@ -31,12 +33,30 @@ class Experiment(BaseModel):
     def __str__(self):
         return f"{self.name}"
 
+    def create_identifier(self):
+        """
+        Create a unique identifier for the experiment.
+        """
+        tries = 0
+        # Create a hash digest of the experiment UUID concatenated with tries
+        identifier = hashlib.sha256(f"{self.id}{tries}".encode()).hexdigest()[:5]
+        # Check if the identifier is already in use
+        if Experiment.objects.filter(identifier=identifier).exists():
+            tries += 1
+            return self.create_identifier()
+        return identifier
+    
+    def save(self, *args, **kwargs):
+        if not self.identifier:
+            self.identifier = self.create_identifier()
+        super().save(*args, **kwargs)
+
 
 class UserProfile(BaseModel):
     """
     User profile model.
     """
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     display_name = models.CharField(max_length=255, unique=True)
     username = models.CharField(max_length=255, unique=True)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
@@ -55,6 +75,20 @@ class UserProfile(BaseModel):
     def __str__(self):
         bot_status = " (Digital Twin)" if self.is_digital_twin else ""
         return f"{self.username}{bot_status}"
+        
+    def is_experiment_moderator(self):
+        """
+        Check if this user profile has moderator permissions for the experiment.
+        A user is considered a moderator if they:
+        1. Own the experiment (are the creator)
+        2. Are a collaborator
+        3. Have the is_moderator flag set
+        """
+        return (
+            self.experiment.creator == self.user or  # User owns the experiment
+            self.is_collaborator or  # User is a collaborator
+            self.is_moderator  # User has moderator flag
+        )
 
 
 class UndeletedPostManager(models.Manager):
@@ -93,6 +127,28 @@ class Post(BaseModel):
         Returns the number of posts that have this post as their parent.
         """
         return Post.objects.filter(parent_post=self).count()
+
+    def parse_hashtags(self):
+        """
+        Returns a list of hashtags for this post.
+        """
+        if self.content:
+            # Process hashtags
+            for word in self.content.split():
+                if word.startswith('#'):
+                    hashtag = word[1:]  # Remove the # symbol
+                    print("Hashtag: ", hashtag)
+                    try:
+                        hashtag, created = Hashtag.objects.get_or_create(
+                            tag=hashtag.lower(),
+                            post=self
+                        )
+                    except Exception as e:
+                        print(f"Error processing hashtag {hashtag}: {e}")
+
+    def save(self, *args, **kwargs):
+        self.parse_hashtags()
+        super().save(*args, **kwargs)
 
 
 class Vote(BaseModel):
@@ -133,3 +189,27 @@ class DigitalTwin(BaseModel):
 
     def __str__(self):
         return self.user_profile.username
+
+
+class Hashtag(BaseModel):
+    """
+    Hashtag model.
+    """
+    tag = models.CharField(max_length=255)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"#{self.tag}, {self.post.id}"
+
+
+class Notification(BaseModel):
+    """
+    Notification model.
+    """
+    user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    event = models.CharField(max_length=255)
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user_profile.username} - {self.event}"

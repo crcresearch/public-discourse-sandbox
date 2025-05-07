@@ -1,5 +1,6 @@
 from typing import ClassVar
 
+from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import BooleanField
 from django.db.models import CharField
@@ -52,6 +53,7 @@ class User(AbstractUser, BaseModel):
         default=False,
         help_text=_("Designates whether this user is a researcher."),
     )
+    last_accessed = models.ForeignKey('pds_app.Experiment', on_delete=models.SET_NULL, null=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

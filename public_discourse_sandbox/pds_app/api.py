@@ -3,11 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from .models import Post, UserProfile
+from .models import Post, UserProfile, Experiment, Vote
+from .decorators import check_banned
+import json
 
 @login_required
 @ensure_csrf_cookie
-def create_comment(request):
+@check_banned
+def create_comment(request, experiment_identifier):
     """Handle creation of comments/replies to posts."""
     # used by human users to reply to posts
     if request.method == 'POST':
@@ -18,12 +21,15 @@ def create_comment(request):
             return JsonResponse({'status': 'error', 'message': 'Content is required'}, status=400)
             
         try:
+            experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
             parent_post = Post.objects.get(id=parent_id)
+            user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+            
             comment = Post.objects.create(
-                user_profile=request.user.userprofile,
+                user_profile=user_profile,
                 content=content,
                 parent_post=parent_post,
-                experiment=request.user.userprofile.experiment,
+                experiment=experiment,
                 depth=parent_post.depth + 1
             )
             return JsonResponse({
@@ -43,7 +49,6 @@ def create_comment(request):
 def get_post_replies(request, post_id):
     """Get replies for a specific post."""
     try:
-
         # Filter replies that are not deleted and not from banned users
         replies = Post.objects.filter(
             parent_post__id=post_id,
@@ -54,11 +59,14 @@ def get_post_replies(request, post_id):
 
         replies_data = [{
             'id': str(reply.id),  # Convert UUID to string
+            'user_id': str(reply.user_profile.user.id),  # Add user ID
             'username': reply.user_profile.username,
             'display_name': reply.user_profile.display_name,
             'content': reply.content,
             'created_date': reply.created_date.isoformat(),
-            'profile_picture': reply.user_profile.profile_picture.url if reply.user_profile.profile_picture else None
+            'profile_picture': reply.user_profile.profile_picture.url if reply.user_profile.profile_picture else None,
+            'is_author': reply.user_profile.user == request.user,
+            'is_moderator': request.user.groups.filter(name='Moderators').exists()
         } for reply in replies]
         
         return JsonResponse({'status': 'success', 'replies': replies_data})
@@ -69,30 +77,24 @@ def get_post_replies(request, post_id):
 
 @login_required
 @ensure_csrf_cookie
+@check_banned
 def delete_post(request, post_id):
-    """Handle deletion of posts."""
+    """Delete a post."""
     if request.method != 'DELETE':
         return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
-    
+        
     try:
         post = get_object_or_404(Post, id=post_id)
+        # Get the user's profile for this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=post.experiment).first()
         
-        # Check if the user owns the post
-        if post.user_profile.user != request.user:
-            # If not the owner, check if user has a profile in this experiment and is a moderator
-            try:
-                user_profile = request.user.userprofile
-                if not (user_profile.experiment == post.experiment and user_profile.is_moderator):
-                    print(f"User is not a moderator")
-                    return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-            except AttributeError as e:
-                return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        
-        # Soft delete the post
-        post.is_deleted = True
-        post.save()
-        
-        return JsonResponse({'status': 'success', 'message': 'Post deleted successfully'})
+        # Check if user has permission to delete (either the author or has moderator permissions)
+        if (user_profile and user_profile.is_experiment_moderator()) or post.user_profile.user == request.user:
+            post.is_deleted = True
+            post.save()
+            return JsonResponse({'status': 'success', 'message': 'Post deleted successfully'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'You do not have permission to delete this post'}, status=403)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
@@ -105,14 +107,17 @@ def ban_user(request, user_profile_id):
     
     try:
         # Get the target user profile
-        target_profile = get_object_or_404(UserProfile, id=user_profile_id)
+        try:
+            target_profile = UserProfile.objects.get(id=user_profile_id)
+        except (UserProfile.DoesNotExist, ValueError):
+            return JsonResponse({'status': 'error', 'message': 'User profile not found'}, status=404)
         
         # Check if the requesting user is a moderator in the same experiment
         try:
-            mod_profile = request.user.userprofile
-            if not (mod_profile.experiment == target_profile.experiment and mod_profile.is_moderator):
+            mod_profile = request.user.userprofile_set.get(experiment=target_profile.experiment)
+            if not mod_profile.is_experiment_moderator():
                 return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        except AttributeError:
+        except UserProfile.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         
         # Ban the user
@@ -136,10 +141,10 @@ def unban_user(request, user_profile_id):
         
         # Check if the requesting user is a moderator in the same experiment
         try:
-            mod_profile = request.user.userprofile
-            if not (mod_profile.experiment == target_profile.experiment and mod_profile.is_moderator):
+            mod_profile = request.user.userprofile_set.get(experiment=target_profile.experiment)
+            if not mod_profile.is_experiment_moderator():
                 return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
-        except AttributeError:
+        except UserProfile.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
         
         # Unban the user
@@ -147,5 +152,86 @@ def unban_user(request, user_profile_id):
         target_profile.save()
         
         return JsonResponse({'status': 'success', 'message': 'User unbanned successfully'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@ensure_csrf_cookie
+def update_last_accessed(request):
+    """Update the user's last_accessed experiment."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        experiment_identifier = data.get('experiment_identifier')
+        
+        if not experiment_identifier:
+            return JsonResponse({'status': 'error', 'message': 'Experiment identifier is required'}, status=400)
+            
+        experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
+        
+        # Verify user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            return JsonResponse({'status': 'error', 'message': 'You do not have access to this experiment'}, status=403)
+            
+        # Update last_accessed
+        request.user.last_accessed = experiment
+        request.user.save()
+        
+        return JsonResponse({'status': 'success', 'message': 'Last accessed experiment updated'})
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@ensure_csrf_cookie
+@check_banned
+def handle_like(request, post_id):
+    """Handle post likes/unlikes."""
+    try:
+        post = get_object_or_404(Post, id=post_id)
+        user_profile = request.user.userprofile_set.filter(experiment=post.experiment).first()
+        
+        if not user_profile:
+            return JsonResponse({'status': 'error', 'message': 'User profile not found'}, status=404)
+            
+        # Check if user already voted
+        existing_vote = Vote.objects.filter(
+            user_profile=user_profile,
+            post=post
+        ).first()
+        
+        if existing_vote:
+            # Unlike: delete the vote and decrement count
+            existing_vote.delete()
+            post.num_upvotes -= 1
+            post.save()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Post unliked',
+                'is_liked': False,
+                'upvotes': post.num_upvotes
+            })
+        else:
+            # Like: create new vote and increment count
+            Vote.objects.create(
+                user_profile=user_profile,
+                post=post,
+                is_upvote=True
+            )
+            post.num_upvotes += 1
+            post.save()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Post liked',
+                'is_liked': True,
+                'upvotes': post.num_upvotes
+            })
+            
+    except Post.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Post not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

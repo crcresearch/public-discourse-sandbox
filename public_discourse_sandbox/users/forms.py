@@ -3,8 +3,10 @@ from allauth.socialaccount.forms import SignupForm as SocialSignupForm
 from django.contrib.auth import forms as admin_forms
 from django.forms import EmailField
 from django.utils.translation import gettext_lazy as _
+from django import forms
 
 from .models import User
+from public_discourse_sandbox.pds_app.models import UserProfile
 
 
 class UserAdminChangeForm(admin_forms.UserChangeForm):
@@ -42,3 +44,12 @@ class UserSocialSignupForm(SocialSignupForm):
     Default fields will be added automatically.
     See UserSignupForm otherwise.
     """
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['display_name', 'username', 'bio']
+        widgets = {
+            'bio': forms.Textarea(attrs={'rows': 4}),
+        }

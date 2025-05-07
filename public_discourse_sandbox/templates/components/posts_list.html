@@ -15,7 +15,7 @@
                     {% endif %}
                 </a>
                 <div class="post-content">
-                    <!-- Regular tweet header -->
+                    <!-- Regular post header -->
                     <div class="post-header">
                         <div class="user-info">
                             <a href="{% url 'users:detail' post.user_profile.user.id %}" class="user-name">
@@ -27,26 +27,31 @@
                             <span class="dot">·</span>
                             <span class="time">{{ post.created_date|timesince }}</span>
                         </div>
-                        {% if post.user_profile.user == request.user or request.user.userprofile.is_moderator %}
-                            <div class="post-menu">
-                                <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
-                                    <i class="ri-more-fill"></i>
-                                </button>
-                                <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
-                                    <button onclick="deletePost('{{ post.id }}')" class="post-menu-item">
+                        <div class="post-menu">
+                            <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
+                                <i class="ri-more-fill"></i>
+                            </button>
+                            <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+                                {% if post.user_profile.user == request.user or is_moderator %}
+                                    <button onclick="showDeleteModal('{{ post.id }}')" class="post-menu-item">
                                         <i class="ri-delete-bin-line"></i> Delete
                                     </button>
-                                    <!-- {% if request.user.userprofile.is_moderator %}
-                                    <button onclick="banUser('{{ post.user_profile.id }}')" class="post-menu-item">
+                                    <!-- {% if is_moderator %}
+                                    <button onclick="showBanModal('{{ post.user_profile.id }}', 'ban')" class="post-menu-item">
                                         <i class="ri-user-unfollow-line"></i> Ban User
                                     </button>
                                     {% endif %} -->
-                                </div>
+                                {% endif %}
+                                {% if post.user_profile.user != request.user %}
+                                    <button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
+                                        <i class="ri-user-follow-line"></i> Follow
+                                    </button>
+                                {% endif %}
                             </div>
-                        {% endif %}
+                        </div>
                     </div>
         
-                    <!-- Regular tweet content -->
+                    <!-- Regular post content -->
                     <div class="post-text">{{ post.content }}</div>
         
                     <!-- Post Actions -->
@@ -61,9 +66,9 @@
                             <span>0</span>
                         </button>
         
-                        <button class="action-button like-button " data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
-                            <i class="ri-heart-line"></i>
-                            <span>0</span>
+                        <button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}" data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
+                            <i class="{% if post.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+                            <span>{{ post.num_upvotes }}</span>
                         </button>
                     </div>
                 </div>
@@ -79,18 +84,10 @@
 {% include 'components/comment_modal.html' %}
 
 <!-- Delete Confirmation Modal -->
-<div id="delete-modal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 320px;">
-        <div class="modal-body" style="overflow: visible;">
-            <h2>Delete post?</h2>
-            <p class="text-secondary">This can't be undone and it will be removed from your profile, the timeline of any accounts that follow you, and from search results.</p>
-            <div class="form-actions" style="flex-direction: column; gap: 12px;">
-                <button id="confirm-delete" class="post-button delete modal-button">Delete</button>
-                <button id="cancel-delete" class="post-button modal-button">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'components/delete_modal.html' %}
+
+<!-- Ban User Modal -->
+{% include 'components/ban_modal.html' %}
 
 <script src="{% static 'js/shared.js' %}"></script>
 <script>
@@ -123,70 +120,36 @@ function togglePostMenu(postId) {
     }
 }
 
-let postToDelete = null;
-
-function showDeleteModal(postId) {
-    postToDelete = postId;
-    const modal = document.getElementById('delete-modal');
-    modal.style.display = 'flex';
-    
-    // Close when clicking outside the modal
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            hideDeleteModal();
-        }
-    });
+function showRepostPopup(postId) {
+    console.log('showRepostPopup', postId);
 }
 
-function hideDeleteModal() {
-    const modal = document.getElementById('delete-modal');
-    modal.style.display = 'none';
-    postToDelete = null;
-}
-
-async function handleDeleteConfirm() {
-    if (!postToDelete) return;
-    
-    try {
-        await makeRequest(`/api/posts/${postToDelete}/delete/`, 'DELETE');
-        const postElement = document.querySelector(`[data-post-id="${postToDelete}"]`);
-        postElement.remove();
-        hideDeleteModal();
-    } catch (error) {
-        console.error('Error:', error);
-        alert(error.message || 'Failed to delete post');
-    }
-}
-
-// Set up event listeners for the delete modal
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('confirm-delete').addEventListener('click', handleDeleteConfirm);
-    document.getElementById('cancel-delete').addEventListener('click', hideDeleteModal);
-});
-
-// Update the delete button click handler
-function deletePost(postId) {
-    showDeleteModal(postId);
-}
-
-async function banUser(userId) {
-    if (!confirm('Are you sure you want to ban this user?')) {
-        return;
-    }
-    
-    try {
-        const response = await makeRequest(`/api/users/${userId}/ban/`, 'POST');
-        if (response.ok) {
-            showToast('success', 'User has been banned successfully');
-            // Reload the page to reflect the changes
-            window.location.reload();
+function handleLike(button, postId) {
+    makeRequest(
+        '{% url "like_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId),
+        'POST'
+    )
+    .then(data => {
+        // Update the like count
+        const countSpan = button.querySelector('span');
+        countSpan.textContent = data.upvotes;
+        
+        // Toggle the like button style
+        const icon = button.querySelector('i');
+        if (data.is_liked) {
+            icon.classList.remove('ri-heart-line');
+            icon.classList.add('ri-heart-fill');
+            button.classList.add('liked');
         } else {
-            showToast('error', 'Failed to ban user');
+            icon.classList.remove('ri-heart-fill');
+            icon.classList.add('ri-heart-line');
+            button.classList.remove('liked');
         }
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error:', error);
-        showToast('error', 'An error occurred while banning the user');
-    }
+        alert('An error occurred while liking the post');
+    });
 }
 
 </script>

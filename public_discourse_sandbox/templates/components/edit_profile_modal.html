@@ -1,0 +1,163 @@
+{% load static %}
+
+<div id="editProfileModal" class="modal" style="display: none;">
+  <div class="modal-content profile-edit-modal">
+    <div class="popup-header">
+      <button type="button" class="close-popup" onclick="closeEditProfileModal()">
+        <i class="ri-close-line"></i>
+      </button>
+      <h2>Edit Profile</h2>
+    </div>
+    <div class="modal-body">
+      <form id="editProfileForm" enctype="multipart/form-data" class="profile-edit-form">
+        {% csrf_token %}
+        
+        <!-- Profile Picture Section -->
+        <div class="profile-picture-section">
+          <div class="current-picture">
+            {% if viewed_profile.profile_picture %}
+              <img src="{{ viewed_profile.profile_picture.url }}" alt="Current Profile Picture" class="profile-preview">
+            {% else %}
+              <div class="profile-preview placeholder">
+                <i class="ri-user-3-line"></i>
+              </div>
+            {% endif %}
+          </div>
+          <div class="picture-upload">
+            <label for="profile_picture" class="upload-label">
+              <i class="ri-camera-line"></i>
+              <span>Change Profile Picture</span>
+            </label>
+            <input type="file" id="profile_picture" name="profile_picture" accept="image/*" class="hidden-input">
+          </div>
+        </div>
+
+        <!-- Banner Picture Section -->
+        <div class="banner-picture-section">
+          <div class="current-banner">
+            {% if viewed_profile.banner_picture %}
+              <img src="{{ viewed_profile.banner_picture.url }}" alt="Current Banner Picture" class="banner-preview">
+            {% else %}
+              <div class="banner-preview placeholder">
+                <i class="ri-image-line"></i>
+              </div>
+            {% endif %}
+          </div>
+          <div class="banner-upload">
+            <label for="banner_picture" class="upload-label">
+              <i class="ri-image-add-line"></i>
+              <span>Change Banner Picture</span>
+            </label>
+            <input type="file" id="banner_picture" name="banner_picture" accept="image/*" class="hidden-input">
+          </div>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="form-fields">
+          <div class="form-group">
+            <label for="display_name">Display Name</label>
+            <input type="text" id="display_name" name="display_name" value="{{ viewed_profile.display_name }}" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" value="{{ viewed_profile.username }}" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="4">{{ viewed_profile.bio }}</textarea>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="post-button" onclick="closeEditProfileModal()">Cancel</button>
+          <button type="submit" class="post-button bg-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'flex';
+  }
+
+  function closeEditProfileModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('editProfileModal');
+    const form = document.getElementById('editProfileForm');
+    const profileInput = document.getElementById('profile_picture');
+    const bannerInput = document.getElementById('banner_picture');
+    const profilePreview = document.querySelector('.profile-preview');
+    const bannerPreview = document.querySelector('.banner-preview');
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeEditProfileModal();
+      }
+    });
+
+    // Preview images when selected
+    profileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          if (profilePreview.classList.contains('placeholder')) {
+            profilePreview.classList.remove('placeholder');
+            profilePreview.innerHTML = '';
+          }
+          profilePreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    bannerInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          if (bannerPreview.classList.contains('placeholder')) {
+            bannerPreview.classList.remove('placeholder');
+            bannerPreview.innerHTML = '';
+          }
+          bannerPreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      
+      try {
+        const response = await fetch('{% url "users:update_profile" experiment.identifier %}', {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin'
+        });
+
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          console.error('Error updating profile');
+          showToast('error', 'Failed to update profile');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('error', 'An error occurred while updating your profile');
+      }
+    });
+  });
+</script> 

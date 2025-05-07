@@ -1,0 +1,92 @@
+{% load static %}
+
+<div id="banModal" class="modal" style="display: none;" 
+     data-ban-url="{% url 'ban_user_with_experiment' '00000000-0000-0000-0000-000000000000' %}"
+     data-unban-url="{% url 'unban_user_with_experiment' '00000000-0000-0000-0000-000000000000' %}">
+  <div class="modal-content">
+    <div class="popup-header">
+      <button type="button" class="close-popup" onclick="closeBanModal()">
+        <i class="ri-close-line"></i>
+      </button>
+      <h2>Confirm Action</h2>
+    </div>
+    <div class="modal-body">
+      <p id="banModalMessage"></p>
+      <div class="form-actions">
+        <button type="button" class="post-button" onclick="closeBanModal()">Cancel</button>
+        <button type="button" class="post-button" id="confirmBanBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /*
+   * Note: We use a valid UUID format (00000000-0000-0000-0000-000000000000) as a placeholder because:
+   * 1. The URL pattern expects a UUID type parameter: <uuid:user_profile_id>
+   * 2. Django's URL resolver validates the format before generating the URL
+   * 3. The pattern [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} requires this exact format
+   * 4. We replace this placeholder with the actual UUID when making the request
+   */
+  // Global variables for ban modal
+  var currentProfileId = null;
+  var currentAction = null;
+  var banModal = document.getElementById('banModal');
+
+  function showBanModal(profileId, action) {
+    currentProfileId = profileId;
+    currentAction = action;
+    const message = document.getElementById('banModalMessage');
+    const confirmBtn = document.getElementById('confirmBanBtn');
+    
+    if (action === 'ban') {
+      message.textContent = 'Are you sure you want to ban this user? This will prevent them from posting or interacting with content.';
+      confirmBtn.className = 'post-button bg-danger';
+      confirmBtn.textContent = 'Ban User';
+    } else {
+      message.textContent = 'Are you sure you want to unban this user? They will regain the ability to post and interact with content.';
+      confirmBtn.className = 'post-button bg-success';
+      confirmBtn.textContent = 'Unban User';
+    }
+    
+    banModal.style.display = 'flex';
+  }
+
+  function closeBanModal() {
+    banModal.style.display = 'none';
+  }
+
+  // Initialize modal when DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!banModal) return;
+
+    // Close modal when clicking outside
+    banModal.addEventListener('click', function(e) {
+      if (e.target === banModal) {
+        closeBanModal();
+      }
+    });
+
+    document.getElementById('confirmBanBtn')?.addEventListener('click', async function() {
+      if (!currentProfileId || !currentAction) return;
+      
+      try {
+        const baseUrl = currentAction === 'ban' 
+          ? banModal.dataset.banUrl
+          : banModal.dataset.unbanUrl;
+        
+        // Replace the UUID placeholder with the actual UUID
+        const url = baseUrl.replace('00000000-0000-0000-0000-000000000000', currentProfileId);
+        
+        const response = await makeRequest(url, 'POST');
+        
+        if (response.status === 'success') {
+          closeBanModal();
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+  });
+</script> 
