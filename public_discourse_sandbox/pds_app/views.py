@@ -256,6 +256,17 @@ class ResearcherToolsView(LoginRequiredMixin, TemplateView):
             models.Q(userprofile__user=self.request.user, userprofile__is_collaborator=True)  # User is collaborator
         ).distinct().order_by('-created_date')  # Order by most recent first
         
+        # Annotate each experiment with statistics
+        user_experiments = user_experiments.annotate(
+            total_users=models.Count('userprofile', distinct=True),
+            total_posts=models.Count('post', distinct=True),
+            total_digital_twins=models.Count(
+                'userprofile',
+                filter=models.Q(userprofile__is_digital_twin=True),
+                distinct=True
+            )
+        )
+        
         context['experiments'] = user_experiments
         return context
 

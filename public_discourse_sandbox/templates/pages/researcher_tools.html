@@ -31,6 +31,9 @@
                                 <th>{% translate "Name" %}</th>
                                 <th>{% translate "ID" %}</th>
                                 <th>{% translate "Description" %}</th>
+                                <th>{% translate "Users" %}</th>
+                                <th>{% translate "Posts" %}</th>
+                                <th>{% translate "Digital Twins" %}</th>
                                 <th>{% translate "Actions" %}</th>
                             </tr>
                         </thead>
@@ -40,6 +43,9 @@
                                     <td class="experiment-name">{{ experiment.name }}</td>
                                     <td class="experiment-id">{{ experiment.identifier }}</td>
                                     <td class="experiment-description">{{ experiment.description }}</td>
+                                    <td class="experiment-users">{{ experiment.total_users }}</td>
+                                    <td class="experiment-posts">{{ experiment.total_posts }}</td>
+                                    <td class="experiment-twins">{{ experiment.total_digital_twins }}</td>
                                     <td class="experiment-actions">
                                         <a href="{% url 'experiment_detail' experiment.identifier %}" class="btn btn-info">
                                             <i class="ri-information-line"></i>
