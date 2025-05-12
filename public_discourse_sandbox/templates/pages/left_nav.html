@@ -5,7 +5,7 @@
     </div>
 
     <!-- Add My Account Link -->
-    {% if request.user.is_authenticated  and experiment %}
+    {% if user.is_authenticated and experiment and not hide_main_nav %}
     <a href="{% if experiment %}{% url 'users:detail_with_experiment' experiment.identifier request.user.id %}{% else %}{% url 'users:detail' request.user.id %}{% endif %}" class="my-account-link {% if '/users/' in request.path %}active{% endif %}">
         <div class="my-account-content">
             <div class="my-account-photo">
@@ -24,7 +24,7 @@
     </a>
     {% endif %}
     <ul class="nav-menu">
-        {% if user.is_authenticated and experiment %}
+        {% if user.is_authenticated and experiment and not hide_main_nav %}
         <li>
             <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
                 <i class="ri-home-fill"></i>

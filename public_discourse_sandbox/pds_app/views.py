@@ -394,6 +394,8 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
         if experiment.creator == self.request.user:
             context['form'] = ExperimentForm(instance=experiment)
             
+        # Hide main nav on experiment detail page
+        context['hide_main_nav'] = True
         return context
         
     def post(self, request, *args, **kwargs):

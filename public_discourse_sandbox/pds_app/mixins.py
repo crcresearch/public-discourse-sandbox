@@ -70,6 +70,7 @@ class ExperimentContextMixin:
         self.experiment = None
         self.should_redirect = False
         self.user_profile = None
+        self.redirect_to_landing = False
         
         if request.user.is_authenticated:
             def get_valid_experiment(exp):
@@ -97,16 +98,16 @@ class ExperimentContextMixin:
                     self.experiment = user_profile.experiment
                     self.should_redirect = True
 
-            # If still not found, redirect to landing page
+            # If still not found, set redirect flag
             if not self.experiment:
-                from django.shortcuts import redirect
-                raise redirect("/")
+                self.redirect_to_landing = True
+                return
 
             # Verify user has access to this experiment and get their profile for this experiment
             self.user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
             if not self.user_profile:
-                from django.shortcuts import redirect
-                raise redirect("/")
+                self.redirect_to_landing = True
+                return
 
             # Update user's last_accessed experiment if needed
             if request.user.last_accessed != self.experiment:
@@ -163,6 +164,10 @@ class ExperimentContextMixin:
         Returns:
             HttpResponse: The response to send to the client
         """
+        # Handle redirect if setup flagged it
+        if getattr(self, 'redirect_to_landing', False):
+            from django.shortcuts import redirect
+            return redirect("/")
         response = super().dispatch(request, *args, **kwargs)
         
         # If we should redirect and we have an experiment, redirect to the URL with the identifier
