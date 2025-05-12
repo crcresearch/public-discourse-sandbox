@@ -2,45 +2,49 @@
 {% load i18n %}
 
 {% block content %}
-<div class="researcher-tools-container">
-    <h1>{% translate "Researcher Tools" %}</h1>
-    
-    <div class="experiments-list">
-        <h2>{% translate "Your Experiments" %}</h2>
+<div class="page-container">
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+
+    <div class="main-content">
+        <h1>{% translate "Researcher Tools" %}</h1>
         
-        {% if experiments %}
-            <div class="experiments-grid">
-                {% for experiment in experiments %}
-                    <div class="experiment-card">
-                        <h3>{{ experiment.name }}</h3>
-                        <p class="experiment-identifier">ID: {{ experiment.identifier }}</p>
-                        <p class="experiment-description">{{ experiment.description }}</p>
-                        <div class="experiment-actions">
-                            <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
-                                <i class="ri-home-line"></i>
-                                {% translate "View Experiment" %}
-                            </a>
-                            {% if experiment.creator == request.user %}
-                                <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
-                                    <i class="ri-dashboard-line"></i>
-                                    {% translate "Moderator Dashboard" %}
+        <div class="experiments-list">
+            <h2>{% translate "Your Experiments" %}</h2>
+            
+            {% if experiments %}
+                <div class="experiments-grid">
+                    {% for experiment in experiments %}
+                        <div class="experiment-card">
+                            <h3>{{ experiment.name }}</h3>
+                            <p class="experiment-identifier">ID: {{ experiment.identifier }}</p>
+                            <p class="experiment-description">{{ experiment.description }}</p>
+                            <div class="experiment-actions">
+                                <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
+                                    <i class="ri-home-line"></i>
+                                    {% translate "View Experiment" %}
                                 </a>
-                            {% endif %}
+                                {% if experiment.creator == request.user %}
+                                    <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
+                                        <i class="ri-dashboard-line"></i>
+                                        {% translate "Moderator Dashboard" %}
+                                    </a>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="no-experiments">{% translate "You don't have any experiments yet." %}</p>
-        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-experiments">{% translate "You don't have any experiments yet." %}</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 
 <style>
-.researcher-tools-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
+.page-container {
+    display: flex;
+    min-height: 100vh;
 }
 
 .experiments-grid {
