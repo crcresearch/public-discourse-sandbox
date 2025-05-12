@@ -10,7 +10,7 @@ from public_discourse_sandbox.pds_app.views import (
 from public_discourse_sandbox.pds_app.api import (
     create_comment, get_post_replies,
     delete_post, ban_user, unban_user,
-    update_last_accessed, handle_like
+    update_last_accessed, handle_like, delete_experiment
 )
 
 urlpatterns = [
@@ -19,6 +19,7 @@ urlpatterns = [
     path("researcher-tools/", ResearcherToolsView.as_view(), name="researcher_tools"),
     path("create-experiment/", CreateExperimentView.as_view(), name="create_experiment"),
     path("experiment/<str:experiment_identifier>/", ExperimentDetailView.as_view(), name="experiment_detail"),
+    path("experiment/<str:experiment_identifier>/delete/", delete_experiment, name="delete_experiment"),
     # URLs with experiment identifier
     path("<str:experiment_identifier>/about/", AboutView.as_view(), name="about_with_experiment"),
     path("<str:experiment_identifier>/home/", HomeView.as_view(), name="home_with_experiment"),

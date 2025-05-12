@@ -1,73 +1,89 @@
 {% extends "base.html" %}
+
+{% load static %}
+
 {% load i18n %}
 
 {% block content %}
-<!-- Left Sidebar -->
-{% include 'pages/left_nav.html' %}
+  {% csrf_token %}
+  <!-- Left Sidebar -->
+  {% include 'pages/left_nav.html' %}
 
-<div class="no-xp-main-content">
-    <header class="main-header">
-        <div class="header-content">
-            <h1>{% translate "Researcher Tools" %}</h1>
-            <a href="{% url 'create_experiment' %}" class="btn btn-primary">
-                <i class="ri-add-line"></i>
-                {% translate "Create Experiment" %}
-            </a>
-        </div>
-    </header>
-    
-    <div class="experiments-list">
-        <h2>{% translate "Your Experiments" %}</h2>
-        
-        {% if experiments %}
-            <div class="table-container">
-                <table class="experiments-table">
-                    <thead>
-                        <tr>
-                            <th>{% translate "Name" %}</th>
-                            <th>{% translate "ID" %}</th>
-                            <th>{% translate "Description" %}</th>
-                            <th>{% translate "Actions" %}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for experiment in experiments %}
-                            <tr>
-                                <td class="experiment-name">{{ experiment.name }}</td>
-                                <td class="experiment-id">{{ experiment.identifier }}</td>
-                                <td class="experiment-description">{{ experiment.description }}</td>
-                                <td class="experiment-actions">
-                                    <a href="{% url 'experiment_detail' experiment.identifier %}" class="btn btn-info">
-                                        <i class="ri-information-line"></i>
-                                        {% translate "Details" %}
-                                    </a>
-                                    <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
-                                        <i class="ri-home-line"></i>
-                                        {% translate "View" %}
-                                    </a>
-                                    {% if experiment.creator == request.user %}
-                                        <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
-                                            <i class="ri-dashboard-line"></i>
-                                            {% translate "Dashboard" %}
-                                        </a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="no-experiments">
-                <p>{% translate "You don't have any experiments yet." %}</p>
+    <div class="no-xp-main-content">
+        <header class="main-header">
+            <div class="header-content">
+                <h1>{% translate "Researcher Tools" %}</h1>
                 <a href="{% url 'create_experiment' %}" class="btn btn-primary">
                     <i class="ri-add-line"></i>
-                    {% translate "Create Your First Experiment" %}
+                    {% translate "Create Discourse" %}
                 </a>
             </div>
-        {% endif %}
+        </header>
+        
+        <div class="experiments-list">
+            <h4>{% translate "Your Discourses" %}</h4>
+            
+            {% if experiments %}
+                <div class="table-container">
+                    <table class="experiments-table">
+                        <thead>
+                            <tr>
+                                <th>{% translate "Name" %}</th>
+                                <th>{% translate "ID" %}</th>
+                                <th>{% translate "Description" %}</th>
+                                <th>{% translate "Actions" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for experiment in experiments %}
+                                <tr>
+                                    <td class="experiment-name">{{ experiment.name }}</td>
+                                    <td class="experiment-id">{{ experiment.identifier }}</td>
+                                    <td class="experiment-description">{{ experiment.description }}</td>
+                                    <td class="experiment-actions">
+                                        <a href="{% url 'experiment_detail' experiment.identifier %}" class="btn btn-info">
+                                            <i class="ri-information-line"></i>
+                                            {% translate "Details" %}
+                                        </a>
+                                        <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
+                                            <i class="ri-home-line"></i>
+                                            {% translate "View" %}
+                                        </a>
+                                        {% if experiment.creator == request.user %}
+                                            <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
+                                                <i class="ri-dashboard-line"></i>
+                                                {% translate "Dashboard" %}
+                                            </a>
+                                            <button class="btn btn-danger" onclick="showDeleteModal('{{ experiment.identifier }}', '{{ experiment.name }}')">
+                                                <i class="ri-delete-bin-line"></i>
+                                                {% translate "Delete" %}
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-experiments">
+                    <p>{% translate "You don't have any experiments yet." %}</p>
+                    <a href="{% url 'create_experiment' %}" class="btn btn-primary">
+                        <i class="ri-add-line"></i>
+                        {% translate "Create Your First Experiment" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
+
+    {% include 'components/delete_experiment_modal.html' %}
+
+{% endblock content %}
+
+{% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
+{% endblock inline_javascript %}
 
 <style>
 .header-content {
@@ -170,6 +186,15 @@
     background-color: #138496;
 }
 
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
 .no-experiments {
     text-align: center;
     color: #666;
@@ -211,5 +236,4 @@
         align-items: flex-start;
     }
 }
-</style>
-{% endblock %} 
+</style> 

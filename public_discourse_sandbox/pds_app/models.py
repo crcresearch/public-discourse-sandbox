@@ -20,6 +20,14 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class UndeletedExperimentManager(models.Manager):
+    """
+    Custom manager for Experiment model that only returns non-deleted experiments.
+    """
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
 class Experiment(BaseModel):
     """
     Experiment model.
@@ -29,6 +37,11 @@ class Experiment(BaseModel):
     description = models.TextField()
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # This defines what user "owns" this experiment
+    is_deleted = models.BooleanField(default=False)
+
+    # Add custom managers
+    all_objects = models.Manager()  # Default manager that shows all experiments
+    objects = UndeletedExperimentManager()  # Custom manager that only shows non-deleted experiments
 
     def __str__(self):
         return f"{self.name}"

@@ -3,9 +3,9 @@ from .models import Experiment, UserProfile, Post, Vote, SocialNetwork, DigitalT
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'creator', 'created_date', 'last_modified')
+    list_display = ('name', 'creator', 'created_date', 'last_modified', 'is_deleted')
     search_fields = ('name', 'description')
-    list_filter = ('creator',)
+    list_filter = ('creator', 'is_deleted')
     readonly_fields = ('created_date', 'last_modified')
     raw_id_fields = ('creator',)  # Uses a popup for better performance with many users
 

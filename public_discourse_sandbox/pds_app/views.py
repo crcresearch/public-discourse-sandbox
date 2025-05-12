@@ -250,6 +250,7 @@ class ResearcherToolsView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         
         # Get experiments where user is creator or collaborator
+        # Note: We don't need to filter is_deleted=False here because the default manager already does that
         user_experiments = Experiment.objects.filter(
             models.Q(creator=self.request.user) |  # User is creator
             models.Q(userprofile__user=self.request.user, userprofile__is_collaborator=True)  # User is collaborator
@@ -311,6 +312,11 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
         # Get the experiment
         self.object = self.get_object()
         
+        # Check if experiment is deleted
+        if self.object.is_deleted:
+            messages.error(request, 'This experiment has been deleted.')
+            return redirect('researcher_tools')
+        
         # Check if user has access to this experiment
         if not (self.object.creator == request.user or 
                 self.object.userprofile_set.filter(user=request.user, is_collaborator=True).exists()):
@@ -318,6 +324,13 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
             
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
+        
+    def get_queryset(self):
+        """
+        Override get_queryset to use all_objects instead of objects.
+        This allows us to access deleted experiments for the detail view.
+        """
+        return Experiment.all_objects.all()
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
