@@ -47,24 +47,14 @@
                                     <td class="experiment-posts">{{ experiment.total_posts }}</td>
                                     <td class="experiment-twins">{{ experiment.total_digital_twins }}</td>
                                     <td class="experiment-actions">
-                                        <a href="{% url 'experiment_detail' experiment.identifier %}" class="btn btn-info">
-                                            <i class="ri-information-line"></i>
-                                            {% translate "Details" %}
-                                        </a>
-                                        <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
-                                            <i class="ri-home-line"></i>
-                                            {% translate "View" %}
-                                        </a>
-                                        {% if experiment.creator == request.user %}
-                                            <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
-                                                <i class="ri-dashboard-line"></i>
-                                                {% translate "Dashboard" %}
-                                            </a>
-                                            <button class="btn btn-danger" onclick="showDeleteModal('{{ experiment.identifier }}', '{{ experiment.name }}')">
-                                                <i class="ri-delete-bin-line"></i>
-                                                {% translate "Delete" %}
-                                            </button>
-                                        {% endif %}
+                                        <button class="menu-button" 
+                                            title="More"
+                                            onclick="showGlobalExperimentMenu(event)"
+                                            data-experiment-id="{{ experiment.identifier }}"
+                                            data-experiment-name="{{ experiment.name|escapejs }}"
+                                            data-is-creator="{% if experiment.creator == request.user %}1{% else %}0{% endif %}">
+                                            <i class="ri-more-fill"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -85,8 +75,59 @@
 
     {% include 'components/delete_experiment_modal.html' %}
 
+    <!-- Global Experiment Menu (hidden by default) -->
+    <div id="global-experiment-menu" class="post-menu-dropdown" style="display:none; position:fixed; min-width:200px;">
+        <!-- Menu content will be injected by JS -->
+    </div>
+
 {% endblock content %}
 
 {% block inline_javascript %}
 <script src="{% static 'js/shared.js' %}"></script>
+<script>
+// Helper to get menu HTML for an experiment
+function getExperimentMenuHTML(experimentId, experimentName, isCreator) {
+    let html = '';
+    html += `<a href="${window.urls['experiment_detail'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-information-line"></i> Details</a>`;
+    html += `<a href="${window.urls['home_with_experiment'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-home-line"></i> View</a>`;
+    if (isCreator) {
+        html += `<a href="${window.urls['moderator_dashboard'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-dashboard-line"></i> Dashboard</a>`;
+        html += `<button onclick=\"showDeleteModal('${experimentId}', '${experimentName}')\" class=\"post-menu-item\"><i class=\"ri-delete-bin-line\"></i> Delete</button>`;
+    }
+    return html;
+}
+
+// Store Django URLs for JS use
+window.urls = {
+    'experiment_detail': '{% url "experiment_detail" "EXPERIMENT_ID" %}',
+    'home_with_experiment': '{% url "home_with_experiment" "EXPERIMENT_ID" %}',
+    'moderator_dashboard': '{% url "moderator_dashboard" "EXPERIMENT_ID" %}'
+};
+
+function showGlobalExperimentMenu(event) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    const experimentId = btn.getAttribute('data-experiment-id');
+    const experimentName = btn.getAttribute('data-experiment-name');
+    const isCreator = btn.getAttribute('data-is-creator') === '1';
+    const menu = document.getElementById('global-experiment-menu');
+    // Set menu content
+    menu.innerHTML = getExperimentMenuHTML(experimentId, experimentName, isCreator);
+    // Position menu
+    const rect = btn.getBoundingClientRect();
+    menu.style.display = 'block';
+    menu.style.left = `${rect.right - 200}px`;
+    menu.style.top = `${rect.bottom + window.scrollY}px`;
+    // Hide on outside click
+    const closeMenu = (e) => {
+        if (!menu.contains(e.target)) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    setTimeout(() => {
+        document.addEventListener('click', closeMenu);
+    }, 0);
+}
+</script>
 {% endblock inline_javascript %} 
