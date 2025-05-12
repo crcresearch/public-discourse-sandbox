@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, TemplateView, View
-from .forms import PostForm
+from django.views.generic import ListView, TemplateView, View, DetailView
+from .forms import PostForm, ExperimentForm
 from .models import Post, UserProfile, Experiment, SocialNetwork
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
@@ -9,6 +9,8 @@ from .decorators import check_banned
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.db import models
+from django.urls import reverse_lazy
+from django.contrib import messages
 
 def get_active_posts(request, experiment=None, hashtag=None):
     """
@@ -255,3 +257,98 @@ class ResearcherToolsView(LoginRequiredMixin, TemplateView):
         
         context['experiments'] = user_experiments
         return context
+
+
+class CreateExperimentView(LoginRequiredMixin, TemplateView):
+    """
+    View for creating a new experiment.
+    """
+    template_name = 'pages/create_experiment.html'
+    
+    def get(self, request, *args, **kwargs):
+        # Check if user is in researcher group
+        if not request.user.groups.filter(name='researcher').exists():
+            raise PermissionDenied("You must be a researcher to access this page")
+            
+        return super().get(request, *args, **kwargs)
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = ExperimentForm()
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        """Handle experiment creation."""
+        form = ExperimentForm(request.POST)
+        if form.is_valid():
+            experiment = form.save(commit=False)
+            experiment.creator = request.user
+            experiment.save()
+            messages.success(request, 'Experiment created successfully!')
+            return redirect('researcher_tools')
+            
+        # If form is invalid, show form with errors
+        context = self.get_context_data()
+        context['form'] = form
+        return render(request, self.template_name, context)
+
+
+class ExperimentDetailView(LoginRequiredMixin, DetailView):
+    """
+    View for displaying experiment details.
+    """
+    model = Experiment
+    template_name = 'pages/experiment_detail.html'
+    context_object_name = 'experiment'
+    slug_field = 'identifier'
+    slug_url_kwarg = 'experiment_identifier'
+    
+    def get(self, request, *args, **kwargs):
+        # Check if user is in researcher group
+        if not request.user.groups.filter(name='researcher').exists():
+            raise PermissionDenied("You must be a researcher to access this page")
+            
+        # Get the experiment
+        self.object = self.get_object()
+        
+        # Check if user has access to this experiment
+        if not (self.object.creator == request.user or 
+                self.object.userprofile_set.filter(user=request.user, is_collaborator=True).exists()):
+            raise PermissionDenied("You do not have access to this experiment")
+            
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        experiment = self.object
+        
+        # Add experiment statistics
+        context['total_users'] = experiment.userprofile_set.count()
+        context['total_posts'] = experiment.post_set.count()
+        context['total_digital_twins'] = experiment.userprofile_set.filter(is_digital_twin=True).count()
+        
+        # Add form for editing if user is creator
+        if experiment.creator == self.request.user:
+            context['form'] = ExperimentForm(instance=experiment)
+            
+        return context
+        
+    def post(self, request, *args, **kwargs):
+        """Handle experiment updates."""
+        experiment = self.get_object()
+        
+        # Only creator can edit
+        if experiment.creator != request.user:
+            raise PermissionDenied("Only the experiment creator can edit this experiment")
+            
+        form = ExperimentForm(request.POST, instance=experiment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Experiment updated successfully!')
+            return redirect('experiment_detail', experiment_identifier=experiment.identifier)
+            
+        # If form is invalid, show form with errors
+        context = self.get_context_data()
+        context['form'] = form
+        return render(request, self.template_name, context)

@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<!-- Left Sidebar -->
+{% include 'pages/left_nav.html' %}
+
+<div class="no-xp-main-content">
+    <header class="main-header">
+        <div class="header-content">
+            <a href="{% url 'researcher_tools' %}" class="back-link">
+                <i class="ri-arrow-left-line"></i>
+                {% translate "Back to Experiments" %}
+            </a>
+            <h1>{{ experiment.name }}</h1>
+        </div>
+    </header>
+    
+    <div class="experiment-detail">
+        <!-- Experiment Info -->
+        <div class="experiment-info-section">
+            <div class="experiment-header">
+                <div class="experiment-meta">
+                    <span class="experiment-id">ID: {{ experiment.identifier }}</span>
+                    <span class="experiment-date">Created: {{ experiment.created_date|date:"F j, Y" }}</span>
+                </div>
+                {% if experiment.creator == request.user %}
+                    <button class="btn btn-secondary" onclick="toggleEditForm()">
+                        <i class="ri-edit-line"></i>
+                        {% translate "Edit" %}
+                    </button>
+                {% endif %}
+            </div>
+            
+            <div class="experiment-description">
+                <h3>{% translate "Description" %}</h3>
+                <p>{{ experiment.description }}</p>
+            </div>
+            
+            {% if experiment.creator == request.user %}
+                <form method="post" class="experiment-form edit-form" style="display: none;">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="toggleEditForm()">
+                            {% translate "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            {% translate "Save Changes" %}
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+        
+        <!-- Experiment Statistics -->
+        <div class="experiment-stats">
+            <div class="stat-card">
+                <i class="ri-user-line"></i>
+                <div class="stat-content">
+                    <h3>{% translate "Total Users" %}</h3>
+                    <p class="stat-value">{{ total_users }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="ri-message-2-line"></i>
+                <div class="stat-content">
+                    <h3>{% translate "Total Posts" %}</h3>
+                    <p class="stat-value">{{ total_posts }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="ri-robot-line"></i>
+                <div class="stat-content">
+                    <h3>{% translate "Digital Twins" %}</h3>
+                    <p class="stat-value">{{ total_digital_twins }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h3>{% translate "Quick Actions" %}</h3>
+            <div class="action-buttons">
+                <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
+                    <i class="ri-home-line"></i>
+                    {% translate "View Experiment" %}
+                </a>
+                {% if experiment.creator == request.user %}
+                    <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
+                        <i class="ri-dashboard-line"></i>
+                        {% translate "Moderator Dashboard" %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Header Styles */
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--nd-blue);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    color: var(--nd-metallic-gold);
+}
+
+/* Experiment Detail Styles */
+.experiment-detail {
+    padding: 2rem;
+}
+
+.experiment-info-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.experiment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.experiment-meta {
+    display: flex;
+    gap: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.experiment-id {
+    font-family: monospace;
+}
+
+.experiment-description h3 {
+    margin-bottom: 1rem;
+    color: var(--nd-blue);
+}
+
+.experiment-description p {
+    color: #444;
+    line-height: 1.6;
+}
+
+/* Statistics Styles */
+.experiment-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-card i {
+    font-size: 2rem;
+    color: var(--nd-blue);
+}
+
+.stat-content h3 {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--nd-blue);
+    margin: 0;
+}
+
+/* Quick Actions Styles */
+.quick-actions {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+.quick-actions h3 {
+    margin-bottom: 1.5rem;
+    color: var(--nd-blue);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Form Styles */
+.experiment-form {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--nd-blue);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(12, 35, 64, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: var(--nd-blue);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+/* Alert Styles */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.alert-danger {
+    background-color: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #c53030;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .experiment-detail {
+        padding: 1rem;
+    }
+    
+    .experiment-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .experiment-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+function toggleEditForm() {
+    const form = document.querySelector('.edit-form');
+    const description = document.querySelector('.experiment-description');
+    const editButton = document.querySelector('.btn-secondary');
+    
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        description.style.display = 'none';
+        editButton.style.display = 'none';
+    } else {
+        form.style.display = 'none';
+        description.style.display = 'block';
+        editButton.style.display = 'inline-flex';
+    }
+}
+</script>
+{% endblock %} 

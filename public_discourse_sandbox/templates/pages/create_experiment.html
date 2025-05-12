@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<!-- Left Sidebar -->
+{% include 'pages/left_nav.html' %}
+
+<div class="no-xp-main-content">
+    <header class="main-header">
+        <div class="header-content">
+            <a href="{% url 'researcher_tools' %}" class="back-link">
+                <i class="ri-arrow-left-line"></i>
+                {% translate "Back to Experiments" %}
+            </a>
+            <h1>{% translate "Create New Experiment" %}</h1>
+        </div>
+    </header>
+    
+    <div class="create-experiment-section">
+        <form method="post" class="experiment-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-group">
+                {{ form.name.label_tag }}
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if form.name.help_text %}
+                    <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.description.label_tag }}
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.description.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if form.description.help_text %}
+                    <small class="form-text text-muted">{{ form.description.help_text }}</small>
+                {% endif %}
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'researcher_tools' %}" class="btn btn-secondary">
+                    {% translate "Cancel" %}
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="ri-add-line"></i>
+                    {% translate "Create Experiment" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Header Styles */
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.back-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--nd-blue);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    color: var(--nd-metallic-gold);
+}
+
+/* Form Section Styles */
+.create-experiment-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin: 2rem 0;
+    max-width: 800px;
+}
+
+.experiment-form {
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--nd-blue);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(12, 35, 64, 0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+/* Alert Styles */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.alert-danger {
+    background-color: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #c53030;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: var(--nd-blue);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .create-experiment-section {
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+</style>
+{% endblock %} 
