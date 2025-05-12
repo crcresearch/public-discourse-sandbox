@@ -26,13 +26,13 @@
     <ul class="nav-menu">
         {% if user.is_authenticated and experiment and not hide_main_nav %}
         <li>
-            <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <a href="{% if experiment %}{% url 'home_with_experiment' experiment.identifier %}{% else %}{% url 'home' %}{% endif %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
                 <i class="ri-home-fill"></i>
                 Home
             </a>
         </li>
         <li>
-            <a href="{% url 'explore' %}" class="{% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
+            <a href="{% if experiment %}{% url 'explore_with_experiment' experiment.identifier %}{% else %}{% url 'explore' %}{% endif %}" class="{% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
                 <i class="ri-compass-3-line"></i>
                 Explore
             </a>
