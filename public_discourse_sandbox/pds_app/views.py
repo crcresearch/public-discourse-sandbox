@@ -9,8 +9,12 @@ from .decorators import check_banned
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.db import models
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib import messages
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+import json
 
 def get_active_posts(request, experiment=None, hashtag=None):
     """
@@ -416,3 +420,56 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
         context = self.get_context_data()
         context['form'] = form
         return render(request, self.template_name, context)
+
+
+class InviteUserView(LoginRequiredMixin, View):
+    """
+    View for inviting users to an experiment.
+    """
+    def post(self, request, experiment_identifier):
+        try:
+            # Get the experiment
+            experiment = Experiment.objects.get(identifier=experiment_identifier)
+            
+            # Check if user has permission to invite (must be creator)
+            if experiment.creator != request.user:
+                return JsonResponse({'error': 'You do not have permission to invite users to this experiment'}, status=403)
+            
+            # Get email from request
+            data = json.loads(request.body)
+            email = data.get('email')
+            
+            if not email:
+                return JsonResponse({'error': 'Email is required'}, status=400)
+                
+            # Send invitation email
+            context = {
+                'user': request.user,
+                'study': {
+                    'title': experiment.name,
+                    'description': experiment.description,
+                    'contact_name': request.user.get_full_name() or request.user.username,
+                    'contact_email': request.user.email,
+                    'duration': 'Ongoing',
+                    'compensation': 'None',
+                    'irb_information': 'This study has been approved by the University of Notre Dame IRB.'
+                },
+                'study_url': request.build_absolute_uri(reverse('home_with_experiment', args=[experiment.identifier])),
+                'landing_url': request.build_absolute_uri(reverse('landing'))
+            }
+            
+            # Send email
+            send_mail(
+                subject='Research Study Invitation - Public Discourse Sandbox',
+                message='',  # Plain text version will be generated from HTML
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                html_message=render_to_string('email/research_invitation.html', context)
+            )
+            
+            return JsonResponse({'message': 'Invitation sent successfully'})
+            
+        except Experiment.DoesNotExist:
+            return JsonResponse({'error': 'Experiment not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
