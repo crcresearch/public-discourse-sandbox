@@ -2050,8 +2050,15 @@ Profile Tabs Custom Styling
    Researcher Tools Page Styles
    ============================= */
 
+.table-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+}
+
 .table-container {
-    margin-top: 2rem;
+    margin-top: 0;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

@@ -13,55 +13,59 @@
         <header class="main-header">
             <div class="header-content">
                 <h1>{% translate "Researcher Tools" %}</h1>
-                <a href="{% url 'create_experiment' %}" class="btn btn-primary">
-                    <i class="ri-add-line"></i>
-                    {% translate "Create Discourse" %}
-                </a>
             </div>
         </header>
         
         <div class="experiments-list">
-            <h5>{% translate "Your Discourses" %}</h5>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; margin-top: 1rem;">
+                <h5>{% translate "Your Discourses" %}</h5>
+                <a href="{% url 'create_experiment' %}" class="post-button" style="text-decoration: none; color: white;">
+                    <i class="ri-add-line"></i>
+                    {% translate "Create Discourse" %}
+                </a>
+            </div>
             
             {% if experiments %}
-                <div>
-                    <table class="experiments-table">
-                        <thead>
-                            <tr>
-                                <th>{% translate "Name" %}</th>
-                                <th>{% translate "ID" %}</th>
-                                <th>{% translate "Description" %}</th>
-                                <th>{% translate "Users" %}</th>
-                                <th>{% translate "Banned" %}</th>
-                                <th>{% translate "Posts" %}</th>
-                                <th>{% translate "Digital Twins" %}</th>
-                                <th>{% translate "Actions" %}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for experiment in experiments %}
+                <div class="table-container">
+                    <div>
+                        <table class="experiments-table">
+                            <thead>
                                 <tr>
-                                    <td class="experiment-name">{{ experiment.name }}</td>
-                                    <td class="experiment-id">{{ experiment.identifier }}</td>
-                                    <td class="experiment-description">{{ experiment.description }}</td>
-                                    <td class="experiment-users">{{ experiment.total_users }}</td>
-                                    <td class="experiment-banned">{{ experiment.total_banned_users }}</td>
-                                    <td class="experiment-posts">{{ experiment.total_posts }}</td>
-                                    <td class="experiment-twins">{{ experiment.total_digital_twins }}</td>
-                                    <td class="experiment-actions">
-                                        <button class="menu-button" 
-                                            title="More"
-                                            onclick="showGlobalExperimentMenu(event)"
-                                            data-experiment-id="{{ experiment.identifier }}"
-                                            data-experiment-name="{{ experiment.name|escapejs }}"
-                                            data-is-creator="{% if experiment.creator == request.user %}1{% else %}0{% endif %}">
-                                            <i class="ri-more-fill"></i>
-                                        </button>
-                                    </td>
+                                    <th>{% translate "Name" %}</th>
+                                    <th>{% translate "ID" %}</th>
+                                    <th>{% translate "Description" %}</th>
+                                    <th>{% translate "Users" %}</th>
+                                    <th>{% translate "Banned" %}</th>
+                                    <th>{% translate "Posts" %}</th>
+                                    <th>{% translate "Digital Twins" %}</th>
+                                    <th>{% translate "Actions" %}</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for experiment in experiments %}
+                                    <tr>
+                                        <td class="experiment-name">{{ experiment.name }}</td>
+                                        <td class="experiment-id">{{ experiment.identifier }}</td>
+                                        <td class="experiment-description">{{ experiment.description }}</td>
+                                        <td class="experiment-users">{{ experiment.total_users }}</td>
+                                        <td class="experiment-banned">{{ experiment.total_banned_users }}</td>
+                                        <td class="experiment-posts">{{ experiment.total_posts }}</td>
+                                        <td class="experiment-twins">{{ experiment.total_digital_twins }}</td>
+                                        <td class="experiment-actions">
+                                            <button class="menu-button" 
+                                                title="More"
+                                                onclick="showGlobalExperimentMenu(event)"
+                                                data-experiment-id="{{ experiment.identifier }}"
+                                                data-experiment-name="{{ experiment.name|escapejs }}"
+                                                data-is-creator="{% if experiment.creator == request.user %}1{% else %}0{% endif %}">
+                                                <i class="ri-more-fill"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             {% else %}
                 <div class="no-experiments">
