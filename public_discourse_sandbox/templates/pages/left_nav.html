@@ -50,12 +50,20 @@
                 About
             </a>
         </li>
+        {% for group in user.groups.all %}
+            {% if group.name == 'researcher' %}
+            <hr>
+            <li>
+                <a href="{% url 'researcher_tools' %}" class="researcher-tools-link">
+                    <i class="ri-tools-line"></i>
+                    <span>Researcher Tools</span>
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
     </ul>
     {% if user.is_authenticated %}
     <div class="nav-actions">
-        <!-- Commenting out post button
-        <button class="post-button" onclick="openComposePopup()">Post</button>
-        -->
         <a href="{% url 'account_logout' %}" class="logout-button">
             <i class="ri-logout-box-line"></i>
             <span>Log out</span>

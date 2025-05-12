@@ -228,3 +228,30 @@ class FollowView(LoginRequiredMixin, View):
                 'status': 'error',
                 'message': str(e)
             }, status=400)
+
+
+class ResearcherToolsView(LoginRequiredMixin, TemplateView):
+    """
+    View for researcher tools page that displays experiments where the user is either
+    the creator or a collaborator.
+    """
+    template_name = 'pages/researcher_tools.html'
+    
+    def get(self, request, *args, **kwargs):
+        # Check if user is in researcher group
+        if not request.user.groups.filter(name='researcher').exists():
+            raise PermissionDenied("You must be a researcher to access this page")
+            
+        return super().get(request, *args, **kwargs)
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get experiments where user is creator or collaborator
+        user_experiments = Experiment.objects.filter(
+            models.Q(creator=self.request.user) |  # User is creator
+            models.Q(userprofile__user=self.request.user, userprofile__is_collaborator=True)  # User is collaborator
+        ).distinct().order_by('-created_date')  # Order by most recent first
+        
+        context['experiments'] = user_experiments
+        return context
