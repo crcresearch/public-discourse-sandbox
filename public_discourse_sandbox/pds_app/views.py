@@ -277,7 +277,11 @@ class ResearcherToolsView(LoginRequiredMixin, TemplateView):
                 ),
                 distinct=True
             ),
-            total_posts=models.Count('post', distinct=True),
+            total_posts=models.Count(
+                'post',
+                filter=models.Q(post__is_deleted=False),
+                distinct=True
+            ),
             total_digital_twins=models.Count(
                 'userprofile',
                 filter=models.Q(
@@ -380,7 +384,7 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
             is_deleted=False
         ).count()
         
-        context['total_posts'] = experiment.post_set.count()
+        context['total_posts'] = experiment.post_set.filter(is_deleted=False).count()
         context['total_digital_twins'] = experiment.userprofile_set.filter(
             is_digital_twin=True,
             is_deleted=False
