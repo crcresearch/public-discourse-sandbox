@@ -72,43 +72,44 @@ class ExperimentContextMixin:
         self.user_profile = None
         
         if request.user.is_authenticated:
-            # First try to get experiment from URL
+            def get_valid_experiment(exp):
+                if exp and not exp.is_deleted:
+                    return exp
+                return None
+
+            # Try to get experiment from URL
             if 'experiment_identifier' in kwargs:
                 try:
                     self.experiment = Experiment.objects.get(identifier=kwargs['experiment_identifier'])
                 except Experiment.DoesNotExist:
-                    # If experiment doesn't exist, use last_accessed
-                    if hasattr(request.user, 'last_accessed') and request.user.last_accessed:
-                        self.experiment = request.user.last_accessed
-                        self.should_redirect = True
-                    else:
-                        # If no last_accessed, try to get the user's first available experiment
-                        user_profile = request.user.userprofile_set.first()
-                        if user_profile:
-                            self.experiment = user_profile.experiment
-                            self.should_redirect = True
-                        else:
-                            raise PermissionDenied("You do not have access to any experiments")
-            # If no identifier in URL, try to get from user's last_accessed
-            elif hasattr(request.user, 'last_accessed') and request.user.last_accessed:
-                self.experiment = request.user.last_accessed
-                self.should_redirect = True
-            else:
-                # If no experiment found, try to get the user's first available experiment
-                user_profile = request.user.userprofile_set.first()
+                    self.experiment = None
+
+            # If not found, try last_accessed (but only if not deleted)
+            if not self.experiment:
+                self.experiment = get_valid_experiment(getattr(request.user, 'last_accessed', None))
+                if self.experiment:
+                    self.should_redirect = True
+
+            # If still not found, try first available experiment
+            if not self.experiment:
+                user_profile = request.user.userprofile_set.filter(experiment__is_deleted=False).first()
                 if user_profile:
                     self.experiment = user_profile.experiment
                     self.should_redirect = True
-                else:
-                    raise PermissionDenied("You do not have access to any experiments")
-            
+
+            # If still not found, redirect to landing page
+            if not self.experiment:
+                from django.shortcuts import redirect
+                raise redirect("/")
+
             # Verify user has access to this experiment and get their profile for this experiment
-            if self.experiment:
-                self.user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
-                if not self.user_profile:
-                    raise PermissionDenied("You do not have a profile in this experiment")
-                
-                # Update user's last_accessed experiment
+            self.user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
+            if not self.user_profile:
+                from django.shortcuts import redirect
+                raise redirect("/")
+
+            # Update user's last_accessed experiment if needed
+            if request.user.last_accessed != self.experiment:
                 request.user.last_accessed = self.experiment
                 request.user.save()
 
