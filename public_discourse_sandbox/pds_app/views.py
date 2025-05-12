@@ -258,11 +258,32 @@ class ResearcherToolsView(LoginRequiredMixin, TemplateView):
         
         # Annotate each experiment with statistics
         user_experiments = user_experiments.annotate(
-            total_users=models.Count('userprofile', distinct=True),
+            # Count active users (not bots, not banned, not soft-deleted)
+            total_users=models.Count(
+                'userprofile',
+                filter=models.Q(
+                    userprofile__is_digital_twin=False,
+                    userprofile__is_banned=False,
+                    userprofile__is_deleted=False
+                ),
+                distinct=True
+            ),
+            # Count banned users
+            total_banned_users=models.Count(
+                'userprofile',
+                filter=models.Q(
+                    userprofile__is_banned=True,
+                    userprofile__is_deleted=False
+                ),
+                distinct=True
+            ),
             total_posts=models.Count('post', distinct=True),
             total_digital_twins=models.Count(
                 'userprofile',
-                filter=models.Q(userprofile__is_digital_twin=True),
+                filter=models.Q(
+                    userprofile__is_digital_twin=True,
+                    userprofile__is_deleted=False
+                ),
                 distinct=True
             )
         )
@@ -347,10 +368,23 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         experiment = self.object
         
-        # Add experiment statistics
-        context['total_users'] = experiment.userprofile_set.count()
+        # Add experiment statistics with proper filtering
+        context['total_users'] = experiment.userprofile_set.filter(
+            is_digital_twin=False,
+            is_banned=False,
+            is_deleted=False
+        ).count()
+        
+        context['total_banned_users'] = experiment.userprofile_set.filter(
+            is_banned=True,
+            is_deleted=False
+        ).count()
+        
         context['total_posts'] = experiment.post_set.count()
-        context['total_digital_twins'] = experiment.userprofile_set.filter(is_digital_twin=True).count()
+        context['total_digital_twins'] = experiment.userprofile_set.filter(
+            is_digital_twin=True,
+            is_deleted=False
+        ).count()
         
         # Add form for editing if user is creator
         if experiment.creator == self.request.user:
