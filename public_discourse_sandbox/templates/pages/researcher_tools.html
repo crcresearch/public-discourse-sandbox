@@ -21,10 +21,10 @@
         </header>
         
         <div class="experiments-list">
-            <h4>{% translate "Your Discourses" %}</h4>
+            <h5>{% translate "Your Discourses" %}</h5>
             
             {% if experiments %}
-                <div class="table-container">
+                <div>
                     <table class="experiments-table">
                         <thead>
                             <tr>
@@ -91,7 +91,7 @@
 function getExperimentMenuHTML(experimentId, experimentName, isCreator) {
     let html = '';
     html += `<a href="${window.urls['experiment_detail'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-information-line"></i> Details</a>`;
-    html += `<a href="${window.urls['home_with_experiment'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-home-line"></i> View</a>`;
+    html += `<a href="${window.urls['home_with_experiment'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-home-line"></i> Go to Discourse</a>`;
     if (isCreator) {
         html += `<a href="${window.urls['moderator_dashboard'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-dashboard-line"></i> Dashboard</a>`;
         html += `<button onclick=\"showDeleteModal('${experimentId}', '${experimentName}')\" class=\"post-menu-item\"><i class=\"ri-delete-bin-line\"></i> Delete</button>`;
