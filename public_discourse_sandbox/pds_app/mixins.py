@@ -166,7 +166,6 @@ class ExperimentContextMixin:
         """
         # Handle redirect if setup flagged it
         if getattr(self, 'redirect_to_landing', False):
-            from django.shortcuts import redirect
             return redirect("/")
         response = super().dispatch(request, *args, **kwargs)
         
