@@ -228,3 +228,18 @@ class Notification(BaseModel):
 
     def __str__(self):
         return f"{self.user_profile.username} - {self.event}"
+
+
+class ExperimentInvitation(BaseModel):
+    """
+    Experiment invitation model.
+    """
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    email = models.EmailField()
+    is_accepted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f"{self.user_profile.username} - {self.experiment.name}"
