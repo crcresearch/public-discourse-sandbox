@@ -199,6 +199,7 @@ class DigitalTwin(BaseModel):
     is_active = models.BooleanField(default=True)
     api_token = models.CharField(max_length=255, default='default_token')
     llm_url = models.CharField(max_length=255, null=True, blank=True)
+    llm_model = models.CharField(max_length=255, null=True, blank=True)
     last_post = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

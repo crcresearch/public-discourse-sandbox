@@ -105,7 +105,7 @@ class DTService:
             self.token_counter += len(objective.split())
 
 
-    def execute(self, template: str) -> Any:
+    def execute(self, template: str, twin: DigitalTwin) -> Any:
         """
         Core LLM interaction method. Sends prompts to OpenAI and manages the conversation memory.
         Acts as the central point for all AI model interactions.
@@ -117,12 +117,27 @@ class DTService:
         
         # Use OpenAI directly instead of self.llm.prompt
         try:
+            if twin.api_token:
+                api_key = twin.api_token
+            else:
+                api_key = settings.OPENAI_API_KEY
+
+            if twin.llm_url:
+                base_url = twin.llm_url
+            else:
+                base_url = settings.OPENAI_BASE_URL
+
+            if twin.llm_model:
+                llm_model = twin.llm_model
+            else:
+                llm_model = settings.LLM_MODEL
+
             client = openai.OpenAI(
-                base_url=settings.OPENAI_BASE_URL,
-                api_key=settings.OPENAI_API_KEY
+                base_url=base_url,
+                api_key=api_key
             )
             response = client.chat.completions.create(
-                model=settings.LLM_MODEL,
+                model=llm_model,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": self.working_memory}
@@ -291,7 +306,7 @@ class DTService:
             for attempt in range(3):  # Try up to 3 times
                 try:
                     template = self.template("RESPOND", prompt, twin)
-                    response = self.execute(template)
+                    response = self.execute(template, twin)
                     if response:
                         print(f"Generated response on attempt {attempt + 1}: {response}")
                         # Clean up the response
