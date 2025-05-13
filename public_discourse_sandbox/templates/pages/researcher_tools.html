@@ -81,6 +81,7 @@
 
     {% include 'components/delete_experiment_modal.html' %}
     {% include 'components/invite_user_modal.html' %}
+    {% include 'components/enroll_digital_twin_modal.html' %}
 
     <!-- Global Experiment Menu (hidden by default) -->
     <div id="global-experiment-menu" class="post-menu-dropdown" style="display:none; position:fixed; min-width:200px;">
@@ -100,6 +101,7 @@ function getExperimentMenuHTML(experimentId, experimentName, isCreator) {
     if (isCreator) {
         html += `<a href="${window.urls['moderator_dashboard'].replace('EXPERIMENT_ID', experimentId)}" class="post-menu-item"><i class="ri-dashboard-line"></i> Dashboard</a>`;
         html += `<button onclick=\"showInviteModal('${experimentId}', '${experimentName}')\" class=\"post-menu-item\"><i class=\"ri-user-add-line\"></i> Invite User</button>`;
+        html += `<button onclick=\"showEnrollDigitalTwinModal('${experimentId}')\" class=\"post-menu-item\"><i class=\"ri-robot-2-line\"></i> Enroll Digital Twin</button>`;
         html += `<button onclick=\"showDeleteModal('${experimentId}', '${experimentName}')\" class=\"post-menu-item\"><i class=\"ri-delete-bin-line\"></i> Delete</button>`;
     }
     return html;
@@ -110,7 +112,8 @@ window.urls = {
     'experiment_detail': '{% url "experiment_detail" "EXPERIMENT_ID" %}',
     'home_with_experiment': '{% url "home_with_experiment" "EXPERIMENT_ID" %}',
     'moderator_dashboard': '{% url "moderator_dashboard" "EXPERIMENT_ID" %}',
-    'invite_user': '{% url "invite_user" "EXPERIMENT_ID" %}'
+    'invite_user': '{% url "invite_user" "EXPERIMENT_ID" %}',
+    'enroll_digital_twin': '{% url "enroll_digital_twin" "EXPERIMENT_ID" %}'
 };
 
 function showGlobalExperimentMenu(event) {

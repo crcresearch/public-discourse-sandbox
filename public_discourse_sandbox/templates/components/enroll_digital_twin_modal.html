@@ -1,0 +1,104 @@
+{% load i18n %}
+<div id="enroll-digital-twin-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="popup-header">
+            <button type="button" class="close-popup" onclick="closeEnrollDigitalTwinModal()">
+                <i class="ri-close-line"></i>
+            </button>
+            <h2>{% translate "Enroll Digital Twin" %}</h2>
+        </div>
+        <div class="modal-body">
+            <form id="enroll-digital-twin-form" enctype="multipart/form-data" autocomplete="off" onsubmit="handleEnrollDigitalTwinSubmit(event)">
+                <h4>{% translate "User Information" %}</h4>
+                <div class="form-group">
+                    <label for="dt_name">{% translate "Name" %}</label>
+                    <input type="text" id="dt_name" name="name" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="dt_email">{% translate "Email" %}</label>
+                    <input type="email" id="dt_email" name="email" required class="form-control">
+                </div>
+                <h4>{% translate "Profile Information" %}</h4>
+                <div class="form-group">
+                    <label for="dt_display_name">{% translate "Display Name" %}</label>
+                    <input type="text" id="dt_display_name" name="display_name" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="dt_username">{% translate "Username" %}</label>
+                    <input type="text" id="dt_username" name="username" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="dt_bio">{% translate "Bio" %}</label>
+                    <textarea id="dt_bio" name="bio" class="form-control"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="dt_banner_picture">{% translate "Banner Picture" %}</label>
+                    <input type="file" id="dt_banner_picture" name="banner_picture" accept="image/*" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="dt_profile_picture">{% translate "Profile Picture" %}</label>
+                    <input type="file" id="dt_profile_picture" name="profile_picture" accept="image/*" class="form-control">
+                </div>
+                <h4>{% translate "Digital Twin Settings" %}</h4>
+                <div class="form-group">
+                    <label for="dt_persona">{% translate "Persona" %}</label>
+                    <textarea id="dt_persona" name="persona" class="form-control"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="dt_api_token">{% translate "API Token" %}</label>
+                    <input type="text" id="dt_api_token" name="api_token" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="dt_llm_url">{% translate "LLM URL" %}</label>
+                    <input type="text" id="dt_llm_url" name="llm_url" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="dt_llm_model">{% translate "LLM Model" %}</label>
+                    <input type="text" id="dt_llm_model" name="llm_model" class="form-control">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="post-button" onclick="closeEnrollDigitalTwinModal()">{% translate "Cancel" %}</button>
+                    <button type="submit" class="post-button">{% translate "Enroll" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+let currentEnrollExperimentId = null;
+const enrollDigitalTwinModal = document.getElementById('enroll-digital-twin-modal');
+function showEnrollDigitalTwinModal(experimentId) {
+    currentEnrollExperimentId = experimentId;
+    enrollDigitalTwinModal.style.display = 'flex';
+}
+function closeEnrollDigitalTwinModal() {
+    enrollDigitalTwinModal.style.display = 'none';
+    currentEnrollExperimentId = null;
+    document.getElementById('enroll-digital-twin-form').reset();
+}
+async function handleEnrollDigitalTwinSubmit(event) {
+    event.preventDefault();
+    const form = document.getElementById('enroll-digital-twin-form');
+    const url = window.urls['enroll_digital_twin'].replace('EXPERIMENT_ID', currentEnrollExperimentId);
+    const formData = new FormData(form);
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: formData
+        });
+        if (response.ok) {
+            closeEnrollDigitalTwinModal();
+            alert('Digital Twin enrolled successfully!');
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to enroll digital twin. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+</script> 

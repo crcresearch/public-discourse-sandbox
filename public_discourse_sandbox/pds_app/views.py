@@ -1,19 +1,21 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View, DetailView
-from .forms import PostForm, ExperimentForm
-from .models import Post, UserProfile, Experiment, SocialNetwork
+from .forms import PostForm, ExperimentForm, EnrollDigitalTwinForm
+from .models import Post, UserProfile, Experiment, SocialNetwork, DigitalTwin
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
-from django.db import models
+from django.db import models, transaction
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.contrib.auth import get_user_model
+User = get_user_model()
 import json
 
 def get_active_posts(request, experiment=None, hashtag=None):
@@ -471,5 +473,48 @@ class InviteUserView(LoginRequiredMixin, View):
             
         except Experiment.DoesNotExist:
             return JsonResponse({'error': 'Experiment not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+class EnrollDigitalTwinView(LoginRequiredMixin, View):
+    def post(self, request, experiment_identifier):
+        form = EnrollDigitalTwinForm(request.POST, request.FILES)
+        if not form.is_valid():
+            return JsonResponse({'error': form.errors.as_json()}, status=400)
+        try:
+            with transaction.atomic():
+                # Create User (custom user model: only email, name, password)
+                user = User.objects.create_user(
+                    email=form.cleaned_data['email'],
+                    password=User.objects.make_random_password(),
+                    name=form.cleaned_data['name']
+                )
+                # Get experiment
+                experiment = Experiment.objects.get(identifier=experiment_identifier)
+                # Create UserProfile
+                user_profile = UserProfile.objects.create(
+                    user=user,
+                    display_name=form.cleaned_data['display_name'],
+                    username=form.cleaned_data['username'],
+                    experiment=experiment,
+                    bio=form.cleaned_data.get('bio', ''),
+                    is_digital_twin=True
+                )
+                # Handle images
+                if form.cleaned_data.get('banner_picture'):
+                    user_profile.banner_picture = form.cleaned_data['banner_picture']
+                if form.cleaned_data.get('profile_picture'):
+                    user_profile.profile_picture = form.cleaned_data['profile_picture']
+                user_profile.save()
+                # Create DigitalTwin
+                DigitalTwin.objects.create(
+                    user_profile=user_profile,
+                    persona=form.cleaned_data.get('persona', ''),
+                    api_token=form.cleaned_data.get('api_token', ''),
+                    llm_url=form.cleaned_data.get('llm_url', ''),
+                    llm_model=form.cleaned_data.get('llm_model', '')
+                )
+            return JsonResponse({'message': 'Digital Twin enrolled successfully!'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
