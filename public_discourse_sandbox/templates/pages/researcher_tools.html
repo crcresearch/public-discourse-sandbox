@@ -43,7 +43,7 @@
                             </thead>
                             <tbody>
                                 {% for experiment in experiments %}
-                                    <tr>
+                                    <tr class="experiment-row" data-detail-url="{% url 'experiment_detail' experiment.identifier %}">
                                         <td class="experiment-name">{{ experiment.name }}</td>
                                         <td class="experiment-id">{{ experiment.identifier }}</td>
                                         <td class="experiment-description">{{ experiment.description }}</td>
@@ -54,7 +54,7 @@
                                         <td class="experiment-actions">
                                             <button class="menu-button" 
                                                 title="More"
-                                                onclick="showGlobalExperimentMenu(event)"
+                                                onclick="event.stopPropagation();showGlobalExperimentMenu(event)"
                                                 data-experiment-id="{{ experiment.identifier }}"
                                                 data-experiment-name="{{ experiment.name|escapejs }}"
                                                 data-is-creator="{% if experiment.creator == request.user %}1{% else %}0{% endif %}">
@@ -141,5 +141,11 @@ function showGlobalExperimentMenu(event) {
         document.addEventListener('click', closeMenu);
     }, 0);
 }
+
+document.querySelectorAll('.experiment-row').forEach(row => {
+    row.addEventListener('click', function() {
+        window.location.href = row.getAttribute('data-detail-url');
+    });
+});
 </script>
 {% endblock inline_javascript %} 

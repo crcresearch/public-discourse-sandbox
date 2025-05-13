@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View, DetailView
 from .forms import PostForm, ExperimentForm, EnrollDigitalTwinForm
-from .models import Post, UserProfile, Experiment, SocialNetwork, DigitalTwin
+from .models import Post, UserProfile, Experiment, SocialNetwork, DigitalTwin, ExperimentInvitation
 from .mixins import ExperimentContextMixin
 from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
@@ -402,6 +402,7 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
             
         # Hide main nav on experiment detail page
         context['hide_main_nav'] = True
+        context['invitations'] = ExperimentInvitation.objects.filter(experiment=experiment, is_deleted=False)
         return context
         
     def post(self, request, *args, **kwargs):

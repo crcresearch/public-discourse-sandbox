@@ -2156,3 +2156,7 @@ Profile Tabs Custom Styling
         gap: 0.5rem;
     }
 }
+
+.experiment-row {
+    cursor: pointer;
+}
