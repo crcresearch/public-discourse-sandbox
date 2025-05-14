@@ -76,4 +76,47 @@ class EnrollDigitalTwinForm(forms.Form):
         email = self.cleaned_data['email']
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError('A user with this email already exists.')
-        return email 
+        return email
+
+class UserProfileForm(forms.ModelForm):
+    """
+    Form for creating and updating user profiles.
+    """
+    class Meta:
+        model = UserProfile
+        fields = ['display_name', 'username', 'bio', 'profile_picture', 'banner_picture']
+        widgets = {
+            'display_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
+            'banner_picture': forms.FileInput(attrs={'class': 'form-control'})
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.experiment = kwargs.pop('experiment', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username:
+            # Check if username is already taken in this experiment
+            existing = UserProfile.objects.filter(
+                experiment=self.experiment or self.instance.experiment,
+                username=username
+            ).exclude(pk=getattr(self.instance, 'pk', None))
+            if existing.exists():
+                raise forms.ValidationError('This username is already taken in this experiment.')
+        return username
+
+    def clean_display_name(self):
+        display_name = self.cleaned_data.get('display_name')
+        if display_name:
+            # Check if display name is already taken in this experiment
+            existing = UserProfile.objects.filter(
+                experiment=self.experiment or self.instance.experiment,
+                display_name=display_name
+            ).exclude(pk=getattr(self.instance, 'pk', None))
+            if existing.exists():
+                raise forms.ValidationError('This display name is already taken in this experiment.')
+        return display_name 

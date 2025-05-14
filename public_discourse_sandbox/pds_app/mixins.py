@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
-from .models import Experiment, UserProfile
+from .models import Experiment, UserProfile, ExperimentInvitation
 
 class ExperimentContextMixin:
     """
@@ -103,11 +103,8 @@ class ExperimentContextMixin:
                 self.redirect_to_landing = True
                 return
 
-            # Verify user has access to this experiment and get their profile for this experiment
+            # Get user's profile for this experiment
             self.user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
-            if not self.user_profile:
-                self.redirect_to_landing = True
-                return
 
             # Update user's last_accessed experiment if needed
             if request.user.last_accessed != self.experiment:
@@ -244,3 +241,32 @@ class ModeratorPermissionMixin:
         context = super().get_context_data(**kwargs)
         context['is_moderator'] = self.is_moderator(self.request.user, self.experiment)
         return context 
+
+class ProfileRequiredMixin:
+    """
+    Mixin that redirects users to create their profile if they don't have one.
+    Handles both experiment creators and invited users.
+    Should be used after ExperimentContextMixin in the inheritance chain.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        # Skip if we're already on the create profile page
+        if request.resolver_match.url_name == 'create_profile':
+            return super().dispatch(request, *args, **kwargs)
+            
+        # Check if user needs a profile
+        needs_profile = (
+            # Creator without profile
+            (self.experiment.creator == request.user and not self.user_profile) or
+            # Invited user without profile
+            (not self.user_profile and 
+             ExperimentInvitation.objects.filter(
+                 experiment=self.experiment,
+                 email=request.user.email,
+                 is_deleted=False
+             ).exists())
+        )
+        
+        if needs_profile:
+            return redirect('create_profile', experiment_identifier=self.experiment.identifier)
+            
+        return super().dispatch(request, *args, **kwargs) 

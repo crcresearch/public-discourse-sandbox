@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View, DetailView
-from .forms import PostForm, ExperimentForm, EnrollDigitalTwinForm
+from .forms import PostForm, ExperimentForm, EnrollDigitalTwinForm, UserProfileForm
 from .models import Post, UserProfile, Experiment, SocialNetwork, DigitalTwin, ExperimentInvitation
-from .mixins import ExperimentContextMixin
+from .mixins import ExperimentContextMixin, ProfileRequiredMixin
 from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
 from django.utils.decorators import method_decorator
@@ -87,7 +87,7 @@ class LandingView(View):
         return render(request, 'pages/landing.html')
 
 
-class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
+class HomeView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView):
     """Home page view that displays and handles creation of posts."""
     model = Post
     template_name = 'pages/home.html'
@@ -129,7 +129,7 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ListView):
         return self.get(request, *args, **kwargs)
 
 
-class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ListView):
+class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView):
     """
     Explore page view that displays all posts.
     Supports filtering by hashtag using the 'hashtag' query parameter.
@@ -155,7 +155,7 @@ class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
     template_name = 'pages/about.html'
 
 
-class ModeratorDashboardView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
+class ModeratorDashboardView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, TemplateView):
     """
     Example view that demonstrates all three moderator permission approaches working together.
     """
@@ -460,12 +460,15 @@ class InviteUserView(LoginRequiredMixin, View):
             )
             if created:
                 # Send invitation email
+                # Get a name or email for the user who is being invited
+                contact_name = request.user.name or request.user.email
                 context = {
                     'user': request.user,
                     'study': {
+                        'invitee_name': email,
                         'title': experiment.name,
                         'description': experiment.description,
-                        'contact_name': request.user.get_full_name() or request.user.username,
+                        'contact_name': contact_name,
                         'contact_email': request.user.email,
                         'duration': 'Ongoing',
                         'compensation': 'None',
@@ -538,6 +541,75 @@ class EnrollDigitalTwinView(LoginRequiredMixin, View):
             return JsonResponse({'error': str(e)}, status=500)
 
 
+class CreateProfileView(LoginRequiredMixin, View):
+    """
+    View for creating a user profile for a specific experiment.
+    Requires user to be logged in and experiment identifier to be valid.
+    """
+    template_name = 'pages/create_profile.html'
+    
+    def get(self, request, experiment_identifier):
+        # Check if experiment exists
+        try:
+            experiment = Experiment.objects.get(identifier=experiment_identifier)
+        except Experiment.DoesNotExist:
+            return render(request, self.template_name, {
+                'error': 'Invalid experiment identifier'
+            })
+            
+        # Check if user already has a profile for this experiment
+        existing_profile = UserProfile.objects.filter(
+            user=request.user,
+            experiment=experiment,
+            is_deleted=False
+        ).first()
+        
+        if existing_profile:
+            return render(request, self.template_name, {
+                'experiment': experiment,
+                'existing_profile': existing_profile,
+                'home_url': reverse('home_with_experiment', kwargs={'experiment_identifier': experiment.identifier})
+            })
+            
+        # If no existing profile, show the create profile form
+        return render(request, self.template_name, {
+            'experiment': experiment,
+            'form': UserProfileForm(experiment=experiment)
+        })
+        
+    def post(self, request, experiment_identifier):
+        try:
+            experiment = Experiment.objects.get(identifier=experiment_identifier)
+        except Experiment.DoesNotExist:
+            return render(request, self.template_name, {
+                'error': 'Invalid experiment identifier'
+            })
+            
+        # Check if user already has a profile
+        if UserProfile.objects.filter(user=request.user, experiment=experiment, is_deleted=False).exists():
+            return render(request, self.template_name, {
+                'experiment': experiment,
+                'error': 'You already have a profile for this experiment'
+            })
+            
+        form = UserProfileForm(request.POST, request.FILES, experiment=experiment)
+        if form.is_valid():
+            # Create the profile
+            profile = form.save(commit=False)
+            profile.user = request.user
+            profile.experiment = experiment
+            profile.save()
+            
+            # Redirect to the experiment's home page
+            return redirect('home_with_experiment', experiment_identifier=experiment.identifier)
+            
+        # If form is invalid, show form with errors
+        return render(request, self.template_name, {
+            'experiment': experiment,
+            'form': form
+        })
+
+
 class AcceptInvitationView(TemplateView):
     """
     View for handling experiment invitations.
@@ -578,3 +650,12 @@ class AcceptInvitationView(TemplateView):
             context['error'] = 'Invalid experiment'
             
         return context
+
+
+class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView):
+    """
+    View for displaying a user's profile.
+    """
+    model = UserProfile
+    template_name = 'pages/user_profile.html'
+    context_object_name = 'profile'

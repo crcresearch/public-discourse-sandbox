@@ -5,7 +5,7 @@
 {% block content %}
 <h2>Research Study Invitation</h2>
 
-<p>Hello {{ user.get_full_name }},</p>
+<!-- <p>Hello {{ user.get_full_name }},</p> -->
 
 <p>You have been invited by {{ study.contact_name }} to participate in a research study on <b>Public Discourse Sandbox</b>. We believe your perspective would be valuable for this research.</p>
 
@@ -29,7 +29,7 @@
             <p style="margin-bottom: 0;">{{ study.description }}</p>
         </div>
         <div>
-            <p style="margin-bottom: 4px; color: var(--secondary-text);">Contact Person</p>
+            <p style="margin-bottom: 4px; color: var(--secondary-text);">Contact</p>
             <p style="margin-bottom: 0;">{{ study.contact_name }}</p>
         </div>
     </div>
@@ -58,7 +58,7 @@
 
 <div style="text-align: center; margin-top: 32px;">
     <a href="{{ accept_url }}" class="button" style="margin-right: 16px;">Accept Invitation</a>
-    <a href="{{ landing_url }}" class="button" style="background-color: transparent; color: var(--navy); border: 1px solid var(--navy);">Decline Invitation</a>
+    <!-- <a href="{{ landing_url }}" class="button" style="background-color: transparent; color: var(--navy); border: 1px solid var(--navy);">Decline Invitation</a> -->
 </div>
 
 <p style="margin: 32px 0 24px;">If you have any questions about the study, please contact the Principal Investigator of the research team at <a href="mailto:{{ study.contact_email }}" style="color: var(--navy); text-decoration: underline;">{{ study.contact_email }}</a>.</p>
