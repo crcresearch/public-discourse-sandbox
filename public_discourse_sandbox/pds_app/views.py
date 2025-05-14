@@ -15,7 +15,6 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.sites.shortcuts import get_current_site
 User = get_user_model()
 import json
 
