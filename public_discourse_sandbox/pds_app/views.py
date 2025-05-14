@@ -630,6 +630,20 @@ class AcceptInvitationView(TemplateView):
             # Get the experiment
             experiment = Experiment.objects.get(identifier=experiment_identifier)
             
+            # Check if a user with this email already has a profile for this experiment
+            user = User.objects.filter(email=email).first()
+            if user:
+                existing_profile = UserProfile.objects.filter(
+                    user=user,
+                    experiment=experiment,
+                    is_deleted=False
+                ).first()
+                if existing_profile:
+                    context['already_accepted'] = True
+                    context['experiment'] = experiment
+                    context['home_url'] = reverse('home_with_experiment', kwargs={'experiment_identifier': experiment.identifier})
+                    return context
+            
             # Check if invitation exists
             invitation = ExperimentInvitation.objects.filter(
                 experiment=experiment,

@@ -1,60 +1,54 @@
 {% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Accept Invitation" %}{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
-    {% if error %}
-        <div class="alert alert-danger" role="alert">
-            {{ error }}
-        </div>
-    {% else %}
-        <div class="card">
-            <h2 style="margin-top: 0;">Welcome to Public Discourse Sandbox</h2>
-            
-            <p>You've been invited to participate in the research study: <strong>{{ experiment.name }}</strong></p>
-            
-            <div class="card" style="margin: 2rem 0;">
-                <h3 style="margin-top: 0;">Study Details</h3>
-                <div style="display: grid; gap: 16px;">
-                    <div>
-                        <p style="margin-bottom: 4px; color: var(--secondary-text);">Study Title</p>
-                        <p style="margin-bottom: 0; font-weight: 500;">{{ experiment.name }}</p>
-                    </div>
-                    <div>
-                        <p style="margin-bottom: 4px; color: var(--secondary-text);">Description</p>
-                        <p style="margin-bottom: 0;">{{ experiment.description }}</p>
-                    </div>
-                </div>
-            </div>
-
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
             <div class="card">
-                <h3 style="margin-top: 0;">User Consent Form</h3>
-                <div style="display: grid; gap: 16px;">
-                    <p style="margin-bottom: 0;">This study has been approved by the University of Notre Dame IRB.</p>
-                    <div class="final-consent">
-                        <div class="checkbox-wrapper">
-                            <input type="checkbox" id="final-consent" name="consent" required style="margin-right: 8px; border: 1px;">
-                            <span class="consent-text">
-                                By creating an account, I confirm that I have read, understood, and agree to all platform rules,
-                                research consent terms, and mandatory security requirements.
-                            </span>
+                <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger">
+                            {{ error }}
                         </div>
-                    </div>
+                    {% elif already_accepted %}
+                        <div class="text-center">
+                            <h2 class="mb-4">{% trans "Invitation Already Accepted" %}</h2>
+                            <p class="lead">
+                                {% trans "It looks like you've already accepted this invitation and created a profile for this experiment." %}
+                            </p>
+                            <a href="{{ home_url }}" class="btn btn-primary mt-3">
+                                {% trans "Go To Discourse" %}
+                            </a>
+                        </div>
+                    {% else %}
+                        <h2 class="card-title text-center mb-4">{% trans "Accept Invitation" %}</h2>
+                        <div class="text-center mb-4">
+                            <h4>{{ experiment.name }}</h4>
+                            <p class="text-muted">{{ experiment.description }}</p>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <p class="mb-0">
+                                {% trans "You've been invited to participate in this experiment. Please sign in or create an account to continue." %}
+                            </p>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'account_login' %}?next={{ request.path }}?email={{ email }}" class="btn btn-primary">
+                                {% trans "Sign In" %}
+                            </a>
+                            <a href="{% url 'account_signup' %}?next={{ request.path }}?email={{ email }}" class="btn btn-outline-primary">
+                                {% trans "Create Account" %}
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-
-            <div style="text-align: center; margin-top: 32px;">
-                <button id="acceptButton" class="button" style="margin-right: 16px;">Accept Invitation</button>
-            </div>
         </div>
-    {% endif %}
+    </div>
 </div>
-
-{% block extra_js %}
-<script>
-document.getElementById('acceptButton')?.addEventListener('click', function() {
-    console.log('Accept button clicked');
-    // TODO: Implement actual acceptance logic
-});
-</script>
-{% endblock %}
 {% endblock %} 
