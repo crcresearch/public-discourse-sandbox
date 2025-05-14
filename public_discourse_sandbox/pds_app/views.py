@@ -15,6 +15,8 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.views import redirect_to_login
+from django.shortcuts import resolve_url
 User = get_user_model()
 import json
 
@@ -612,10 +614,13 @@ class CreateProfileView(LoginRequiredMixin, View):
 class AcceptInvitationView(View):
     """
     View for handling invitation acceptance.
+    Updated: If the invitation email matches an existing User and the user is not authenticated,
+    redirect to login with a 'next' parameter to return to this page after login.
     """
     def get(self, request, *args, **kwargs):
         experiment_identifier = kwargs.get('experiment_identifier')
         email = kwargs.get('email')
+        User = get_user_model()
         
         if not email:
             return render(request, 'pages/accept_invitation.html', {
@@ -630,8 +635,19 @@ class AcceptInvitationView(View):
                 is_accepted=False,
                 is_deleted=False
             )
-            
-            # Check if user is already logged in
+
+            # Check if the invitation email matches an existing user
+            user_exists = User.objects.filter(email__iexact=email).exists()
+
+            # If not authenticated and the email matches a user, redirect to login
+            if user_exists and not request.user.is_authenticated:
+                # Use Django's built-in login view, with 'next' param to return here after login
+                # login_url = reverse('login')
+                login_url = resolve_url(settings.LOGIN_URL)
+                next_url = request.get_full_path()
+                return redirect_to_login(next_url, login_url)
+
+            # If user is authenticated
             if request.user.is_authenticated:
                 # Check if user already has a profile for this experiment
                 if UserProfile.objects.filter(user=request.user, experiment=experiment).exists():
@@ -640,13 +656,13 @@ class AcceptInvitationView(View):
                         'already_accepted': True,
                         'home_url': reverse('home', kwargs={'experiment_identifier': experiment_identifier})
                     })
-                
                 return render(request, 'pages/accept_invitation.html', {
                     'experiment': experiment,
                     'existing_user': True,
                     'create_profile_url': reverse('create_profile', kwargs={'experiment_identifier': experiment_identifier})
                 })
             else:
+                # If the email does not match a user, proceed to signup
                 signup_url = reverse('users:signup_with_profile') + f'?experiment={experiment_identifier}&email={email}'
                 return render(request, 'pages/accept_invitation.html', {
                     'experiment': experiment,
