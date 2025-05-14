@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% else %}
+        <div class="card">
+            <h2 style="margin-top: 0;">Welcome to Public Discourse Sandbox</h2>
+            
+            <p>You've been invited to participate in the research study: <strong>{{ experiment.name }}</strong></p>
+            
+            <div class="card" style="margin: 2rem 0;">
+                <h3 style="margin-top: 0;">Study Details</h3>
+                <div style="display: grid; gap: 16px;">
+                    <div>
+                        <p style="margin-bottom: 4px; color: var(--secondary-text);">Study Title</p>
+                        <p style="margin-bottom: 0; font-weight: 500;">{{ experiment.name }}</p>
+                    </div>
+                    <div>
+                        <p style="margin-bottom: 4px; color: var(--secondary-text);">Description</p>
+                        <p style="margin-bottom: 0;">{{ experiment.description }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top: 0;">User Consent Form</h3>
+                <div style="display: grid; gap: 16px;">
+                    <p style="margin-bottom: 0;">This study has been approved by the University of Notre Dame IRB.</p>
+                    <div class="final-consent">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="final-consent" name="consent" required style="margin-right: 8px; border: 1px;">
+                            <span class="consent-text">
+                                By creating an account, I confirm that I have read, understood, and agree to all platform rules,
+                                research consent terms, and mandatory security requirements.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 32px;">
+                <button id="acceptButton" class="button" style="margin-right: 16px;">Accept Invitation</button>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.getElementById('acceptButton')?.addEventListener('click', function() {
+    console.log('Accept button clicked');
+    // TODO: Implement actual acceptance logic
+});
+</script>
+{% endblock %}
+{% endblock %} 

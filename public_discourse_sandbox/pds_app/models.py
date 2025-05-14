@@ -242,4 +242,4 @@ class ExperimentInvitation(BaseModel):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
-        return f"{self.user_profile.username} - {self.experiment.name}"
+        return f"{self.email} - {self.experiment.name}"

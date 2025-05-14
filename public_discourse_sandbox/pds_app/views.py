@@ -15,6 +15,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.sites.shortcuts import get_current_site
 User = get_user_model()
 import json
 
@@ -470,7 +471,8 @@ class InviteUserView(LoginRequiredMixin, View):
                         'compensation': 'None',
                         'irb_information': 'This study has been approved by the University of Notre Dame IRB.'
                     },
-                    'study_url': request.build_absolute_uri(reverse('home_with_experiment', args=[experiment.identifier])),
+                    'experiment': experiment,
+                    'accept_url': request.build_absolute_uri(reverse('accept_invitation', args=[experiment.identifier])) + f'?email={email}',
                     'landing_url': request.build_absolute_uri(reverse('landing'))
                 }
                 
@@ -534,3 +536,45 @@ class EnrollDigitalTwinView(LoginRequiredMixin, View):
             return JsonResponse({'message': 'Digital Twin enrolled successfully!'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+
+class AcceptInvitationView(TemplateView):
+    """
+    View for handling experiment invitations.
+    This view is accessible without login and verifies invitation validity.
+    """
+    template_name = 'pages/accept_invitation.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        experiment_identifier = kwargs.get('experiment_identifier')
+        email = self.request.GET.get('email')
+        
+        if not email:
+            context['error'] = 'No email address provided'
+            return context
+            
+        try:
+            # Get the experiment
+            experiment = Experiment.objects.get(identifier=experiment_identifier)
+            
+            # Check if invitation exists
+            invitation = ExperimentInvitation.objects.filter(
+                experiment=experiment,
+                email=email,
+                is_deleted=False
+            ).first()
+            
+            if not invitation:
+                context['error'] = f'No invitation found for {email}'
+                return context
+                
+            # Add experiment and invitation info to context
+            context['experiment'] = experiment
+            context['invitation'] = invitation
+            context['email'] = email
+            
+        except Experiment.DoesNotExist:
+            context['error'] = 'Invalid experiment'
+            
+        return context

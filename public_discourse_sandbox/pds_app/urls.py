@@ -5,7 +5,8 @@ from django.views.generic import TemplateView
 from public_discourse_sandbox.pds_app.views import (
     HomeView, ExploreView, AboutView, LandingView, 
     ModeratorDashboardView, FollowView, ResearcherToolsView,
-    ExperimentDetailView, CreateExperimentView, InviteUserView, EnrollDigitalTwinView
+    ExperimentDetailView, CreateExperimentView, InviteUserView, EnrollDigitalTwinView,
+    AcceptInvitationView
 )
 from public_discourse_sandbox.pds_app.api import (
     create_comment, get_post_replies,
@@ -20,6 +21,7 @@ urlpatterns = [
     path("create-experiment/", CreateExperimentView.as_view(), name="create_experiment"),
     path("experiment/<str:experiment_identifier>/", ExperimentDetailView.as_view(), name="experiment_detail"),
     path("experiment/<str:experiment_identifier>/delete/", delete_experiment, name="delete_experiment"),
+    path("accept-invitation/<str:experiment_identifier>/", AcceptInvitationView.as_view(), name="accept_invitation"),
     # URLs with experiment identifier
     path("<str:experiment_identifier>/about/", AboutView.as_view(), name="about_with_experiment"),
     path("<str:experiment_identifier>/home/", HomeView.as_view(), name="home_with_experiment"),
