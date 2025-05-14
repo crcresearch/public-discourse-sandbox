@@ -643,6 +643,10 @@ class AcceptInvitationView(TemplateView):
                     context['experiment'] = experiment
                     context['home_url'] = reverse('home_with_experiment', kwargs={'experiment_identifier': experiment.identifier})
                     return context
+                else:
+                    # User exists but no profile - they'll go to create_profile
+                    context['existing_user'] = True
+                    context['create_profile_url'] = reverse('create_profile', kwargs={'experiment_identifier': experiment.identifier})
             
             # Check if invitation exists
             invitation = ExperimentInvitation.objects.filter(
@@ -659,6 +663,10 @@ class AcceptInvitationView(TemplateView):
             context['experiment'] = experiment
             context['invitation'] = invitation
             context['email'] = email
+            
+            # If no existing user, they'll go to signup
+            if not context.get('existing_user'):
+                context['signup_url'] = reverse('account_signup') + f'?next={reverse("create_profile", kwargs={"experiment_identifier": experiment.identifier})}'
             
         except Experiment.DoesNotExist:
             context['error'] = 'Invalid experiment'

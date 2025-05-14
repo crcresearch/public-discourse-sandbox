@@ -33,7 +33,11 @@
                         
                         <div class="alert alert-info">
                             <p class="mb-0">
-                                {% trans "You've been invited to participate in this experiment. Please create a profile to continue." %}
+                                {% if existing_user %}
+                                    {% trans "You've been invited to participate in this discourse. Please create your profile to continue." %}
+                                {% else %}
+                                    {% trans "You've been invited to participate in this discourse. Please create an account and profile to continue." %}
+                                {% endif %}
                             </p>
                         </div>
 
@@ -53,7 +57,7 @@
                         </div>
                         
                         <div class="d-grid">
-                            <a href="{% url 'account_signup' %}?next={{ request.path }}?email={{ email }}" 
+                            <a href="{% if existing_user %}{{ create_profile_url }}{% else %}{{ signup_url }}{% endif %}" 
                                class="btn btn-primary" 
                                id="createProfileBtn" 
                                disabled>
