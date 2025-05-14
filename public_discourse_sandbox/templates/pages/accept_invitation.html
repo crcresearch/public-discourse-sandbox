@@ -57,13 +57,31 @@
                         </div>
                         
                         <div class="d-grid">
-                            <a href="{% if existing_user %}{{ create_profile_url }}{% else %}{{ signup_url }}{% endif %}" 
+                            <button type="button"
                                class="btn btn-primary" 
                                id="createProfileBtn" 
+                               data-href="{% if existing_user %}{{ create_profile_url }}{% else %}{{ signup_url }}{% endif %}"
                                disabled>
                                 {% trans "Create Profile For Discourse" %}
-                            </a>
+                            </button>
                         </div>
+
+                        <script>
+                            const consentCheckbox = document.getElementById('final-consent');
+                            const createProfileBtn = document.getElementById('createProfileBtn');
+                            
+                            if (consentCheckbox && createProfileBtn) {
+                                consentCheckbox.addEventListener('change', function() {
+                                    createProfileBtn.disabled = !this.checked;
+                                });
+
+                                createProfileBtn.addEventListener('click', function() {
+                                    if (!this.disabled) {
+                                        window.location.href = this.getAttribute('data-href');
+                                    }
+                                });
+                            }
+                        </script>
                     {% endif %}
                 </div>
             </div>
@@ -72,17 +90,4 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const consentCheckbox = document.getElementById('final-consent');
-    const createProfileBtn = document.getElementById('createProfileBtn');
-    
-    if (consentCheckbox && createProfileBtn) {
-        consentCheckbox.addEventListener('change', function() {
-            createProfileBtn.disabled = !this.checked;
-        });
-    }
-});
-</script>
-{% endblock %} 
+{% block extra_js %}{% endblock %} 
