@@ -184,29 +184,45 @@ update_profile_view = UpdateProfileView.as_view()
 class CustomSignupView(SignupView):
     """
     Custom signup view that uses our form with profile fields.
-    If accessed without a pending invitation, redirects to the original signup.
+    If accessed without experiment and email parameters, redirects to original signup.
     """
     form_class = CustomSignupForm
     
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        # Get experiment and email from session if it exists
-        pending_invitation = self.request.session.get('pending_invitation')
-        if pending_invitation:
+        # Get experiment and email from URL parameters or POST data
+        experiment_identifier = self.request.GET.get('experiment') or self.request.POST.get('experiment')
+        email = self.request.GET.get('email') or self.request.POST.get('email')
+        
+        if experiment_identifier and email:
             try:
-                kwargs['experiment'] = Experiment.objects.get(identifier=pending_invitation['experiment_identifier'])
-                # Add initial email from the invitation
-                kwargs['initial'] = {'email': pending_invitation['email']}
-            except Experiment.DoesNotExist:
+                experiment = Experiment.objects.get(identifier=experiment_identifier)
+                # Verify invitation exists
+                invitation = ExperimentInvitation.objects.get(
+                    experiment=experiment,
+                    email=email,
+                    is_accepted=False,
+                    is_deleted=False
+                )
+                kwargs['experiment'] = experiment
+                kwargs['initial'] = {'email': email}
+            except (Experiment.DoesNotExist, ExperimentInvitation.DoesNotExist):
                 pass
         return kwargs
         
     def get(self, request, *args, **kwargs):
-        # If no pending invitation, redirect to original signup
-        if not request.session.get('pending_invitation'):
+        # If no experiment/email in URL params, redirect to original signup
+        if not (request.GET.get('experiment') and request.GET.get('email')):
             return redirect('account_signup')
         return super().get(request, *args, **kwargs)
-        
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add experiment and email to form context for hidden fields
+        context['experiment'] = self.request.GET.get('experiment')
+        context['email'] = self.request.GET.get('email')
+        return context
+
     def get_success_url(self):
         # After successful signup, redirect to email verification
         return reverse('account_email_verification_sent')
@@ -214,14 +230,20 @@ class CustomSignupView(SignupView):
 
 class CustomEmailVerificationSentView(EmailVerificationSentView):
     """
-    Custom view to handle email verification.
-    The UserProfile is already created by the adapter during signup.
+    Custom view to handle email verification and redirect to create profile
+    if there's a pending invitation.
     """
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
         
-        # Clear any pending invitation from session
-        if 'pending_invitation' in request.session:
+        # Check if there's a pending invitation
+        pending_invitation = request.session.get('pending_invitation')
+        if pending_invitation:
+            # Clear the session data
             del request.session['pending_invitation']
+            
+            # Redirect to create profile
+            return redirect('create_profile', 
+                          experiment_identifier=pending_invitation['experiment_identifier'])
         
         return response

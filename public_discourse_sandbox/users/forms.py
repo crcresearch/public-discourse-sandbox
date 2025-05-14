@@ -83,14 +83,33 @@ class CustomSignupForm(SignupForm):
         required=False,
         widget=forms.FileInput(attrs={'class': 'form-control'})
     )
+    # Hidden fields for experiment and email
+    experiment = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=True
+    )
     
     def __init__(self, *args, **kwargs):
+        # Store experiment before popping it from kwargs
         self.experiment = kwargs.pop('experiment', None)
         super().__init__(*args, **kwargs)
+        
         # Make email field read-only if it's from an invitation
         if self.experiment:
             self.fields['email'].widget.attrs['readonly'] = True
             self.fields['email'].widget.attrs['class'] = 'form-control'
+            # Set initial value for hidden experiment field
+            self.fields['experiment'].initial = self.experiment.identifier
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        # Get experiment from form data if not already set
+        if not self.experiment and cleaned_data.get('experiment'):
+            try:
+                self.experiment = Experiment.objects.get(identifier=cleaned_data['experiment'])
+            except Experiment.DoesNotExist:
+                raise forms.ValidationError('Invalid experiment identifier')
+        return cleaned_data
     
     def clean_username(self):
         username = self.cleaned_data.get('username')

@@ -342,6 +342,7 @@ SOCIALACCOUNT_ADAPTER = "public_discourse_sandbox.users.adapters.SocialAccountAd
 SOCIALACCOUNT_FORMS = {
     "signup": "public_discourse_sandbox.users.forms.UserSocialSignupForm",
 }
+ACCOUNT_ADAPTER = "public_discourse_sandbox.users.adapters.AccountAdapter"
 
 # django-rest-framework
 # -------------------------------------------------------------------------------

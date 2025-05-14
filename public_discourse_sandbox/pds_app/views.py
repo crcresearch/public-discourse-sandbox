@@ -642,22 +642,17 @@ class AcceptInvitationView(View):
                         'home_url': reverse('home', kwargs={'experiment_identifier': experiment_identifier})
                     })
                 
-                # Store invitation info in session
-                request.session['pending_invitation'] = {
-                    'experiment_identifier': experiment_identifier,
-                    'email': email
-                }
-                
                 return render(request, 'pages/accept_invitation.html', {
                     'experiment': experiment,
                     'existing_user': True,
                     'create_profile_url': reverse('create_profile', kwargs={'experiment_identifier': experiment_identifier})
                 })
             else:
+                signup_url = reverse('users:signup_with_profile') + f'?experiment={experiment_identifier}&email={email}'
                 return render(request, 'pages/accept_invitation.html', {
                     'experiment': experiment,
                     'existing_user': False,
-                    'signup_url': reverse('users:signup_with_profile')
+                    'signup_url': signup_url
                 })
                 
         except Experiment.DoesNotExist:

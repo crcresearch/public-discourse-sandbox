@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import typing
+from typing import Any
 
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 from django.http import HttpRequest
+from allauth.account.utils import user_email, user_field, user_username
+from allauth.utils import valid_email_or_none
 from public_discourse_sandbox.pds_app.models import UserProfile, Experiment
 
 if typing.TYPE_CHECKING:
@@ -29,24 +32,28 @@ class AccountAdapter(DefaultAccountAdapter):
         if hasattr(form, 'cleaned_data'):
             # Get profile-specific fields if they exist
             display_name = form.cleaned_data.get('display_name')
-            username = form.cleaned_data.get('username')
+            username = form.cleaned_data.get('username') or display_name
             bio = form.cleaned_data.get('bio', '')
             profile_picture = form.cleaned_data.get('profile_picture')
             banner_picture = form.cleaned_data.get('banner_picture')
+            experiment_id = form.cleaned_data.get('experiment')
             
             # Save the user first
             if commit:
                 user.save()
             
-            # Check for pending invitation in session
-            pending_invitation = request.session.get('pending_invitation')
-            if pending_invitation:
+            # Get experiment from form or form data
+            experiment = getattr(form, 'experiment', None)
+            if not experiment and experiment_id:
                 try:
-                    experiment = Experiment.objects.get(
-                        identifier=pending_invitation['experiment_identifier']
-                    )
+                    experiment = Experiment.objects.get(identifier=experiment_id)
+                except Experiment.DoesNotExist:
+                    pass
+            
+            if experiment:
+                try:
                     # Create the UserProfile
-                    UserProfile.objects.create(
+                    profile = UserProfile.objects.create(
                         user=user,
                         experiment=experiment,
                         display_name=display_name,
@@ -55,8 +62,12 @@ class AccountAdapter(DefaultAccountAdapter):
                         profile_picture=profile_picture,
                         banner_picture=banner_picture
                     )
-                except Experiment.DoesNotExist:
-                    pass
+                    
+                    # Set last_accessed experiment
+                    user.last_accessed = experiment
+                    user.save()
+                except Exception as e:
+                    raise
         elif commit:
             user.save()
             
