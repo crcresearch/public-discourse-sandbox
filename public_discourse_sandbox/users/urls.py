@@ -6,6 +6,8 @@ from public_discourse_sandbox.users.views import (
     user_update_view,
     user_profile_detail_view,
     update_profile_view,
+    CustomEmailVerificationSentView,
+    CustomSignupView,
 )
 
 app_name = "users"
@@ -15,4 +17,7 @@ urlpatterns = [
     path("<uuid:pk>/", view=user_detail_view, name="detail"),
     path("<str:experiment_identifier>/<uuid:pk>/", view=user_profile_detail_view, name="detail_with_experiment"),
     path("<str:experiment_identifier>/update-profile/", view=update_profile_view, name="update_profile"),
+    path('email/verification-sent/', CustomEmailVerificationSentView.as_view(),
+         name='account_email_verification_sent'),
+    path('signup-with-profile/', CustomSignupView.as_view(), name='signup_with_profile'),
 ]

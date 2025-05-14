@@ -103,6 +103,21 @@ class UserProfile(BaseModel):
             self.is_moderator  # User has moderator flag
         )
 
+    def save(self, *args, **kwargs):
+        # Update the user's last_accessed experiment
+        self.user.last_accessed = self.experiment
+        self.user.save(update_fields=['last_accessed'])
+
+        # Find and update any pending invitations for this user and experiment
+        ExperimentInvitation.objects.filter(
+            experiment=self.experiment,
+            email=self.user.email,
+            is_accepted=False,
+            is_deleted=False
+        ).update(is_accepted=True)
+
+        super().save(*args, **kwargs)
+
 
 class UndeletedPostManager(models.Manager):
     def get_queryset(self):

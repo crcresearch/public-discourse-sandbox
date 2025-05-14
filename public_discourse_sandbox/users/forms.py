@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django import forms
 
 from .models import User
-from public_discourse_sandbox.pds_app.models import UserProfile
+from public_discourse_sandbox.pds_app.models import UserProfile, Experiment, ExperimentInvitation
 
 
 class UserAdminChangeForm(admin_forms.UserChangeForm):
@@ -53,3 +53,61 @@ class UserProfileForm(forms.ModelForm):
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
         }
+
+
+class CustomSignupForm(SignupForm):
+    """
+    Custom signup form that includes profile fields.
+    Used when there's a pending invitation.
+    """
+    display_name = forms.CharField(
+        max_length=255,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    username = forms.CharField(
+        max_length=255,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    bio = forms.CharField(
+        max_length=1000,
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+    )
+    profile_picture = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
+    banner_picture = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.experiment = kwargs.pop('experiment', None)
+        super().__init__(*args, **kwargs)
+        # Make email field read-only if it's from an invitation
+        if self.experiment:
+            self.fields['email'].widget.attrs['readonly'] = True
+            self.fields['email'].widget.attrs['class'] = 'form-control'
+    
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username and self.experiment:
+            if UserProfile.objects.filter(
+                experiment=self.experiment,
+                username=username
+            ).exists():
+                raise forms.ValidationError('This username is already taken in this experiment.')
+        return username
+    
+    def clean_display_name(self):
+        display_name = self.cleaned_data.get('display_name')
+        if display_name and self.experiment:
+            if UserProfile.objects.filter(
+                experiment=self.experiment,
+                display_name=display_name
+            ).exists():
+                raise forms.ValidationError('This display name is already taken in this experiment.')
+        return display_name

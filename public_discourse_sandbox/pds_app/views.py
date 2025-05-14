@@ -475,7 +475,7 @@ class InviteUserView(LoginRequiredMixin, View):
                         'irb_information': 'This study has been approved by the University of Notre Dame IRB.'
                     },
                     'experiment': experiment,
-                    'accept_url': request.build_absolute_uri(reverse('accept_invitation', args=[experiment.identifier])) + f'?email={email}',
+                    'accept_url': request.build_absolute_uri(reverse('accept_invitation', args=[experiment.identifier, email])),
                     'landing_url': request.build_absolute_uri(reverse('landing'))
                 }
                 
@@ -610,68 +610,64 @@ class CreateProfileView(LoginRequiredMixin, View):
         })
 
 
-class AcceptInvitationView(TemplateView):
+class AcceptInvitationView(View):
     """
-    View for handling experiment invitations.
-    This view is accessible without login and verifies invitation validity.
+    View for handling invitation acceptance.
     """
-    template_name = 'pages/accept_invitation.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get(self, request, *args, **kwargs):
         experiment_identifier = kwargs.get('experiment_identifier')
-        email = self.request.GET.get('email')
+        email = kwargs.get('email')
         
         if not email:
-            context['error'] = 'No email address provided'
-            return context
-            
+            return render(request, 'pages/accept_invitation.html', {
+                'error': _('No email address provided.')
+            })
+        
         try:
-            # Get the experiment
             experiment = Experiment.objects.get(identifier=experiment_identifier)
-            
-            # Check if a user with this email already has a profile for this experiment
-            user = User.objects.filter(email=email).first()
-            if user:
-                existing_profile = UserProfile.objects.filter(
-                    user=user,
-                    experiment=experiment,
-                    is_deleted=False
-                ).first()
-                if existing_profile:
-                    context['already_accepted'] = True
-                    context['experiment'] = experiment
-                    context['home_url'] = reverse('home_with_experiment', kwargs={'experiment_identifier': experiment.identifier})
-                    return context
-                else:
-                    # User exists but no profile - they'll go to create_profile
-                    context['existing_user'] = True
-                    context['create_profile_url'] = reverse('create_profile', kwargs={'experiment_identifier': experiment.identifier})
-            
-            # Check if invitation exists
-            invitation = ExperimentInvitation.objects.filter(
+            invitation = ExperimentInvitation.objects.get(
                 experiment=experiment,
                 email=email,
+                is_accepted=False,
                 is_deleted=False
-            ).first()
+            )
             
-            if not invitation:
-                context['error'] = f'No invitation found for {email}'
-                return context
+            # Check if user is already logged in
+            if request.user.is_authenticated:
+                # Check if user already has a profile for this experiment
+                if UserProfile.objects.filter(user=request.user, experiment=experiment).exists():
+                    return render(request, 'pages/accept_invitation.html', {
+                        'experiment': experiment,
+                        'already_accepted': True,
+                        'home_url': reverse('home', kwargs={'experiment_identifier': experiment_identifier})
+                    })
                 
-            # Add experiment and invitation info to context
-            context['experiment'] = experiment
-            context['invitation'] = invitation
-            context['email'] = email
-            
-            # If no existing user, they'll go to signup
-            if not context.get('existing_user'):
-                context['signup_url'] = reverse('account_signup') + f'?next={reverse("create_profile", kwargs={"experiment_identifier": experiment.identifier})}'
-            
+                # Store invitation info in session
+                request.session['pending_invitation'] = {
+                    'experiment_identifier': experiment_identifier,
+                    'email': email
+                }
+                
+                return render(request, 'pages/accept_invitation.html', {
+                    'experiment': experiment,
+                    'existing_user': True,
+                    'create_profile_url': reverse('create_profile', kwargs={'experiment_identifier': experiment_identifier})
+                })
+            else:
+                return render(request, 'pages/accept_invitation.html', {
+                    'experiment': experiment,
+                    'existing_user': False,
+                    'signup_url': reverse('users:signup_with_profile')
+                })
+                
         except Experiment.DoesNotExist:
-            context['error'] = 'Invalid experiment'
-            
-        return context
+            return render(request, 'pages/accept_invitation.html', {
+                'error': _('Invalid experiment.')
+            })
+        except ExperimentInvitation.DoesNotExist:
+            return render(request, 'pages/accept_invitation.html', {
+                'error': _('Invalid or expired invitation link.')
+            })
 
 
 class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView):

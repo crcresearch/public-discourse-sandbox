@@ -11,11 +11,16 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.contrib.auth import get_user_model
+from django.shortcuts import redirect
+from allauth.account.views import EmailVerificationSentView, SignupView
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
-from public_discourse_sandbox.pds_app.models import UserProfile, SocialNetwork, Post
+from public_discourse_sandbox.pds_app.models import UserProfile, SocialNetwork, Post, Experiment, ExperimentInvitation
+from .forms import CustomSignupForm
 
+User = get_user_model()
 
 class UserDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
     model = User
@@ -175,3 +180,78 @@ class UpdateProfileView(LoginRequiredMixin, ExperimentContextMixin, View):
             }, status=400)
 
 update_profile_view = UpdateProfileView.as_view()
+
+class CustomSignupView(SignupView):
+    """
+    Custom signup view that uses our form with profile fields.
+    If accessed without a pending invitation, redirects to the original signup.
+    """
+    form_class = CustomSignupForm
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Get experiment and email from session if it exists
+        pending_invitation = self.request.session.get('pending_invitation')
+        if pending_invitation:
+            try:
+                kwargs['experiment'] = Experiment.objects.get(identifier=pending_invitation['experiment_identifier'])
+                # Add initial email from the invitation
+                kwargs['initial'] = {'email': pending_invitation['email']}
+            except Experiment.DoesNotExist:
+                pass
+        return kwargs
+        
+    def get(self, request, *args, **kwargs):
+        # If no pending invitation, redirect to original signup
+        if not request.session.get('pending_invitation'):
+            return redirect('account_signup')
+        return super().get(request, *args, **kwargs)
+        
+    def form_valid(self, form):
+        # First let allauth do its magic
+        response = super().form_valid(form)
+        
+        # Now create the profile
+        pending_invitation = self.request.session.get('pending_invitation')
+        if pending_invitation:
+            try:
+                experiment = Experiment.objects.get(identifier=pending_invitation['experiment_identifier'])
+                # Create the user profile
+                UserProfile.objects.create(
+                    user=self.user,
+                    experiment=experiment,
+                    display_name=form.cleaned_data['display_name'],
+                    username=form.cleaned_data['username'],
+                    bio=form.cleaned_data.get('bio', ''),
+                    profile_picture=form.cleaned_data.get('profile_picture'),
+                    banner_picture=form.cleaned_data.get('banner_picture')
+                )
+            except Experiment.DoesNotExist:
+                pass
+                
+        return response
+        
+    def get_success_url(self):
+        # After successful signup, redirect to email verification
+        return reverse('account_email_verification_sent')
+
+
+class CustomEmailVerificationSentView(EmailVerificationSentView):
+    """
+    Custom view to handle email verification and redirect to create profile
+    if there's a pending invitation.
+    """
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        
+        # Check if there's a pending invitation
+        pending_invitation = request.session.get('pending_invitation')
+        if pending_invitation:
+            # Clear the session data
+            del request.session['pending_invitation']
+            
+            # Redirect to create profile
+            return redirect('create_profile', 
+                          experiment_identifier=pending_invitation['experiment_identifier'])
+        
+        return response
