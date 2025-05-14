@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load allauth %}
+{% load i18n %}
+
+{% block head_title %}
+    {% trans "Generate Recovery Codes" %}
+{% endblock head_title %}
+
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+    <div class="main-content">
+        <header class="main-header">
+            {% trans "Generate Recovery Codes" %}
+        </header>
+        <div class="alert alert-info mb-3">
+            {% trans "Generating new recovery codes will invalidate any previously unused codes. Are you sure you want to continue?" %}
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="row mb-2">
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                    <button type="submit" class="btn btn-danger btn-sm w-100">
+                        {% trans "Generate New Codes" %}
+                    </button>
+                </div>
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                    <a href="{% url 'mfa_view_recovery_codes' %}" class="btn btn-secondary btn-sm w-100">
+                        {% trans "Cancel" %}
+                    </a>
+                </div>
+                <div class="col-12 col-md-4">
+                    <a href="{% url 'home' %}" class="btn btn-secondary btn-sm w-100">
+                        {% trans "Go to Discourse" %}
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock content %} 

@@ -24,7 +24,7 @@
         <label class="mb-2">
             <b>{% trans "Unused codes" %}</b>
         </label>
-        <ul class="list-group mb-3">
+        <ul class="list-group mb-3 alert alert-info">
             {% for code in unused_codes %}
                 <li>{{ code }}</li>
             {% endfor %}
