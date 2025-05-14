@@ -121,7 +121,16 @@
         
         <!-- Invitations Table -->
         <div class="experiment-info-section experiment-invitations" style="margin-bottom: 2rem;">
-            <h3>{% translate "Invitations" %}</h3>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin-bottom: 0;">{% translate "Invitations" %}</h3>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="showInviteModal('{{ experiment.identifier }}', '{{ experiment.name|escapejs }}')"
+                >
+                    {% translate "Invite a user" %}
+                </button>
+            </div>
             {% if invitations and invitations|length > 0 %}
                 <div class="table-responsive">
                     <table class="table">
@@ -181,6 +190,8 @@
     </div>
 </div>
 
+{% include 'components/invite_user_modal.html' %}
+
 <script>
 function toggleEditForm() {
     const form = document.querySelector('.edit-form');
@@ -197,5 +208,10 @@ function toggleEditForm() {
         editButton.style.display = 'inline-flex';
     }
 }
+
+window.urls = {
+    'invite_user': '{% url "invite_user" "EXPERIMENT_ID" %}'
+    // Add other URLs as needed
+};
 </script>
 {% endblock %} 

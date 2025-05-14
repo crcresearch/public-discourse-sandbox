@@ -444,33 +444,48 @@ class InviteUserView(LoginRequiredMixin, View):
             
             if not email:
                 return JsonResponse({'error': 'Email is required'}, status=400)
-                
-            # Send invitation email
-            context = {
-                'user': request.user,
-                'study': {
-                    'title': experiment.name,
-                    'description': experiment.description,
-                    'contact_name': request.user.get_full_name() or request.user.username,
-                    'contact_email': request.user.email,
-                    'duration': 'Ongoing',
-                    'compensation': 'None',
-                    'irb_information': 'This study has been approved by the University of Notre Dame IRB.'
-                },
-                'study_url': request.build_absolute_uri(reverse('home_with_experiment', args=[experiment.identifier])),
-                'landing_url': request.build_absolute_uri(reverse('landing'))
-            }
             
-            # Send email
-            send_mail(
-                subject='Research Study Invitation - Public Discourse Sandbox',
-                message='',  # Plain text version will be generated from HTML
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                html_message=render_to_string('email/research_invitation.html', context)
+            # Check if a user with this email exists and is already a member of the experiment
+            user = User.objects.filter(email=email).first()
+            if user:
+                if UserProfile.objects.filter(user=user, experiment=experiment, is_deleted=False).exists():
+                    return JsonResponse({'message': 'User is already a member of this experiment.'}, status=400)
+            
+            # Create the invitation if not already invited
+            invitation, created = ExperimentInvitation.objects.get_or_create(
+                experiment=experiment,
+                email=email,
+                created_by=request.user
             )
-            
-            return JsonResponse({'message': 'Invitation sent successfully'})
+            if created:
+                # Send invitation email
+                context = {
+                    'user': request.user,
+                    'study': {
+                        'title': experiment.name,
+                        'description': experiment.description,
+                        'contact_name': request.user.get_full_name() or request.user.username,
+                        'contact_email': request.user.email,
+                        'duration': 'Ongoing',
+                        'compensation': 'None',
+                        'irb_information': 'This study has been approved by the University of Notre Dame IRB.'
+                    },
+                    'study_url': request.build_absolute_uri(reverse('home_with_experiment', args=[experiment.identifier])),
+                    'landing_url': request.build_absolute_uri(reverse('landing'))
+                }
+                
+                # Send email
+                send_mail(
+                    subject='Research Study Invitation - Public Discourse Sandbox',
+                    message='',  # Plain text version will be generated from HTML
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    html_message=render_to_string('email/research_invitation.html', context)
+                )
+                
+                return JsonResponse({'message': 'Invitation sent successfully'})
+            else:
+                return JsonResponse({'message': 'User already invited'}, status=400)
             
         except Experiment.DoesNotExist:
             return JsonResponse({'error': 'Experiment not found'}, status=404)

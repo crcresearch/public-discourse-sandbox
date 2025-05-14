@@ -62,7 +62,14 @@ async function handleInviteSubmit(event) {
             alert('Invitation sent successfully!');
         } else {
             const data = await response.json();
-            alert(data.error || 'Failed to send invitation. Please try again.');
+            // Show specific messages for known errors
+            if (data.message === 'User already invited') {
+                alert('An invitation for this email already exists.');
+            } else if (data.message === 'User is already a member of this experiment.') {
+                alert('This user is already a member of the experiment.');
+            } else {
+                alert(data.error || data.message || 'Failed to send invitation. Please try again.');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
