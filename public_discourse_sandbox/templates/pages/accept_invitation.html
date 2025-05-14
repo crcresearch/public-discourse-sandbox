@@ -33,16 +33,31 @@
                         
                         <div class="alert alert-info">
                             <p class="mb-0">
-                                {% trans "You've been invited to participate in this experiment. Please sign in or create an account to continue." %}
+                                {% trans "You've been invited to participate in this experiment. Please create a profile to continue." %}
                             </p>
                         </div>
+
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">{% trans "User Consent Form" %}</h5>
+                                <p class="text-muted mb-3">
+                                    {% trans "This study has been approved by the University of Notre Dame IRB." %}
+                                </p>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="final-consent" name="consent" required>
+                                    <label class="form-check-label" for="final-consent">
+                                        {% trans "By creating an account, I confirm that I have read, understood, and agree to all platform rules, research consent terms, and mandatory security requirements." %}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <div class="d-grid gap-2">
-                            <a href="{% url 'account_login' %}?next={{ request.path }}?email={{ email }}" class="btn btn-primary">
-                                {% trans "Sign In" %}
-                            </a>
-                            <a href="{% url 'account_signup' %}?next={{ request.path }}?email={{ email }}" class="btn btn-outline-primary">
-                                {% trans "Create Account" %}
+                        <div class="d-grid">
+                            <a href="{% url 'account_signup' %}?next={{ request.path }}?email={{ email }}" 
+                               class="btn btn-primary" 
+                               id="createProfileBtn" 
+                               disabled>
+                                {% trans "Create Profile For Discourse" %}
                             </a>
                         </div>
                     {% endif %}
@@ -51,4 +66,19 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const consentCheckbox = document.getElementById('final-consent');
+    const createProfileBtn = document.getElementById('createProfileBtn');
+    
+    if (consentCheckbox && createProfileBtn) {
+        consentCheckbox.addEventListener('change', function() {
+            createProfileBtn.disabled = !this.checked;
+        });
+    }
+});
+</script>
 {% endblock %} 
