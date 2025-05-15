@@ -288,7 +288,6 @@ def repost(request, post_id):
         new_post = Post.objects.create(
             user_profile=user_profile,
             experiment=original_post.experiment,
-            content=original_post.content,
             repost_source=original_post
         )
         
