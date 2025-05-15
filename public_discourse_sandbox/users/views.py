@@ -318,4 +318,4 @@ def update_name_view(request):
             messages.error(request, _("Name cannot be empty"))
             
     # Redirect back to settings page
-    return HttpResponseRedirect(reverse('pds_app:settings'))
+    return HttpResponseRedirect(reverse('settings'))
