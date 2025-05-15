@@ -38,7 +38,7 @@
                                     <th>{% translate "Banned" %}</th>
                                     <th>{% translate "Posts" %}</th>
                                     <th>{% translate "Digital Twins" %}</th>
-                                    <th>{% translate "Actions" %}</th>
+                                    {% comment %}<th>{% translate "Actions" %}</th>{% endcomment %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -51,6 +51,7 @@
                                         <td class="experiment-banned">{{ experiment.total_banned_users }}</td>
                                         <td class="experiment-posts">{{ experiment.total_posts }}</td>
                                         <td class="experiment-twins">{{ experiment.total_digital_twins }}</td>
+                                        {% comment %}
                                         <td class="experiment-actions">
                                             <button class="menu-button" 
                                                 title="More"
@@ -61,6 +62,7 @@
                                                 <i class="ri-more-fill"></i>
                                             </button>
                                         </td>
+                                        {% endcomment %}
                                     </tr>
                                 {% endfor %}
                             </tbody>
