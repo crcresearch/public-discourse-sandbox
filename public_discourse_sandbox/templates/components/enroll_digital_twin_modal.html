@@ -151,11 +151,120 @@ async function handleEnrollDigitalTwinSubmit(event) {
     const formData = new FormData(form);
     
     try {
-        const data = await submitFormWithValidation(url, 'POST', formData);
+        // First, let's add console logs to debug the request
+        console.log('Submitting form to:', url);
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        console.log('Response status:', response.status);
+        
+        const contentType = response.headers.get('content-type');
+        console.log('Response content type:', contentType);
+        
+        // Try to get response data
+        let responseData = {};
+        if (contentType && contentType.includes('application/json')) {
+            responseData = await response.json();
+            console.log('Response data:', responseData);
+        }
+        
+        if (!response.ok) {
+            // If we have structured error data
+            if (responseData.error) {
+                try {
+                    // Parse the errors JSON string into an object if it's a string
+                    const errors = typeof responseData.error === 'string' && responseData.error.startsWith('{') 
+                        ? JSON.parse(responseData.error) 
+                        : responseData.error;
+                    
+                    console.log('Parsed errors:', errors);
+                    
+                    // Handle different error formats
+                    if (typeof errors === 'string') {
+                        // Simple string error
+                        showErrorMessage(errors);
+                    } else {
+                        // Process field errors
+                        let hasDisplayedErrors = false;
+                        
+                        // Try to iterate through fields
+                        for (const field in errors) {
+                            let errorText = '';
+                            
+                            // Handle array of error objects
+                            if (Array.isArray(errors[field])) {
+                                errors[field].forEach(error => {
+                                    if (error.message) {
+                                        errorText += error.message + ' ';
+                                    } else if (typeof error === 'string') {
+                                        errorText += error + ' ';
+                                    }
+                                });
+                            } 
+                            // Handle string error
+                            else if (typeof errors[field] === 'string') {
+                                errorText = errors[field];
+                            }
+                            
+                            if (errorText) {
+                                showFieldError(field, errorText.trim());
+                                hasDisplayedErrors = true;
+                            }
+                        }
+                        
+                        // If we couldn't process any specific errors, show generic message
+                        if (!hasDisplayedErrors) {
+                            showErrorMessage("Form validation failed. Please check your inputs.");
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing error response:', parseError);
+                    showErrorMessage(responseData.error || "Request failed");
+                }
+            } else {
+                // Generic error
+                showErrorMessage(responseData.message || "Request failed");
+            }
+            return;
+        }
+        
+        // Success
         closeEnrollDigitalTwinModal();
         alert('Digital Twin enrolled successfully!');
     } catch (error) {
-        displayFormErrors(error.message);
+        console.error('Error submitting form:', error);
+        showErrorMessage(error.message || "An unexpected error occurred");
+    }
+}
+
+// Helper function to show general error message
+function showErrorMessage(message) {
+    const errorContainer = document.getElementById('enroll-form-errors');
+    errorContainer.textContent = message;
+    errorContainer.style.display = 'block';
+}
+
+// Helper function to show field-specific error
+function showFieldError(field, message) {
+    const errorElement = document.getElementById(`error-${field}`);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        
+        const input = document.querySelector(`[name="${field}"]`);
+        if (input) {
+            input.classList.add('is-invalid');
+        }
+    } else {
+        // If we can't find a specific field error container, show in general errors
+        showErrorMessage(`${field}: ${message}`);
     }
 }
 </script> 
