@@ -464,6 +464,27 @@ a.user-avatar {
     margin-top: 12px;
 }
 
+/* Post Actions */
+.post-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 80px;
+    margin-top: 12px;
+}
+
+/* Reposted content styling */
+.reposted-content {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 8px 0;
+    background-color: #fafafa;
+}
+
+.repost-original {
+    margin: 0;
+}
+
 .action-button {
     display: flex;
     align-items: center;
@@ -481,6 +502,11 @@ a.user-avatar {
 
 .action-button span {
     font-size: 13px;
+}
+
+.action-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Hashtag styling */
