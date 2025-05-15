@@ -146,7 +146,7 @@ class CustomSignupForm(SignupForm):
             
             if user_name and UserProfile.objects.filter(
                 experiment=self.experiment,
-                username=user_name
+                username__iexact=user_name  # Case-insensitive check
             ).exists():
                 self.add_error('user_name', 'This username is already taken in this experiment.')
 
