@@ -58,10 +58,10 @@
                     </div> -->
                     
                     <!-- Original post content -->
-                    <div class="reposted-content">
+                    <div class="reposted-content" onclick="showCommentPopup('{{ post.repost_source.id }}')" style="cursor: pointer;">
                         <article class="repost-original" data-original-post-id="{{ post.repost_source.id }}">
                             <div class="post-main">
-                                <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-avatar">
+                                <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-avatar" onclick="event.stopPropagation()">
                                     {% if post.repost_source.user_profile.profile_picture %}
                                         <img src="{{ post.repost_source.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
                                     {% else %}
@@ -73,10 +73,10 @@
                                 <div class="post-content">
                                     <div class="post-header">
                                         <div class="user-info">
-                                            <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-name">
+                                            <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-name" onclick="event.stopPropagation()">
                                                 {{ post.repost_source.user_profile.display_name }}
                                             </a>
-                                            <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-handle">
+                                            <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-handle" onclick="event.stopPropagation()">
                                                 @{{ post.repost_source.user_profile.username }}
                                             </a>
                                             <span class="dot">·</span>
