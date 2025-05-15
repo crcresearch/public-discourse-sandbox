@@ -1,6 +1,12 @@
 {% load static %}
 {% csrf_token %}
 <!-- Posts List -->
+<style>
+    .repost-button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
 <div class="post-feed">
     {% for post in posts %}
         <article class="post" data-post-id="{{ post.id }}">
@@ -61,7 +67,11 @@
                             <span>{{ post.comment_count }}</span>
                         </button>
         
-                        <button class="action-button repost-button" data-post-id="{{ post.id }}" data-authenticated="true" onclick="showRepostPopup('{{ post.id }}')">
+                        <button class="action-button repost-button {% if post.user_profile.user == request.user %}disabled{% endif %}" 
+                               data-post-id="{{ post.id }}" 
+                               data-authenticated="true" 
+                               data-is-own-post="{% if post.user_profile.user == request.user %}true{% else %}false{% endif %}"
+                               onclick="handleRepost(this, '{{ post.id }}')">
                             <i class="ri-repeat-line"></i>
                             <span>{{ post.num_shares }}</span>
                         </button>
@@ -120,7 +130,14 @@ function togglePostMenu(postId) {
     }
 }
 
-function showRepostPopup(postId) {
+function handleRepost(button, postId) {
+    // Check if this is the user's own post
+    if (button.dataset.isOwnPost === 'true') {
+        // alert("You cannot repost your own content");
+        console.log("You cannot repost your own content");
+        return;
+    }
+    
     // Check for user confirmation
     if (confirm('Repost this post?')) {
         makeRequest(
@@ -130,7 +147,6 @@ function showRepostPopup(postId) {
         .then(data => {
             if (data.success) {
                 // Update the share count
-                const button = document.querySelector(`.repost-button[data-post-id="${postId}"]`);
                 const countSpan = button.querySelector('span');
                 countSpan.textContent = data.shares_count;
                 
@@ -138,13 +154,17 @@ function showRepostPopup(postId) {
                 alert('Post has been reposted successfully!');
                 
                 // Refresh the page to show the new post
-                // Alternatively, you could insert the new post directly into the DOM
                 window.location.reload();
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while reposting');
+            if (error.response && error.response.status === 403) {
+                // alert('You cannot repost your own content');
+                console.log('You cannot repost your own content');
+            } else {
+                console.error('Error:', error);
+                alert('An error occurred while reposting');
+            }
         });
     }
 }
