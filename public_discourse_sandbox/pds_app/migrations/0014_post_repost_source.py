@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pds_app', '0012_experimentinvitation'),
+        ('pds_app', '0013_alter_digitaltwin_api_token'),
     ]
 
     operations = [
