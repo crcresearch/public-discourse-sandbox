@@ -51,8 +51,47 @@
                         </div>
                     </div>
         
+                    {% if post.repost_source %}
+                    <!-- Repost indicator -->
+                    <!-- <div class="repost-indicator">
+                        <i class="ri-repeat-line"></i> Reposted
+                    </div> -->
+                    
+                    <!-- Original post content -->
+                    <div class="reposted-content">
+                        <article class="repost-original" data-original-post-id="{{ post.repost_source.id }}">
+                            <div class="post-main">
+                                <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-avatar">
+                                    {% if post.repost_source.user_profile.profile_picture %}
+                                        <img src="{{ post.repost_source.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+                                    {% else %}
+                                        <div class="avatar-placeholder">
+                                            <i class="ri-user-line"></i>
+                                        </div>
+                                    {% endif %}
+                                </a>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <div class="user-info">
+                                            <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-name">
+                                                {{ post.repost_source.user_profile.display_name }}
+                                            </a>
+                                            <a href="{% url 'users:detail' post.repost_source.user_profile.user.id %}" class="user-handle">
+                                                @{{ post.repost_source.user_profile.username }}
+                                            </a>
+                                            <span class="dot">·</span>
+                                            <span class="time">{{ post.repost_source.created_date|timesince }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="post-text">{{ post.repost_source.content }}</div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    {% else %}
                     <!-- Regular post content -->
                     <div class="post-text">{{ post.content }}</div>
+                    {% endif %}
         
                     <!-- Post Actions -->
                     <div class="post-actions">
