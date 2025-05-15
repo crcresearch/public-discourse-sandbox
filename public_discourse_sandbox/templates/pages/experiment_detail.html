@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load static %}
 
 {% block content %}
 <!-- Left Sidebar -->
@@ -185,12 +186,21 @@
                         {% translate "Moderator Dashboard" %}
                     </a>
                 {% endif %}
+                {# Enroll Digital Twin button, matches Researcher Tools #}
+                <a href="javascript:void(0);"
+                   class="btn btn-secondary"
+                   onclick="showEnrollDigitalTwinModal('{{ experiment.identifier }}')">
+                    <i class="ri-robot-line"></i>
+                    {% translate "Enroll Digital Twin" %}
+                </a>
             </div>
         </div>
     </div>
 </div>
 
+{% include 'components/delete_experiment_modal.html' %}
 {% include 'components/invite_user_modal.html' %}
+{% include 'components/enroll_digital_twin_modal.html' %}
 
 <script>
 function toggleEditForm() {
@@ -209,9 +219,17 @@ function toggleEditForm() {
     }
 }
 
+// Store Django URLs for JS use
 window.urls = {
-    'invite_user': '{% url "invite_user" "EXPERIMENT_ID" %}'
-    // Add other URLs as needed
+    'experiment_detail': '{% url "experiment_detail" "EXPERIMENT_ID" %}',
+    'home_with_experiment': '{% url "home_with_experiment" "EXPERIMENT_ID" %}',
+    'moderator_dashboard': '{% url "moderator_dashboard" "EXPERIMENT_ID" %}',
+    'invite_user': '{% url "invite_user" "EXPERIMENT_ID" %}',
+    'enroll_digital_twin': '{% url "enroll_digital_twin" "EXPERIMENT_ID" %}'
 };
 </script>
+{% endblock %}
+
+{% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
 {% endblock %} 
