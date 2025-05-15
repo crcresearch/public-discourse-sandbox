@@ -265,6 +265,7 @@ def delete_experiment(request, experiment_identifier):
 def repost(request, post_id):
     """
     Creates a new post that copies the content of the given post.
+    Will return an error if a user attempts to repost their own content.
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -272,6 +273,10 @@ def repost(request, post_id):
     try:
         # Get the original post
         original_post = Post.objects.get(id=post_id)
+        
+        # Check if user is trying to repost their own post
+        if original_post.user_profile.user == request.user:
+            return JsonResponse({'error': 'Cannot repost your own content'}, status=403)
         
         # Get the current user's profile for the current experiment
         user_profile = UserProfile.objects.get(
