@@ -32,7 +32,7 @@ class AccountAdapter(DefaultAccountAdapter):
         if hasattr(form, 'cleaned_data'):
             # Get profile-specific fields if they exist
             display_name = form.cleaned_data.get('display_name')
-            username = form.cleaned_data.get('username') or display_name
+            user_name = form.cleaned_data.get('user_name') or display_name
             bio = form.cleaned_data.get('bio', '')
             profile_picture = form.cleaned_data.get('profile_picture')
             banner_picture = form.cleaned_data.get('banner_picture')
@@ -57,7 +57,7 @@ class AccountAdapter(DefaultAccountAdapter):
                         user=user,
                         experiment=experiment,
                         display_name=display_name,
-                        username=username,
+                        username=user_name,
                         bio=bio,
                         profile_picture=profile_picture,
                         banner_picture=banner_picture

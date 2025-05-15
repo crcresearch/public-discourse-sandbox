@@ -57,15 +57,15 @@ class UserProfileForm(forms.ModelForm):
 
 class CustomSignupForm(SignupForm):
     """
-    Custom signup form that includes profile fields.
-    Used when there's a pending invitation.
+    Custom signup form that includes profile fields for UserProfile.
+    'user_name' is used instead of 'username' to avoid conflict with the User model.
     """
     display_name = forms.CharField(
         max_length=255,
         required=True,
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
-    username = forms.CharField(
+    user_name = forms.CharField(
         max_length=255,
         required=True,
         widget=forms.TextInput(attrs={'class': 'form-control'})
@@ -90,20 +90,15 @@ class CustomSignupForm(SignupForm):
     )
     
     def __init__(self, *args, **kwargs):
-        # Store experiment before popping it from kwargs
         self.experiment = kwargs.pop('experiment', None)
         super().__init__(*args, **kwargs)
-        
-        # Make email field read-only if it's from an invitation
         if self.experiment:
             self.fields['email'].widget.attrs['readonly'] = True
             self.fields['email'].widget.attrs['class'] = 'form-control'
-            # Set initial value for hidden experiment field
             self.fields['experiment'].initial = self.experiment.identifier
     
     def clean(self):
         cleaned_data = super().clean()
-        # Get experiment from form data if not already set
         if not self.experiment and cleaned_data.get('experiment'):
             try:
                 self.experiment = Experiment.objects.get(identifier=cleaned_data['experiment'])
@@ -111,15 +106,15 @@ class CustomSignupForm(SignupForm):
                 raise forms.ValidationError('Invalid experiment identifier')
         return cleaned_data
     
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        if username and self.experiment:
+    def clean_user_name(self):
+        user_name = self.cleaned_data.get('user_name')
+        if user_name and self.experiment:
             if UserProfile.objects.filter(
                 experiment=self.experiment,
-                username=username
+                username=user_name
             ).exists():
                 raise forms.ValidationError('This username is already taken in this experiment.')
-        return username
+        return user_name
     
     def clean_display_name(self):
         display_name = self.cleaned_data.get('display_name')
