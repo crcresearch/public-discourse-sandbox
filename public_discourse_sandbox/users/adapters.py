@@ -63,50 +63,33 @@ class AccountAdapter(DefaultAccountAdapter):
                 
                 if experiment:
                     try:
-                        # Check for existing UserProfile with the same username or display_name
-                        if display_name:
-                            # Check for global uniqueness first
-                            existing_profile = UserProfile.objects.filter(
-                                display_name=display_name
-                            ).first()
-                            if existing_profile:
-                                form.add_error('display_name', 'This display name is already taken. Please choose a different display name.')
-                                raise forms.ValidationError({
-                                    'display_name': ['This display name is already taken. Please choose a different display name.']
-                                })
-                            
-                            # Then check within experiment (redundant but kept for clarity)
-                            existing_profile = UserProfile.objects.filter(
-                                experiment=experiment,
-                                display_name=display_name
-                            ).first()
-                            if existing_profile:
-                                form.add_error('display_name', 'This display name is already taken in this experiment.')
-                                raise forms.ValidationError({
-                                    'display_name': ['This display name is already taken in this experiment.']
-                                })
-                        
+                        # Check for existing UserProfile with the same username
                         if user_name:
-                            # Check for global uniqueness first
-                            existing_profile = UserProfile.objects.filter(
-                                username=user_name
-                            ).first()
-                            if existing_profile:
-                                form.add_error('user_name', 'This username is already taken. Please choose a different username.')
-                                raise forms.ValidationError({
-                                    'user_name': ['This username is already taken. Please choose a different username.']
-                                })
+                            # Check uniqueness only within the experiment - be thorough to catch any issues
+                            print(f"DEBUG: Adapter checking if username '{user_name}' exists in experiment {experiment.identifier}")
                             
-                            # Then check within experiment (redundant but kept for clarity)
+                            # Check case-sensitive match first
                             existing_profile = UserProfile.objects.filter(
                                 experiment=experiment,
                                 username=user_name
                             ).first()
+                            
+                            # Then try case-insensitive if needed
+                            if not existing_profile:
+                                existing_profile = UserProfile.objects.filter(
+                                    experiment=experiment,
+                                    username__iexact=user_name
+                                ).first()
+                            
                             if existing_profile:
-                                form.add_error('user_name', 'This username is already taken in this experiment.')
+                                error_msg = f'This username "{user_name}" is already taken in this experiment. Please choose a different username.'
+                                print(f"DEBUG: Adapter found existing profile with username '{existing_profile.username}' - adding error")
+                                form.add_error('user_name', error_msg)
                                 raise forms.ValidationError({
-                                    'user_name': ['This username is already taken in this experiment.']
+                                    'user_name': [error_msg]
                                 })
+                            else:
+                                print(f"DEBUG: Adapter confirmed username '{user_name}' is available in experiment {experiment.identifier}")
                         
                         # Create the UserProfile
                         profile = UserProfile.objects.create(
@@ -127,14 +110,21 @@ class AccountAdapter(DefaultAccountAdapter):
                         raise
                     except Exception as e:
                         # Convert any other exception to a form validation error
-                        if "duplicate key value violates unique constraint" in str(e):
-                            if "display_name" in str(e):
-                                form.add_error('display_name', 'This display name is already taken in this experiment.')
-                            elif "username" in str(e):
+                        error_message = str(e)
+                        print(f"DEBUG: Adapter caught exception: {error_message}")
+                        
+                        if "duplicate key value violates unique constraint" in error_message:
+                            if "username" in error_message or "pds_app_userprofile_username" in error_message:
+                                print(f"DEBUG: Adapter detected username constraint violation")
+                                form.add_error('user_name', 'This username is already taken in this experiment.')
+                            elif "pds_app_userprofile_username_experiment_id_key" in error_message:
+                                print(f"DEBUG: Adapter detected username+experiment constraint violation")
                                 form.add_error('user_name', 'This username is already taken in this experiment.')
                             else:
+                                print(f"DEBUG: Adapter detected other constraint violation")
                                 form.add_error(None, str(e))
                         else:
+                            print(f"DEBUG: Adapter detected non-constraint error")
                             form.add_error(None, str(e))
                         raise forms.ValidationError("Error creating user profile. Please check the form for errors.")
             elif commit:

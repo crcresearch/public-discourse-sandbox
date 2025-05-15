@@ -239,7 +239,34 @@ class CustomSignupView(SignupView):
         return reverse('account_email_verification_sent')
         
     def form_valid(self, form):
+        """
+        Process the form submission and validate all fields.
+        Adds specific validation for username uniqueness within an experiment.
+        """
         try:
+            # Verify username uniqueness BEFORE calling super().form_valid
+            # This pre-check will help catch issues before trying to create the user
+            experiment = None
+            user_name = form.cleaned_data.get('user_name')
+            experiment_id = form.cleaned_data.get('experiment') or self.request.GET.get('experiment') or self.request.POST.get('experiment')
+            
+            if experiment_id:
+                try:
+                    experiment = Experiment.objects.get(identifier=experiment_id)
+                    print(f"DEBUG: Pre-check - Looking for existing username '{user_name}' in experiment {experiment.identifier}")
+                    
+                    if UserProfile.objects.filter(experiment=experiment, username=user_name).exists():
+                        profile = UserProfile.objects.filter(experiment=experiment, username=user_name).first()
+                        print(f"DEBUG: Pre-check - Found existing profile with username '{profile.username}'")
+                        error_msg = f"This username '{user_name}' is already taken in this experiment. Please choose a different username."
+                        form.add_error('user_name', error_msg)
+                        print(f"DEBUG: Pre-check - Added error to form: {error_msg}")
+                        return self.form_invalid(form)
+                    else:
+                        print(f"DEBUG: Pre-check - Username '{user_name}' is available in experiment {experiment.identifier}")
+                except Experiment.DoesNotExist:
+                    print(f"DEBUG: Pre-check - Could not find experiment with ID {experiment_id}")
+            
             # Call parent method to save the User
             response = super().form_valid(form)
             
@@ -247,44 +274,71 @@ class CustomSignupView(SignupView):
             experiment = form.experiment
             
             if user and experiment:
-                # Check if the user already has a profile for this experiment
-                profile, created = UserProfile.objects.get_or_create(
-                    user=user,
-                    experiment=experiment,
-                    defaults={
-                        'username': form.cleaned_data.get('user_name'),
-                        'display_name': form.cleaned_data.get('display_name'),
-                        'bio': form.cleaned_data.get('bio'),
-                    }
-                )
-                
-                # Upload profile/banner pictures if provided
-                if created:
-                    if form.cleaned_data.get('profile_picture'):
-                        profile.profile_picture = form.cleaned_data.get('profile_picture')
-                    if form.cleaned_data.get('banner_picture'):
-                        profile.banner_picture = form.cleaned_data.get('banner_picture')
-                    profile.save()
-                
-                # If there was an invitation, mark it as accepted
-                email = form.cleaned_data.get('email')
-                if email:
-                    try:
-                        invitation = ExperimentInvitation.objects.get(
-                            experiment=experiment,
-                            email=email,
-                            is_accepted=False,
-                            is_deleted=False
-                        )
-                        invitation.is_accepted = True
-                        invitation.save()
-                    except ExperimentInvitation.DoesNotExist:
-                        # No invitation found, which is fine for direct signups
-                        pass
+                try:
+                    # Double-check username uniqueness
+                    user_name = form.cleaned_data.get('user_name')
+                    print(f"DEBUG: Post-user-creation check - Looking for username '{user_name}' in experiment {experiment.identifier}")
+                    
+                    existing_profile = UserProfile.objects.filter(
+                        experiment=experiment, 
+                        username=user_name
+                    ).first()
+                    
+                    if existing_profile and existing_profile.user != user:
+                        print(f"DEBUG: Post-user-creation - Username conflict with existing profile")
+                        form.add_error('user_name', f"This username '{user_name}' is already taken. Please choose a different username.")
+                        return self.form_invalid(form)
+                    
+                    # Create the UserProfile if it doesn't exist
+                    profile, created = UserProfile.objects.get_or_create(
+                        user=user,
+                        experiment=experiment,
+                        defaults={
+                            'username': user_name,
+                            'display_name': form.cleaned_data.get('display_name'),
+                            'bio': form.cleaned_data.get('bio'),
+                        }
+                    )
+                    
+                    print(f"DEBUG: Profile {'created' if created else 'already existed'} for user {user.email}")
+                    
+                    # Upload profile/banner pictures if provided
+                    if created:
+                        if form.cleaned_data.get('profile_picture'):
+                            profile.profile_picture = form.cleaned_data.get('profile_picture')
+                        if form.cleaned_data.get('banner_picture'):
+                            profile.banner_picture = form.cleaned_data.get('banner_picture')
+                        profile.save()
+                    
+                    # If there was an invitation, mark it as accepted
+                    email = form.cleaned_data.get('email')
+                    if email:
+                        try:
+                            invitation = ExperimentInvitation.objects.get(
+                                experiment=experiment,
+                                email=email,
+                                is_accepted=False,
+                                is_deleted=False
+                            )
+                            invitation.is_accepted = True
+                            invitation.save()
+                        except ExperimentInvitation.DoesNotExist:
+                            # No invitation found, which is fine for direct signups
+                            pass
+                except Exception as e:
+                    # Handle any exceptions from profile creation
+                    error_message = str(e)
+                    print(f"DEBUG: Exception during profile creation: {error_message}")
+                    if "duplicate key value violates unique constraint" in error_message:
+                        if "username" in error_message or "username_experiment_id_key" in error_message:
+                            form.add_error('user_name', f"This username is already taken. Please choose a different username.")
+                            return self.form_invalid(form)
+                    raise  # Re-raise other exceptions
             
             return response
         except forms.ValidationError as e:
             # Handle validation errors raised by the adapter
+            print(f"DEBUG: ValidationError caught: {str(e)}")
             if hasattr(e, 'error_dict'):
                 for field, errors in e.error_dict.items():
                     for error in errors:
@@ -293,23 +347,22 @@ class CustomSignupView(SignupView):
                 form.add_error(None, str(e))
             return self.form_invalid(form)
         except Exception as e:
-            # If there's an integrity error, add it to the form and re-render
+            # Catch any other exceptions
             error_message = str(e)
+            print(f"DEBUG: General exception caught: {error_message}")
             if "duplicate key value violates unique constraint" in error_message:
                 if "email" in error_message:
                     form.add_error('email', 'This email address is already in use. Please use a different email address or sign in.')
-                elif "display_name" in error_message:
-                    form.add_error('display_name', 'This display name is already taken. Please choose a different display name.')
-                elif "username" in error_message or "user_name" in error_message:
+                elif "username" in error_message or "user_name" in error_message or "userprofile_username" in error_message:
                     form.add_error('user_name', 'This username is already taken. Please choose a different username.')
-                elif "pds_app_userprofile_username_key" in error_message:
+                elif "pds_app_userprofile_username_key" in error_message or "pds_app_userprofile_username_experiment_id" in error_message:
                     form.add_error('user_name', 'This username is already taken. Please choose a different username.')
                 else:
                     form.add_error(None, 'A field value must be unique: ' + error_message)
             else:
                 form.add_error(None, f"An error occurred: {error_message}")
             return self.form_invalid(form)
-            
+
     def form_invalid(self, form):
         """
         Called if the form is invalid. Re-renders the context data with the

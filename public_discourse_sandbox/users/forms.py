@@ -64,13 +64,13 @@ class CustomSignupForm(SignupForm):
         max_length=255,
         required=True,
         widget=forms.TextInput(attrs={'class': 'form-control'}),
-        help_text="Your public display name (must be unique within the experiment)"
+        help_text="Your public display name (must be unique within the discourse)"
     )
     user_name = forms.CharField(
         max_length=255,
         required=True,
         widget=forms.TextInput(attrs={'class': 'form-control'}),
-        help_text="Your username for this experiment (must be unique within the experiment)"
+        help_text="Your username for this experiment (must be unique within the discourse)"
     )
     bio = forms.CharField(
         max_length=1000,
@@ -98,6 +98,12 @@ class CustomSignupForm(SignupForm):
         # Apply styling to email field
         self.fields['email'].widget.attrs['class'] = 'form-control'
         self.fields['email'].help_text = "Your email address (must be unique across all users)"
+        
+        # Add required class to username field
+        self.fields['user_name'].widget.attrs['class'] = 'form-control required-field'
+        self.fields['user_name'].widget.attrs['id'] = 'id_user_name_field'
+        self.fields['user_name'].widget.attrs['autocomplete'] = 'off'
+        self.fields['user_name'].help_text = "Your username (must be unique in this discourse)"
         
         if self.experiment:
             # Set experiment field value
@@ -148,18 +154,36 @@ class CustomSignupForm(SignupForm):
         # Check for invalid characters or too short
         if len(user_name) < 3:
             raise forms.ValidationError('Username must be at least 3 characters long.')
-            
-        # First check for global uniqueness (across all experiments)
-        if UserProfile.objects.filter(username=user_name).exists():
-            raise forms.ValidationError('This username is already taken. Please choose a different username.')
-            
-        # Then also check within the experiment (this check is redundant now but kept for clarity)
+        
+        # Convert user_name to lowercase for case-insensitive checks
+        user_name_lower = user_name.lower()
+        
+        # Check uniqueness only within the experiment - with debug info
         if user_name and self.experiment:
-            if UserProfile.objects.filter(
+            print(f"DEBUG: Checking if username '{user_name}' exists in experiment {self.experiment.identifier}")
+            
+            # First check with exact case
+            existing_profiles = UserProfile.objects.filter(
                 experiment=self.experiment,
                 username=user_name
-            ).exists():
-                raise forms.ValidationError('This username is already taken in this experiment.')
+            )
+            
+            # Then check case-insensitive if needed
+            if not existing_profiles.exists():
+                existing_profiles = UserProfile.objects.filter(
+                    experiment=self.experiment,
+                    username__iexact=user_name
+                )
+            
+            if existing_profiles.exists():
+                profile = existing_profiles.first()
+                print(f"DEBUG: Found existing profile with username '{profile.username}' for user {profile.user.email}")
+                error_message = f"This username '{user_name}' is already taken in this experiment. Please choose a different username."
+                print(f"DEBUG: Raising validation error: {error_message}")
+                raise forms.ValidationError(error_message)
+            else:
+                print(f"DEBUG: Username '{user_name}' is available in experiment {self.experiment.identifier}")
+        
         return user_name
     
     def clean_display_name(self):
@@ -171,15 +195,4 @@ class CustomSignupForm(SignupForm):
         if len(display_name) < 2:
             raise forms.ValidationError('Display name must be at least 2 characters long.')
             
-        # First check for global uniqueness (across all experiments)
-        if UserProfile.objects.filter(display_name=display_name).exists():
-            raise forms.ValidationError('This display name is already taken. Please choose a different display name.')
-            
-        # Then also check within the experiment (this check is redundant now but kept for clarity)
-        if display_name and self.experiment:
-            if UserProfile.objects.filter(
-                experiment=self.experiment,
-                display_name=display_name
-            ).exists():
-                raise forms.ValidationError('This display name is already taken in this experiment.')
         return display_name
