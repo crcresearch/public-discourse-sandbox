@@ -36,7 +36,7 @@ class AccountAdapter(DefaultAccountAdapter):
             bio = form.cleaned_data.get('bio', '')
             profile_picture = form.cleaned_data.get('profile_picture')
             banner_picture = form.cleaned_data.get('banner_picture')
-            experiment_id = form.cleaned_data.get('experiment')
+            experiment_id = form.cleaned_data.get('experiment') or "00000"
             
             # Save the user first
             if commit:
@@ -48,6 +48,11 @@ class AccountAdapter(DefaultAccountAdapter):
                 try:
                     experiment = Experiment.objects.get(identifier=experiment_id)
                 except Experiment.DoesNotExist:
+                    if experiment_id == "00000":
+                        # Log error but continue - default experiment should exist
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"Default experiment '00000' not found when creating user {user.email}")
                     pass
             
             if experiment:
