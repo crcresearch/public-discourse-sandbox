@@ -14,6 +14,7 @@ from django.views import View
 from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
 from allauth.account.views import EmailVerificationSentView, SignupView
+from django import forms
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
@@ -238,49 +239,88 @@ class CustomSignupView(SignupView):
         return reverse('account_email_verification_sent')
         
     def form_valid(self, form):
-        # Call parent method to save the User
-        response = super().form_valid(form)
-        
-        user = self.user
-        experiment = form.experiment
-        
-        if user and experiment:
-            # Check if the user already has a profile for this experiment
-            profile, created = UserProfile.objects.get_or_create(
-                user=user,
-                experiment=experiment,
-                defaults={
-                    'username': form.cleaned_data.get('user_name'),
-                    'display_name': form.cleaned_data.get('display_name'),
-                    'bio': form.cleaned_data.get('bio'),
-                }
-            )
+        try:
+            # Call parent method to save the User
+            response = super().form_valid(form)
             
-            # Upload profile/banner pictures if provided
-            if created:
-                if form.cleaned_data.get('profile_picture'):
-                    profile.profile_picture = form.cleaned_data.get('profile_picture')
-                if form.cleaned_data.get('banner_picture'):
-                    profile.banner_picture = form.cleaned_data.get('banner_picture')
-                profile.save()
+            user = self.user
+            experiment = form.experiment
             
-            # If there was an invitation, mark it as accepted
-            email = form.cleaned_data.get('email')
-            if email:
-                try:
-                    invitation = ExperimentInvitation.objects.get(
-                        experiment=experiment,
-                        email=email,
-                        is_accepted=False,
-                        is_deleted=False
-                    )
-                    invitation.is_accepted = True
-                    invitation.save()
-                except ExperimentInvitation.DoesNotExist:
-                    # No invitation found, which is fine for direct signups
-                    pass
-                    
-        return response
+            if user and experiment:
+                # Check if the user already has a profile for this experiment
+                profile, created = UserProfile.objects.get_or_create(
+                    user=user,
+                    experiment=experiment,
+                    defaults={
+                        'username': form.cleaned_data.get('user_name'),
+                        'display_name': form.cleaned_data.get('display_name'),
+                        'bio': form.cleaned_data.get('bio'),
+                    }
+                )
+                
+                # Upload profile/banner pictures if provided
+                if created:
+                    if form.cleaned_data.get('profile_picture'):
+                        profile.profile_picture = form.cleaned_data.get('profile_picture')
+                    if form.cleaned_data.get('banner_picture'):
+                        profile.banner_picture = form.cleaned_data.get('banner_picture')
+                    profile.save()
+                
+                # If there was an invitation, mark it as accepted
+                email = form.cleaned_data.get('email')
+                if email:
+                    try:
+                        invitation = ExperimentInvitation.objects.get(
+                            experiment=experiment,
+                            email=email,
+                            is_accepted=False,
+                            is_deleted=False
+                        )
+                        invitation.is_accepted = True
+                        invitation.save()
+                    except ExperimentInvitation.DoesNotExist:
+                        # No invitation found, which is fine for direct signups
+                        pass
+            
+            return response
+        except forms.ValidationError as e:
+            # Handle validation errors raised by the adapter
+            if hasattr(e, 'error_dict'):
+                for field, errors in e.error_dict.items():
+                    for error in errors:
+                        form.add_error(field, error)
+            else:
+                form.add_error(None, str(e))
+            return self.form_invalid(form)
+        except Exception as e:
+            # If there's an integrity error, add it to the form and re-render
+            error_message = str(e)
+            if "duplicate key value violates unique constraint" in error_message:
+                if "email" in error_message:
+                    form.add_error('email', 'This email address is already in use. Please use a different email address or sign in.')
+                elif "display_name" in error_message:
+                    form.add_error('display_name', 'This display name is already taken. Please choose a different display name.')
+                elif "username" in error_message or "user_name" in error_message:
+                    form.add_error('user_name', 'This username is already taken. Please choose a different username.')
+                elif "pds_app_userprofile_username_key" in error_message:
+                    form.add_error('user_name', 'This username is already taken. Please choose a different username.')
+                else:
+                    form.add_error(None, 'A field value must be unique: ' + error_message)
+            else:
+                form.add_error(None, f"An error occurred: {error_message}")
+            return self.form_invalid(form)
+            
+    def form_invalid(self, form):
+        """
+        Called if the form is invalid. Re-renders the context data with the
+        data-filled form and errors.
+        """
+        # Ensure experiment and email are still in context for hidden fields
+        context = self.get_context_data(form=form)
+        context['experiment'] = self.request.GET.get('experiment') or self.request.POST.get('experiment') or "00000"
+        context['email'] = self.request.GET.get('email') or self.request.POST.get('email')
+        
+        return self.render_to_response(context)
 
 
 class CustomEmailVerificationSentView(EmailVerificationSentView):

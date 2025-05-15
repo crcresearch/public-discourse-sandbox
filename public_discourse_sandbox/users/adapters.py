@@ -10,6 +10,7 @@ from django.http import HttpRequest
 from allauth.account.utils import user_email, user_field, user_username
 from allauth.utils import valid_email_or_none
 from public_discourse_sandbox.pds_app.models import UserProfile, Experiment
+from django import forms
 
 if typing.TYPE_CHECKING:
     from allauth.socialaccount.models import SocialLogin
@@ -25,53 +26,129 @@ class AccountAdapter(DefaultAccountAdapter):
         This is called when saving user via allauth registration.
         We save the user as usual, then create the UserProfile if needed.
         """
-        # First save the user using the default adapter
-        user = super().save_user(request, user, form, commit=False)
-        
-        # Get any custom fields from the form
-        if hasattr(form, 'cleaned_data'):
-            # Get profile-specific fields if they exist
-            display_name = form.cleaned_data.get('display_name')
-            user_name = form.cleaned_data.get('user_name') or display_name
-            bio = form.cleaned_data.get('bio', '')
-            profile_picture = form.cleaned_data.get('profile_picture')
-            banner_picture = form.cleaned_data.get('banner_picture')
-            experiment_id = form.cleaned_data.get('experiment')
+        try:
+            # First save the user using the default adapter
+            user = super().save_user(request, user, form, commit=False)
             
-            # Save the user first
-            if commit:
+            # Get any custom fields from the form
+            if hasattr(form, 'cleaned_data'):
+                # Get profile-specific fields if they exist
+                display_name = form.cleaned_data.get('display_name')
+                user_name = form.cleaned_data.get('user_name') or display_name
+                bio = form.cleaned_data.get('bio', '')
+                profile_picture = form.cleaned_data.get('profile_picture')
+                banner_picture = form.cleaned_data.get('banner_picture')
+                experiment_id = form.cleaned_data.get('experiment')
+                
+                # Save the user first
+                if commit:
+                    try:
+                        user.save()
+                    except Exception as e:
+                        # Handle email uniqueness error
+                        if "duplicate key value violates unique constraint" in str(e) and "email" in str(e):
+                            form.add_error('email', 'This email address is already in use. Please use a different email address or sign in.')
+                            raise forms.ValidationError({
+                                'email': ['This email address is already in use.']
+                            })
+                        raise
+                
+                # Get experiment from form or form data
+                experiment = getattr(form, 'experiment', None)
+                if not experiment and experiment_id:
+                    try:
+                        experiment = Experiment.objects.get(identifier=experiment_id)
+                    except Experiment.DoesNotExist:
+                        pass
+                
+                if experiment:
+                    try:
+                        # Check for existing UserProfile with the same username or display_name
+                        if display_name:
+                            # Check for global uniqueness first
+                            existing_profile = UserProfile.objects.filter(
+                                display_name=display_name
+                            ).first()
+                            if existing_profile:
+                                form.add_error('display_name', 'This display name is already taken. Please choose a different display name.')
+                                raise forms.ValidationError({
+                                    'display_name': ['This display name is already taken. Please choose a different display name.']
+                                })
+                            
+                            # Then check within experiment (redundant but kept for clarity)
+                            existing_profile = UserProfile.objects.filter(
+                                experiment=experiment,
+                                display_name=display_name
+                            ).first()
+                            if existing_profile:
+                                form.add_error('display_name', 'This display name is already taken in this experiment.')
+                                raise forms.ValidationError({
+                                    'display_name': ['This display name is already taken in this experiment.']
+                                })
+                        
+                        if user_name:
+                            # Check for global uniqueness first
+                            existing_profile = UserProfile.objects.filter(
+                                username=user_name
+                            ).first()
+                            if existing_profile:
+                                form.add_error('user_name', 'This username is already taken. Please choose a different username.')
+                                raise forms.ValidationError({
+                                    'user_name': ['This username is already taken. Please choose a different username.']
+                                })
+                            
+                            # Then check within experiment (redundant but kept for clarity)
+                            existing_profile = UserProfile.objects.filter(
+                                experiment=experiment,
+                                username=user_name
+                            ).first()
+                            if existing_profile:
+                                form.add_error('user_name', 'This username is already taken in this experiment.')
+                                raise forms.ValidationError({
+                                    'user_name': ['This username is already taken in this experiment.']
+                                })
+                        
+                        # Create the UserProfile
+                        profile = UserProfile.objects.create(
+                            user=user,
+                            experiment=experiment,
+                            display_name=display_name,
+                            username=user_name,
+                            bio=bio,
+                            profile_picture=profile_picture,
+                            banner_picture=banner_picture
+                        )
+                        
+                        # Set last_accessed experiment
+                        user.last_accessed = experiment
+                        user.save()
+                    except forms.ValidationError:
+                        # Re-raise the validation error to be caught by the form
+                        raise
+                    except Exception as e:
+                        # Convert any other exception to a form validation error
+                        if "duplicate key value violates unique constraint" in str(e):
+                            if "display_name" in str(e):
+                                form.add_error('display_name', 'This display name is already taken in this experiment.')
+                            elif "username" in str(e):
+                                form.add_error('user_name', 'This username is already taken in this experiment.')
+                            else:
+                                form.add_error(None, str(e))
+                        else:
+                            form.add_error(None, str(e))
+                        raise forms.ValidationError("Error creating user profile. Please check the form for errors.")
+            elif commit:
                 user.save()
-            
-            # Get experiment from form or form data
-            experiment = getattr(form, 'experiment', None)
-            if not experiment and experiment_id:
-                try:
-                    experiment = Experiment.objects.get(identifier=experiment_id)
-                except Experiment.DoesNotExist:
-                    pass
-            
-            if experiment:
-                try:
-                    # Create the UserProfile
-                    profile = UserProfile.objects.create(
-                        user=user,
-                        experiment=experiment,
-                        display_name=display_name,
-                        username=user_name,
-                        bio=bio,
-                        profile_picture=profile_picture,
-                        banner_picture=banner_picture
-                    )
-                    
-                    # Set last_accessed experiment
-                    user.last_accessed = experiment
-                    user.save()
-                except Exception as e:
-                    raise
-        elif commit:
-            user.save()
-            
-        return user
+                
+            return user
+        except forms.ValidationError:
+            # Already added the errors to the form, just re-raise
+            raise
+        except Exception as e:
+            # Handle any other exceptions by adding a form error
+            if hasattr(form, 'add_error'):
+                form.add_error(None, f"Error creating account: {str(e)}")
+            raise forms.ValidationError(f"Error creating account: {str(e)}")
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):

@@ -63,12 +63,14 @@ class CustomSignupForm(SignupForm):
     display_name = forms.CharField(
         max_length=255,
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        help_text="Your public display name (must be unique within the experiment)"
     )
     user_name = forms.CharField(
         max_length=255,
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        help_text="Your username for this experiment (must be unique within the experiment)"
     )
     bio = forms.CharField(
         max_length=1000,
@@ -95,6 +97,7 @@ class CustomSignupForm(SignupForm):
         
         # Apply styling to email field
         self.fields['email'].widget.attrs['class'] = 'form-control'
+        self.fields['email'].help_text = "Your email address (must be unique across all users)"
         
         if self.experiment:
             # Set experiment field value
@@ -123,8 +126,34 @@ class CustomSignupForm(SignupForm):
                 
         return cleaned_data
     
+    def clean_email(self):
+        """
+        Validate that the email is unique across all users.
+        """
+        email = self.cleaned_data.get('email')
+        if not email:
+            raise forms.ValidationError('Email address is required.')
+            
+        # Check if the email is already used
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('This email address is already in use. Please use a different email address or sign in.')
+            
+        return email
+    
     def clean_user_name(self):
         user_name = self.cleaned_data.get('user_name')
+        if not user_name:
+            raise forms.ValidationError('Username is required.')
+            
+        # Check for invalid characters or too short
+        if len(user_name) < 3:
+            raise forms.ValidationError('Username must be at least 3 characters long.')
+            
+        # First check for global uniqueness (across all experiments)
+        if UserProfile.objects.filter(username=user_name).exists():
+            raise forms.ValidationError('This username is already taken. Please choose a different username.')
+            
+        # Then also check within the experiment (this check is redundant now but kept for clarity)
         if user_name and self.experiment:
             if UserProfile.objects.filter(
                 experiment=self.experiment,
@@ -135,6 +164,18 @@ class CustomSignupForm(SignupForm):
     
     def clean_display_name(self):
         display_name = self.cleaned_data.get('display_name')
+        if not display_name:
+            raise forms.ValidationError('Display name is required.')
+            
+        # Check for invalid characters or too short
+        if len(display_name) < 2:
+            raise forms.ValidationError('Display name must be at least 2 characters long.')
+            
+        # First check for global uniqueness (across all experiments)
+        if UserProfile.objects.filter(display_name=display_name).exists():
+            raise forms.ValidationError('This display name is already taken. Please choose a different display name.')
+            
+        # Then also check within the experiment (this check is redundant now but kept for clarity)
         if display_name and self.experiment:
             if UserProfile.objects.filter(
                 experiment=self.experiment,
