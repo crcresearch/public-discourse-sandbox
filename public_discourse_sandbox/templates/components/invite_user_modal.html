@@ -1,0 +1,79 @@
+{% load i18n %}
+{% load static %}
+
+<!-- Invite User Modal -->
+<div id="invite-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="popup-header">
+            <button type="button" class="close-popup" onclick="closeInviteModal()">
+                <i class="ri-close-line"></i>
+            </button>
+            <h2>{% translate "Invite User" %}</h2>
+        </div>
+        <div class="modal-body">
+            <form id="invite-form" onsubmit="handleInviteSubmit(event)">
+                <div class="form-group">
+                    <label for="email">{% translate "Email Address" %}</label>
+                    <input type="email" id="email" name="email" required class="form-control">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="post-button" onclick="closeInviteModal()">{% translate "Cancel" %}</button>
+                    <button type="submit" class="post-button">{% translate "Send Invitation" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Invite modal functions
+let currentInviteExperimentId = null;
+const inviteModal = document.getElementById('invite-modal');
+
+function showInviteModal(experimentId, experimentName) {
+    currentInviteExperimentId = experimentId;
+    inviteModal.style.display = 'flex';
+}
+
+function closeInviteModal() {
+    inviteModal.style.display = 'none';
+    currentInviteExperimentId = null;
+    document.getElementById('invite-form').reset();
+}
+
+async function handleInviteSubmit(event) {
+    event.preventDefault();
+    const email = document.getElementById('email').value;
+    const url = window.urls['invite_user'].replace('EXPERIMENT_ID', currentInviteExperimentId);
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        if (response.ok) {
+            closeInviteModal();
+            // Show success message
+            alert('Invitation sent successfully!');
+        } else {
+            const data = await response.json();
+            // Show specific messages for known errors
+            if (data.message === 'User already invited') {
+                alert('An invitation for this email already exists.');
+            } else if (data.message === 'User is already a member of this experiment.') {
+                alert('This user is already a member of the experiment.');
+            } else {
+                alert(data.error || data.message || 'Failed to send invitation. Please try again.');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+</script> 

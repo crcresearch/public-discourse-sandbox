@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import Experiment, UserProfile, Post, Vote, SocialNetwork, DigitalTwin, Hashtag, Notification
+from .models import Experiment, UserProfile, Post, Vote, SocialNetwork, DigitalTwin, Hashtag, Notification, ExperimentInvitation
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'creator', 'created_date', 'last_modified')
+    list_display = ('name', 'creator', 'created_date', 'last_modified', 'is_deleted')
     search_fields = ('name', 'description')
-    list_filter = ('creator',)
+    list_filter = ('creator', 'is_deleted')
     readonly_fields = ('created_date', 'last_modified')
     raw_id_fields = ('creator',)  # Uses a popup for better performance with many users
 
@@ -76,5 +76,15 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ('is_read', 'event', 'created_date')
     readonly_fields = ('created_date', 'last_modified')
     raw_id_fields = ('user_profile',)
+    date_hierarchy = 'created_date'
+    ordering = ('-created_date',)
+
+@admin.register(ExperimentInvitation)
+class ExperimentInvitationAdmin(admin.ModelAdmin):
+    list_display = ('email', 'experiment', 'created_by', 'created_date', 'is_deleted')
+    search_fields = ('email', 'experiment__name')
+    list_filter = ('is_deleted', 'created_date')
+    readonly_fields = ('created_date', 'last_modified')
+    raw_id_fields = ('experiment', 'created_by')
     date_hierarchy = 'created_date'
     ordering = ('-created_date',)

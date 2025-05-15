@@ -11,11 +11,16 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.contrib.auth import get_user_model
+from django.shortcuts import redirect
+from allauth.account.views import EmailVerificationSentView, SignupView
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
-from public_discourse_sandbox.pds_app.models import UserProfile, SocialNetwork, Post
+from public_discourse_sandbox.pds_app.models import UserProfile, SocialNetwork, Post, Experiment, ExperimentInvitation
+from .forms import CustomSignupForm
 
+User = get_user_model()
 
 class UserDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
     model = User
@@ -175,3 +180,121 @@ class UpdateProfileView(LoginRequiredMixin, ExperimentContextMixin, View):
             }, status=400)
 
 update_profile_view = UpdateProfileView.as_view()
+
+class CustomSignupView(SignupView):
+    """
+    Custom signup view that uses our form with profile fields.
+    If accessed without experiment parameter, redirects to original signup.
+    Email parameter is optional for initial signup from landing page.
+    """
+    form_class = CustomSignupForm
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Get experiment and email from URL parameters or POST data
+        experiment_identifier = self.request.GET.get('experiment') or self.request.POST.get('experiment')
+        email = self.request.GET.get('email') or self.request.POST.get('email')
+        
+        if experiment_identifier:
+            try:
+                experiment = Experiment.objects.get(identifier=experiment_identifier)
+                kwargs['experiment'] = experiment
+                
+                # If email is provided, check for invitation
+                if email:
+                    try:
+                        invitation = ExperimentInvitation.objects.get(
+                            experiment=experiment,
+                            email=email,
+                            is_accepted=False,
+                            is_deleted=False
+                        )
+                        kwargs['initial'] = {'email': email}
+                    except ExperimentInvitation.DoesNotExist:
+                        pass
+            except Experiment.DoesNotExist:
+                pass
+        return kwargs
+        
+    def get(self, request, *args, **kwargs):
+        # Only redirect if no experiment is provided
+        if not request.GET.get('experiment'):
+            return redirect('account_signup')
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add experiment and email to form context for hidden fields
+        context['experiment'] = self.request.GET.get('experiment')
+        context['email'] = self.request.GET.get('email')
+        return context
+
+    def get_success_url(self):
+        # After successful signup, redirect to email verification
+        return reverse('account_email_verification_sent')
+        
+    def form_valid(self, form):
+        # Call parent method to save the User
+        response = super().form_valid(form)
+        
+        user = self.user
+        experiment = form.experiment
+        
+        if user and experiment:
+            # Check if the user already has a profile for this experiment
+            profile, created = UserProfile.objects.get_or_create(
+                user=user,
+                experiment=experiment,
+                defaults={
+                    'username': form.cleaned_data.get('user_name'),
+                    'display_name': form.cleaned_data.get('display_name'),
+                    'bio': form.cleaned_data.get('bio'),
+                }
+            )
+            
+            # Upload profile/banner pictures if provided
+            if created:
+                if form.cleaned_data.get('profile_picture'):
+                    profile.profile_picture = form.cleaned_data.get('profile_picture')
+                if form.cleaned_data.get('banner_picture'):
+                    profile.banner_picture = form.cleaned_data.get('banner_picture')
+                profile.save()
+            
+            # If there was an invitation, mark it as accepted
+            email = form.cleaned_data.get('email')
+            if email:
+                try:
+                    invitation = ExperimentInvitation.objects.get(
+                        experiment=experiment,
+                        email=email,
+                        is_accepted=False,
+                        is_deleted=False
+                    )
+                    invitation.is_accepted = True
+                    invitation.save()
+                except ExperimentInvitation.DoesNotExist:
+                    # No invitation found, which is fine for direct signups
+                    pass
+                    
+        return response
+
+
+class CustomEmailVerificationSentView(EmailVerificationSentView):
+    """
+    Custom view to handle email verification and redirect to create profile
+    if there's a pending invitation.
+    """
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        
+        # Check if there's a pending invitation
+        pending_invitation = request.session.get('pending_invitation')
+        if pending_invitation:
+            # Clear the session data
+            del request.session['pending_invitation']
+            
+            # Redirect to create profile
+            return redirect('create_profile', 
+                          experiment_identifier=pending_invitation['experiment_identifier'])
+        
+        return response

@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block content %}
+<!-- Left Sidebar -->
+{% include 'pages/left_nav.html' %}
+
+<div class="no-xp-main-content">
+    <header class="main-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">{{ experiment.name }}</h1>
+            <a href="{% url 'researcher_tools' %}" class="back-link ms-3">
+                <i class="ri-arrow-left-line"></i>
+                {% translate "Back to Researcher Tools" %}
+            </a>
+        </div>
+    </header>
+    
+    <div class="experiment-detail">
+        <!-- Experiment Info -->
+        <div class="experiment-info-section">
+            <div class="experiment-header">
+                <div class="experiment-meta">
+                    <span class="experiment-id">ID: {{ experiment.identifier }}</span>
+                    <span class="experiment-date">Created: {{ experiment.created_date|date:"F j, Y" }}</span>
+                </div>
+                {% if experiment.creator == request.user %}
+                    <button class="btn btn-secondary" onclick="toggleEditForm()">
+                        <i class="ri-edit-line"></i>
+                        {% translate "Edit" %}
+                    </button>
+                {% endif %}
+            </div>
+            
+            <div class="experiment-description">
+                <h3>{% translate "Description" %}</h3>
+                <p>{{ experiment.description }}</p>
+            </div>
+            
+            {% if experiment.creator == request.user %}
+                <form method="post" class="experiment-form edit-form" style="display: none;">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="toggleEditForm()">
+                            {% translate "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            {% translate "Save Changes" %}
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+        
+        <!-- Experiment Statistics -->
+        <div class="experiment-stats">
+            <div class="stat-card">
+                <i class="ri-user-line"></i>
+                <div class="stat-content">
+                    <h3>{% translate "Total Users" %}</h3>
+                    <p class="stat-value">{{ total_users }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="ri-user-unfollow-line"></i>
+                <div class="stat-content">
+                    <h3>{% translate "Banned Users" %}</h3>
+                    <p class="stat-value">{{ total_banned_users }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="ri-message-2-line"></i>
+                <div class="stat-content">
+                    <h3>{% translate "Total Posts" %}</h3>
+                    <p class="stat-value">{{ total_posts }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <i class="ri-robot-line"></i>
+                <div class="stat-content">
+                    <h3>{% translate "Digital Twins" %}</h3>
+                    <p class="stat-value">{{ total_digital_twins }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Invitations Table -->
+        <div class="experiment-info-section experiment-invitations" style="margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin-bottom: 0;">{% translate "Invitations" %}</h3>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="showInviteModal('{{ experiment.identifier }}', '{{ experiment.name|escapejs }}')"
+                >
+                    {% translate "Invite a user" %}
+                </button>
+            </div>
+            {% if invitations and invitations|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>{% translate "Email" %}</th>
+                                <th>{% translate "Accepted" %}</th>
+                                <th>{% translate "Expires At" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invitation in invitations %}
+                                <tr>
+                                    <td>{{ invitation.email }}</td>
+                                    <td>
+                                        {% if invitation.is_accepted %}
+                                            <span style="color: green;">{% translate "Yes" %}</span>
+                                        {% else %}
+                                            <span style="color: #888;">{% translate "No" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if invitation.expires_at %}
+                                            {{ invitation.expires_at|date:"Y-m-d H:i" }}
+                                        {% else %}
+                                            &mdash;
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info" style="margin: 1rem 0;">
+                    {% translate "There aren't currently any invitations for this discourse." %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h3>{% translate "Quick Actions" %}</h3>
+            <div class="action-buttons">
+                <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
+                    <i class="ri-home-line"></i>
+                    {% translate "Go To Discourse" %}
+                </a>
+                {% if experiment.creator == request.user %}
+                    <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
+                        <i class="ri-dashboard-line"></i>
+                        {% translate "Moderator Dashboard" %}
+                    </a>
+                {% endif %}
+                {# Enroll Digital Twin button, matches Researcher Tools #}
+                <a href="javascript:void(0);"
+                   class="btn btn-secondary"
+                   onclick="showEnrollDigitalTwinModal('{{ experiment.identifier }}')">
+                    <i class="ri-robot-line"></i>
+                    {% translate "Enroll Digital Twin" %}
+                </a>
+                {% if experiment.creator == request.user %}
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        style="margin-left: 0.5rem;"
+                        onclick="showDeleteModal('{{ experiment.identifier }}', '{{ experiment.name|escapejs }}')"
+                    >
+                        <i class="ri-delete-bin-line"></i>
+                        {% translate "Delete Discourse" %}
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'components/delete_experiment_modal.html' %}
+{% include 'components/invite_user_modal.html' %}
+{% include 'components/enroll_digital_twin_modal.html' %}
+
+<script>
+function toggleEditForm() {
+    const form = document.querySelector('.edit-form');
+    const description = document.querySelector('.experiment-description');
+    const editButton = document.querySelector('.btn-secondary');
+    
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        description.style.display = 'none';
+        editButton.style.display = 'none';
+    } else {
+        form.style.display = 'none';
+        description.style.display = 'block';
+        editButton.style.display = 'inline-flex';
+    }
+}
+
+// Store Django URLs for JS use
+window.urls = {
+    'experiment_detail': '{% url "experiment_detail" "EXPERIMENT_ID" %}',
+    'home_with_experiment': '{% url "home_with_experiment" "EXPERIMENT_ID" %}',
+    'moderator_dashboard': '{% url "moderator_dashboard" "EXPERIMENT_ID" %}',
+    'invite_user': '{% url "invite_user" "EXPERIMENT_ID" %}',
+    'enroll_digital_twin': '{% url "enroll_digital_twin" "EXPERIMENT_ID" %}'
+};
+</script>
+{% endblock %}
+
+{% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
+{% endblock %} 

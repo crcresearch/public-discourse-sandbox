@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
-from .models import Experiment, UserProfile
+from .models import Experiment, UserProfile, ExperimentInvitation
 
 class ExperimentContextMixin:
     """
@@ -70,45 +70,44 @@ class ExperimentContextMixin:
         self.experiment = None
         self.should_redirect = False
         self.user_profile = None
+        self.redirect_to_landing = False
         
         if request.user.is_authenticated:
-            # First try to get experiment from URL
+            def get_valid_experiment(exp):
+                if exp and not exp.is_deleted:
+                    return exp
+                return None
+
+            # Try to get experiment from URL
             if 'experiment_identifier' in kwargs:
                 try:
                     self.experiment = Experiment.objects.get(identifier=kwargs['experiment_identifier'])
                 except Experiment.DoesNotExist:
-                    # If experiment doesn't exist, use last_accessed
-                    if hasattr(request.user, 'last_accessed') and request.user.last_accessed:
-                        self.experiment = request.user.last_accessed
-                        self.should_redirect = True
-                    else:
-                        # If no last_accessed, try to get the user's first available experiment
-                        user_profile = request.user.userprofile_set.first()
-                        if user_profile:
-                            self.experiment = user_profile.experiment
-                            self.should_redirect = True
-                        else:
-                            raise PermissionDenied("You do not have access to any experiments")
-            # If no identifier in URL, try to get from user's last_accessed
-            elif hasattr(request.user, 'last_accessed') and request.user.last_accessed:
-                self.experiment = request.user.last_accessed
-                self.should_redirect = True
-            else:
-                # If no experiment found, try to get the user's first available experiment
-                user_profile = request.user.userprofile_set.first()
+                    self.experiment = None
+
+            # If not found, try last_accessed (but only if not deleted)
+            if not self.experiment:
+                self.experiment = get_valid_experiment(getattr(request.user, 'last_accessed', None))
+                if self.experiment:
+                    self.should_redirect = True
+
+            # If still not found, try first available experiment
+            if not self.experiment:
+                user_profile = request.user.userprofile_set.filter(experiment__is_deleted=False).first()
                 if user_profile:
                     self.experiment = user_profile.experiment
                     self.should_redirect = True
-                else:
-                    raise PermissionDenied("You do not have access to any experiments")
-            
-            # Verify user has access to this experiment and get their profile for this experiment
-            if self.experiment:
-                self.user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
-                if not self.user_profile:
-                    raise PermissionDenied("You do not have a profile in this experiment")
-                
-                # Update user's last_accessed experiment
+
+            # If still not found, set redirect flag
+            if not self.experiment:
+                self.redirect_to_landing = True
+                return
+
+            # Get user's profile for this experiment
+            self.user_profile = request.user.userprofile_set.filter(experiment=self.experiment).first()
+
+            # Update user's last_accessed experiment if needed
+            if request.user.last_accessed != self.experiment:
                 request.user.last_accessed = self.experiment
                 request.user.save()
 
@@ -162,6 +161,9 @@ class ExperimentContextMixin:
         Returns:
             HttpResponse: The response to send to the client
         """
+        # Handle redirect if setup flagged it
+        if getattr(self, 'redirect_to_landing', False):
+            return redirect("/")
         response = super().dispatch(request, *args, **kwargs)
         
         # If we should redirect and we have an experiment, redirect to the URL with the identifier
@@ -239,3 +241,32 @@ class ModeratorPermissionMixin:
         context = super().get_context_data(**kwargs)
         context['is_moderator'] = self.is_moderator(self.request.user, self.experiment)
         return context 
+
+class ProfileRequiredMixin:
+    """
+    Mixin that redirects users to create their profile if they don't have one.
+    Handles both experiment creators and invited users.
+    Should be used after ExperimentContextMixin in the inheritance chain.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        # Skip if we're already on the create profile page
+        if request.resolver_match.url_name == 'create_profile':
+            return super().dispatch(request, *args, **kwargs)
+            
+        # Check if user needs a profile
+        needs_profile = (
+            # Creator without profile
+            (self.experiment.creator == request.user and not self.user_profile) or
+            # Invited user without profile
+            (not self.user_profile and 
+             ExperimentInvitation.objects.filter(
+                 experiment=self.experiment,
+                 email=request.user.email,
+                 is_deleted=False
+             ).exists())
+        )
+        
+        if needs_profile:
+            return redirect('create_profile', experiment_identifier=self.experiment.identifier)
+            
+        return super().dispatch(request, *args, **kwargs) 

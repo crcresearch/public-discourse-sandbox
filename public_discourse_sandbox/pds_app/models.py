@@ -20,6 +20,14 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class UndeletedExperimentManager(models.Manager):
+    """
+    Custom manager for Experiment model that only returns non-deleted experiments.
+    """
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
 class Experiment(BaseModel):
     """
     Experiment model.
@@ -29,6 +37,11 @@ class Experiment(BaseModel):
     description = models.TextField()
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # This defines what user "owns" this experiment
+    is_deleted = models.BooleanField(default=False)
+
+    # Add custom managers
+    all_objects = models.Manager()  # Default manager that shows all experiments
+    objects = UndeletedExperimentManager()  # Custom manager that only shows non-deleted experiments
 
     def __str__(self):
         return f"{self.name}"
@@ -89,6 +102,21 @@ class UserProfile(BaseModel):
             self.is_collaborator or  # User is a collaborator
             self.is_moderator  # User has moderator flag
         )
+
+    def save(self, *args, **kwargs):
+        # Update the user's last_accessed experiment
+        self.user.last_accessed = self.experiment
+        self.user.save(update_fields=['last_accessed'])
+
+        # Find and update any pending invitations for this user and experiment
+        ExperimentInvitation.objects.filter(
+            experiment=self.experiment,
+            email=self.user.email,
+            is_accepted=False,
+            is_deleted=False
+        ).update(is_accepted=True)
+
+        super().save(*args, **kwargs)
 
 
 class UndeletedPostManager(models.Manager):
@@ -185,6 +213,8 @@ class DigitalTwin(BaseModel):
     user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     api_token = models.CharField(max_length=255, default='default_token')
+    llm_url = models.CharField(max_length=255, null=True, blank=True)
+    llm_model = models.CharField(max_length=255, null=True, blank=True)
     last_post = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -213,3 +243,18 @@ class Notification(BaseModel):
 
     def __str__(self):
         return f"{self.user_profile.username} - {self.event}"
+
+
+class ExperimentInvitation(BaseModel):
+    """
+    Experiment invitation model.
+    """
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
+    email = models.EmailField()
+    is_accepted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f"{self.email} - {self.experiment.name}"

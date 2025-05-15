@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load allauth %}
+{% load i18n %}
+
+{# Page title #}
+{% block head_title %}
+    {% trans "Recovery Codes" %}
+{% endblock head_title %}
+
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+    <div class="main-content">
+        <header class="main-header">
+            <h1>{% trans "Recovery Codes" %}</h1>
+        </header>
+        <p>
+            {% blocktrans count unused=unused_codes|length %}
+                There is {{ unused }} out of {{ total_count }} recovery code available.
+            {% plural %}
+                There are {{ unused }} out of {{ total_count }} recovery codes available.
+            {% endblocktrans %}
+        </p>
+        <label class="mb-2">
+            <b>{% trans "Unused codes" %}</b>
+        </label>
+        <ul class="list-group mb-3 alert alert-info">
+            {% for code in unused_codes %}
+                <li>{{ code }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row mb-2">
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <a href="{% url 'mfa_download_recovery_codes' %}" class="btn btn-primary btn-sm w-100">
+                    {% trans "Download codes" %}
+                </a>
+            </div>
+            <div class="col-12 col-md-4 mb-2 mb-md-0">
+                <a href="{% url 'mfa_generate_recovery_codes' %}" class="btn btn-primary btn-sm w-100">
+                    {% trans "Generate new codes" %}
+                </a>
+            </div>
+            <div class="col-12 col-md-4">
+                <a href="{% url 'home' %}" class="btn btn-secondary btn-sm w-100">
+                    {% trans "Go to Discourse" %}
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock content %} 

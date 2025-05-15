@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django import forms
 
 from .models import User
-from public_discourse_sandbox.pds_app.models import UserProfile
+from public_discourse_sandbox.pds_app.models import UserProfile, Experiment, ExperimentInvitation
 
 
 class UserAdminChangeForm(admin_forms.UserChangeForm):
@@ -53,3 +53,92 @@ class UserProfileForm(forms.ModelForm):
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
         }
+
+
+class CustomSignupForm(SignupForm):
+    """
+    Custom signup form that includes profile fields for UserProfile.
+    'user_name' is used instead of 'username' to avoid conflict with the User model.
+    """
+    display_name = forms.CharField(
+        max_length=255,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    user_name = forms.CharField(
+        max_length=255,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    bio = forms.CharField(
+        max_length=1000,
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+    )
+    profile_picture = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
+    banner_picture = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
+    # Hidden fields for experiment and email
+    experiment = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False  # Make optional for rendering
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.experiment = kwargs.pop('experiment', None)
+        super().__init__(*args, **kwargs)
+        
+        # Apply styling to email field
+        self.fields['email'].widget.attrs['class'] = 'form-control'
+        
+        if self.experiment:
+            # Set experiment field value
+            self.fields['experiment'].initial = self.experiment.identifier
+            
+            # If we have an email in initial data, make it readonly
+            if 'initial' in kwargs and kwargs['initial'].get('email'):
+                self.fields['email'].widget.attrs['readonly'] = True
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Get experiment from either the form field or the instance variable
+        experiment_id = cleaned_data.get('experiment') or (self.experiment.identifier if self.experiment else None)
+        
+        # Experiment is required for validation
+        if not experiment_id:
+            raise forms.ValidationError('Experiment identifier is required')
+            
+        # If we don't already have an experiment instance, try to get it
+        if not self.experiment and experiment_id:
+            try:
+                self.experiment = Experiment.objects.get(identifier=experiment_id)
+            except Experiment.DoesNotExist:
+                raise forms.ValidationError('Invalid experiment identifier')
+                
+        return cleaned_data
+    
+    def clean_user_name(self):
+        user_name = self.cleaned_data.get('user_name')
+        if user_name and self.experiment:
+            if UserProfile.objects.filter(
+                experiment=self.experiment,
+                username=user_name
+            ).exists():
+                raise forms.ValidationError('This username is already taken in this experiment.')
+        return user_name
+    
+    def clean_display_name(self):
+        display_name = self.cleaned_data.get('display_name')
+        if display_name and self.experiment:
+            if UserProfile.objects.filter(
+                experiment=self.experiment,
+                display_name=display_name
+            ).exists():
+                raise forms.ValidationError('This display name is already taken in this experiment.')
+        return display_name

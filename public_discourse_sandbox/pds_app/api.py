@@ -235,3 +235,28 @@ def handle_like(request, post_id):
         return JsonResponse({'status': 'error', 'message': 'Post not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@ensure_csrf_cookie
+def delete_experiment(request, experiment_identifier):
+    """
+    Delete an experiment via AJAX/HTMX (DELETE request).
+    Only the experiment creator can delete their experiment.
+    Uses soft deletion by setting is_deleted to True.
+    Returns JSON response (success or error), mirroring the post delete API.
+    """
+    if request.method != 'DELETE':
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed'}, status=405)
+    try:
+        experiment = Experiment.all_objects.get(identifier=experiment_identifier)
+        # Check if user is the creator
+        if experiment.creator != request.user:
+            return JsonResponse({'status': 'error', 'message': 'Only the experiment creator can delete this experiment'}, status=403)
+        # Soft delete the experiment
+        experiment.is_deleted = True
+        experiment.save()
+        return JsonResponse({'status': 'success', 'message': 'Experiment deleted successfully'})
+    except Experiment.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Experiment not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

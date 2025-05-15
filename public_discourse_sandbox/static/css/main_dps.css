@@ -165,7 +165,7 @@ p, a, button, span {
 
 /* Main Content */
 .main-content {
-    width: 600px;
+    width: 700px;
     /* margin-left: 275px;
     margin-right: 350px; */
     margin: auto;
@@ -174,6 +174,18 @@ p, a, button, span {
     min-height: 100vh;
     overflow-y: auto; 
     background-color: var(--background-color);
+}
+
+/* Main Content */
+.no-xp-main-content {
+    position: absolute;
+    left: 275px;
+    right: 0;
+    min-height: 100vh;
+    overflow-y: auto; 
+    background-color: var(--background-color);
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
 }
 
 /* Main Header */
@@ -1844,4 +1856,307 @@ Profile Tabs Custom Styling
 .topic-count {
     color: var(--secondary-text);
     font-size: 13px;
+}
+
+/* =============================
+   Create Experiment Page Styles
+   ============================= */
+
+.create-experiment-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin: 2rem 0;
+    max-width: 800px;
+}
+
+.experiment-form {
+    width: 100%;
+}
+
+.back-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--nd-blue);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    color: var(--nd-metallic-gold);
+}
+
+/* Form Control (add only if not present) */
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--nd-blue);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(12, 35, 64, 0.1);
+}
+
+@media (max-width: 768px) {
+    .create-experiment-section {
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+
+/* =============================
+   Experiment Detail Page Styles
+   ============================= */
+
+.experiment-detail {
+    padding: 2rem;
+}
+
+.experiment-info-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.experiment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.experiment-meta {
+    display: flex;
+    gap: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.experiment-id {
+    font-family: monospace;
+}
+
+.experiment-description h3 {
+    margin-bottom: 1rem;
+    color: var(--nd-blue);
+}
+
+.experiment-description p {
+    color: #444;
+    line-height: 1.6;
+}
+
+/* Statistics Styles */
+.experiment-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-card i {
+    font-size: 2rem;
+    color: var(--nd-blue);
+}
+
+.stat-content h3 {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--nd-blue);
+    margin: 0;
+}
+
+/* Quick Actions Styles */
+.quick-actions {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+}
+
+.quick-actions h3 {
+    margin-bottom: 1.5rem;
+    color: var(--nd-blue);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Edit Form Styles (specific to experiment detail) */
+.experiment-form {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+}
+
+@media (max-width: 768px) {
+    .experiment-detail {
+        padding: 1rem;
+    }
+    .experiment-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .experiment-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+
+/* =============================
+   Researcher Tools Page Styles
+   ============================= */
+
+.table-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+}
+
+.table-container {
+    margin-top: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.experiments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.experiments-table th,
+.experiments-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.experiments-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.experiments-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.experiment-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.experiment-id {
+    color: #666;
+    font-family: monospace;
+}
+
+.experiment-description {
+    color: #444;
+    max-width: 400px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.experiment-actions {
+    white-space: nowrap;
+}
+
+.btn-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.no-experiments {
+    text-align: center;
+    color: #666;
+    margin-top: 2rem;
+    padding: 3rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.no-experiments p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+    }
+    .experiments-table {
+        min-width: 800px;
+    }
+    .experiment-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+.experiment-row {
+    cursor: pointer;
 }
