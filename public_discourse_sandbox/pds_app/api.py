@@ -289,6 +289,7 @@ def repost(request, post_id):
             user_profile=user_profile,
             experiment=original_post.experiment,
             content=original_post.content,
+            repost_source=original_post
         )
         
         # Increment the share count on the original post
