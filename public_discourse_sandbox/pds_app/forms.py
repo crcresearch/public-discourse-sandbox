@@ -60,17 +60,24 @@ class EnrollDigitalTwinForm(forms.Form):
     llm_url = forms.CharField(max_length=255, required=False)
     llm_model = forms.CharField(max_length=255, required=False)
 
+    def __init__(self, *args, **kwargs):
+        self.experiment = kwargs.pop('experiment', None)
+        super().__init__(*args, **kwargs)
+
     def clean_username(self):
         username = self.cleaned_data['username']
-        if UserProfile.objects.filter(username=username).exists():
-            raise forms.ValidationError('This username is already taken.')
+        if self.experiment:
+            # Check if username is already taken in this experiment
+            if UserProfile.objects.filter(
+                experiment=self.experiment,
+                username__iexact=username  # Case-insensitive check
+            ).exists():
+                raise forms.ValidationError('This username is already taken in this experiment.')
+        else:
+            # Fallback to global check if no experiment is provided
+            if UserProfile.objects.filter(username=username).exists():
+                raise forms.ValidationError('This username is already taken.')
         return username
-
-    def clean_display_name(self):
-        display_name = self.cleaned_data['display_name']
-        if UserProfile.objects.filter(display_name=display_name).exists():
-            raise forms.ValidationError('This display name is already taken.')
-        return display_name
 
     def clean_email(self):
         email = self.cleaned_data['email']

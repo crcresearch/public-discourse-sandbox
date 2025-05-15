@@ -8,53 +8,67 @@
             <h2>{% translate "Enroll Digital Twin" %}</h2>
         </div>
         <div class="modal-body">
+            <div id="enroll-form-errors" class="alert alert-danger" style="display: none; margin-bottom: 15px;"></div>
+            
             <form id="enroll-digital-twin-form" enctype="multipart/form-data" autocomplete="off" onsubmit="handleEnrollDigitalTwinSubmit(event)">
+                {% csrf_token %}
                 <h4>{% translate "User Information" %}</h4>
                 <div class="form-group">
                     <label for="dt_name">{% translate "Name" %}</label>
                     <input type="text" id="dt_name" name="name" required class="form-control">
+                    <div class="invalid-feedback" id="error-name"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_email">{% translate "Email" %}</label>
                     <input type="email" id="dt_email" name="email" required class="form-control">
+                    <div class="invalid-feedback" id="error-email"></div>
                 </div>
                 <h4>{% translate "Profile Information" %}</h4>
                 <div class="form-group">
                     <label for="dt_display_name">{% translate "Display Name" %}</label>
                     <input type="text" id="dt_display_name" name="display_name" required class="form-control">
+                    <div class="invalid-feedback" id="error-display_name"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_username">{% translate "Username" %}</label>
                     <input type="text" id="dt_username" name="username" required class="form-control">
+                    <div class="invalid-feedback" id="error-username"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_bio">{% translate "Bio" %}</label>
                     <textarea id="dt_bio" name="bio" class="form-control"></textarea>
+                    <div class="invalid-feedback" id="error-bio"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_banner_picture">{% translate "Banner Picture" %}</label>
                     <input type="file" id="dt_banner_picture" name="banner_picture" accept="image/*" class="form-control">
+                    <div class="invalid-feedback" id="error-banner_picture"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_profile_picture">{% translate "Profile Picture" %}</label>
                     <input type="file" id="dt_profile_picture" name="profile_picture" accept="image/*" class="form-control">
+                    <div class="invalid-feedback" id="error-profile_picture"></div>
                 </div>
                 <h4>{% translate "Digital Twin Settings" %}</h4>
                 <div class="form-group">
                     <label for="dt_persona">{% translate "Persona" %}</label>
                     <textarea id="dt_persona" name="persona" class="form-control"></textarea>
+                    <div class="invalid-feedback" id="error-persona"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_api_token">{% translate "API Token" %}</label>
                     <input type="text" id="dt_api_token" name="api_token" class="form-control">
+                    <div class="invalid-feedback" id="error-api_token"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_llm_url">{% translate "LLM URL" %}</label>
                     <input type="text" id="dt_llm_url" name="llm_url" class="form-control">
+                    <div class="invalid-feedback" id="error-llm_url"></div>
                 </div>
                 <div class="form-group">
                     <label for="dt_llm_model">{% translate "LLM Model" %}</label>
                     <input type="text" id="dt_llm_model" name="llm_model" class="form-control">
+                    <div class="invalid-feedback" id="error-llm_model"></div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="post-button" onclick="closeEnrollDigitalTwinModal()">{% translate "Cancel" %}</button>
@@ -67,27 +81,81 @@
 <script>
 let currentEnrollExperimentId = null;
 const enrollDigitalTwinModal = document.getElementById('enroll-digital-twin-modal');
+
 function showEnrollDigitalTwinModal(experimentId) {
     currentEnrollExperimentId = experimentId;
     enrollDigitalTwinModal.style.display = 'flex';
+    clearFormErrors();
 }
+
 function closeEnrollDigitalTwinModal() {
     enrollDigitalTwinModal.style.display = 'none';
     currentEnrollExperimentId = null;
     document.getElementById('enroll-digital-twin-form').reset();
+    clearFormErrors();
 }
+
+function clearFormErrors() {
+    const errorContainer = document.getElementById('enroll-form-errors');
+    errorContainer.style.display = 'none';
+    errorContainer.textContent = '';
+    
+    const errorElements = document.querySelectorAll('.invalid-feedback');
+    errorElements.forEach(element => {
+        element.textContent = '';
+        element.style.display = 'none';
+    });
+    
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+        input.classList.remove('is-invalid');
+    });
+}
+
+function displayFormErrors(errorMessage) {
+    if (errorMessage.includes('\n')) {
+        const errors = errorMessage.split('\n');
+        
+        errors.forEach(error => {
+            const parts = error.split(': ');
+            if (parts.length === 2) {
+                const field = parts[0];
+                const message = parts[1];
+                
+                const errorElement = document.getElementById(`error-${field}`);
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.style.display = 'block';
+                    
+                    const input = document.querySelector(`[name="${field}"]`);
+                    if (input) {
+                        input.classList.add('is-invalid');
+                    }
+                }
+            }
+        });
+    } else {
+        const errorContainer = document.getElementById('enroll-form-errors');
+        errorContainer.textContent = errorMessage;
+        errorContainer.style.display = 'block';
+    }
+}
+
 async function handleEnrollDigitalTwinSubmit(event) {
     event.preventDefault();
+    
+    clearFormErrors();
+    
     const form = document.getElementById('enroll-digital-twin-form');
     const url = window.urls['enroll_digital_twin'].replace('EXPERIMENT_ID', currentEnrollExperimentId);
     const formData = new FormData(form);
-    makeRequest(url, 'POST', formData)
-        .then(data => {
-            closeEnrollDigitalTwinModal();
-            alert('Digital Twin enrolled successfully!');
-        })
-        .catch(error => {
-            alert(error.message || 'Failed to enroll digital twin. Please try again.');
-        });
+    
+    try {
+        const data = await submitFormWithValidation(url, 'POST', formData);
+        closeEnrollDigitalTwinModal();
+        alert('Digital Twin enrolled successfully!');
+    } catch (error) {
+        displayFormErrors(error.message);
+    }
 }
 </script> 

@@ -501,10 +501,15 @@ class InviteUserView(LoginRequiredMixin, View):
 
 class EnrollDigitalTwinView(LoginRequiredMixin, View):
     def post(self, request, experiment_identifier):
-        form = EnrollDigitalTwinForm(request.POST, request.FILES)
-        if not form.is_valid():
-            return JsonResponse({'error': form.errors.as_json()}, status=400)
         try:
+            # Get experiment first so we can pass it to the form
+            experiment = Experiment.objects.get(identifier=experiment_identifier)
+            
+            # Pass experiment to the form
+            form = EnrollDigitalTwinForm(request.POST, request.FILES, experiment=experiment)
+            if not form.is_valid():
+                return JsonResponse({'error': form.errors.as_json()}, status=400)
+                
             with transaction.atomic():
                 # Create User (custom user model: only email, name, password)
                 user = User.objects.create_user(
@@ -512,8 +517,6 @@ class EnrollDigitalTwinView(LoginRequiredMixin, View):
                     password=User.objects.make_random_password(),
                     name=form.cleaned_data['name']
                 )
-                # Get experiment
-                experiment = Experiment.objects.get(identifier=experiment_identifier)
                 # Create UserProfile
                 user_profile = UserProfile.objects.create(
                     user=user,
@@ -538,6 +541,8 @@ class EnrollDigitalTwinView(LoginRequiredMixin, View):
                     llm_model=form.cleaned_data.get('llm_model', '')
                 )
             return JsonResponse({'message': 'Digital Twin enrolled successfully!'})
+        except Experiment.DoesNotExist:
+            return JsonResponse({'error': 'Experiment not found'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 

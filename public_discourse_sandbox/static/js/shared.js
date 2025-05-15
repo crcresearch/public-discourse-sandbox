@@ -29,6 +29,61 @@ async function makeRequest(url, method, data = null) {
     return response.json();
 }
 
+/**
+ * Helper function to handle form submissions with better error handling for form validation
+ * @param {string} url - The API endpoint URL
+ * @param {string} method - The HTTP method (POST, PUT, etc.)
+ * @param {FormData|Object} data - Form data or JSON data
+ * @returns {Promise<Object>} - Response data
+ */
+async function submitFormWithValidation(url, method, data = null) {
+    try {
+        // Use the existing makeRequest function
+        return await makeRequest(url, method, data);
+    } catch (error) {
+        // Check if this is a form validation error (contains JSON error data)
+        const errorMsg = error.message || '';
+        
+        // Try to extract and parse form validation errors
+        if (errorMsg.startsWith('{') && errorMsg.endsWith('}')) {
+            try {
+                // Check if the error is JSON and might contain field errors
+                const errorObj = JSON.parse(errorMsg);
+                
+                if (errorObj.error) {
+                    // Try to parse the nested error object
+                    const formErrors = JSON.parse(errorObj.error);
+                    
+                    // Format error message for display
+                    let errorMessages = [];
+                    
+                    // Extract all error messages for each field
+                    for (const field in formErrors) {
+                        const fieldErrors = formErrors[field];
+                        if (Array.isArray(fieldErrors)) {
+                            fieldErrors.forEach(error => {
+                                if (error.message) {
+                                    errorMessages.push(`${field}: ${error.message}`);
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Join all error messages
+                    if (errorMessages.length) {
+                        throw new Error(errorMessages.join('\n'));
+                    }
+                }
+            } catch (parseError) {
+                // JSON parsing failed, continue with original error
+            }
+        }
+        
+        // If we couldn't parse special form validation errors, just rethrow the original error
+        throw error;
+    }
+}
+
 // Reusable function to handle follow/unfollow actions
 function handleFollow(userProfileId) {
     makeRequest(
