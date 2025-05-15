@@ -18,7 +18,7 @@
             {% comment %} <a href="{% url 'login' %}" class="login-btn">Sign in</a>
             <a href="{% url 'signup' %}" class="signup-btn">Sign up</a> {% endcomment %}
             <a href="{% url 'account_login' %}" class="login-btn">Sign in</a>
-            <a href="{% url 'users:signup_with_profile' %}?experiment=00000" class="signup-btn">Sign up</a>
+            <a href="#" class="signup-btn" onclick="openConsentModal(); return false;">Sign up</a>
         </div>
     </header>
 
@@ -33,7 +33,7 @@
                 <div class="cta-buttons">
                     {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
                     <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
-                    <a href="{% url 'users:signup_with_profile' %}?experiment=00000" class="cta-btn signup">Create Account</a>
+                    <a href="#" class="cta-btn signup" onclick="openConsentModal(); return false;">Create Account</a>
                     <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
                 </div>
             </div>
@@ -112,7 +112,7 @@
             <div class="cta-buttons">
                 {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
                 <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
-                <a href="{% url 'users:signup_with_profile' %}?experiment=00000" class="cta-btn signup">Create Account</a>
+                <a href="#" class="cta-btn signup" onclick="openConsentModal(); return false;">Create Account</a>
                 <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
             </div>
         </section>
@@ -131,4 +131,77 @@
         </div>
     </footer>
 </div>
+
+<!-- Consent Modal -->
+<div id="consentModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 20px; border-radius: 8px; max-width: 600px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0;">Consent for Participation</h3>
+            <span onclick="closeConsentModal()" style="cursor: pointer; font-size: 24px;">&times;</span>
+        </div>
+        <div>
+            <p>Thank you for your interest in the Public Discourse Sandbox. Before you create an account, please read and agree to the following consent terms:</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; max-height: 300px; overflow-y: auto;">
+                <h5>User Consent Form</h5>
+                <p class="text-muted mb-3">
+                    This study has been approved by the University of Notre Dame IRB.
+                </p>
+                <p>By creating an account, you agree to participate in a research study focused on community engagement in social media contexts. Your interactions within the platform may be anonymized and analyzed for research purposes.</p>
+                <p>You understand that:</p>
+                <ul>
+                    <li>Your participation is voluntary and you can withdraw at any time</li>
+                    <li>Your identity will be kept confidential in any published research</li>
+                    <li>You agree to follow all platform rules and guidelines</li>
+                    <li>You will respect the privacy and contributions of other participants</li>
+                </ul>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="consentCheckbox" style="margin-right: 10px;" onchange="toggleCreateButton()">
+                    <span>I have read, understood, and agree to all platform rules, research consent terms, and mandatory security requirements.</span>
+                </label>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button onclick="closeConsentModal()" style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 8px 16px; border-radius: 4px; margin-right: 10px; cursor: pointer;">Cancel</button>
+                <a id="createProfileBtn" href="{% url 'users:signup_with_profile' %}?experiment=00000" style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; text-decoration: none; opacity: 0.5; pointer-events: none;">Create Profile For Public Discourse</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openConsentModal() {
+        document.getElementById('consentModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeConsentModal() {
+        document.getElementById('consentModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+    
+    function toggleCreateButton() {
+        const checkbox = document.getElementById('consentCheckbox');
+        const button = document.getElementById('createProfileBtn');
+        
+        if (checkbox.checked) {
+            button.style.opacity = '1';
+            button.style.pointerEvents = 'auto';
+        } else {
+            button.style.opacity = '0.5';
+            button.style.pointerEvents = 'none';
+        }
+    }
+    
+    // Close if user clicks outside modal
+    window.onclick = function(event) {
+        const modal = document.getElementById('consentModal');
+        if (event.target == modal) {
+            closeConsentModal();
+        }
+    }
+</script>
 {% endblock %} 
