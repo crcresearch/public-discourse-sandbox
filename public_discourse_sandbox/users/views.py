@@ -14,6 +14,9 @@ from django.views import View
 from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
 from allauth.account.views import EmailVerificationSentView, SignupView
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import HttpResponseRedirect
 
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
@@ -298,3 +301,21 @@ class CustomEmailVerificationSentView(EmailVerificationSentView):
                           experiment_identifier=pending_invitation['experiment_identifier'])
         
         return response
+
+@login_required
+def update_name_view(request):
+    """
+    Simple view to update a user's name field.
+    """
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            user = request.user
+            user.name = name
+            user.save(update_fields=['name'])
+            messages.success(request, _("Name successfully updated"))
+        else:
+            messages.error(request, _("Name cannot be empty"))
+            
+    # Redirect back to settings page
+    return HttpResponseRedirect(reverse('pds_app:settings'))
