@@ -184,7 +184,8 @@ update_profile_view = UpdateProfileView.as_view()
 class CustomSignupView(SignupView):
     """
     Custom signup view that uses our form with profile fields.
-    If accessed without experiment and email parameters, redirects to original signup.
+    If accessed without experiment parameter, redirects to original signup.
+    Email parameter is optional for initial signup from landing page.
     """
     form_class = CustomSignupForm
     
@@ -194,25 +195,30 @@ class CustomSignupView(SignupView):
         experiment_identifier = self.request.GET.get('experiment') or self.request.POST.get('experiment')
         email = self.request.GET.get('email') or self.request.POST.get('email')
         
-        if experiment_identifier and email:
+        if experiment_identifier:
             try:
                 experiment = Experiment.objects.get(identifier=experiment_identifier)
-                # Verify invitation exists
-                invitation = ExperimentInvitation.objects.get(
-                    experiment=experiment,
-                    email=email,
-                    is_accepted=False,
-                    is_deleted=False
-                )
                 kwargs['experiment'] = experiment
-                kwargs['initial'] = {'email': email}
-            except (Experiment.DoesNotExist, ExperimentInvitation.DoesNotExist):
+                
+                # If email is provided, check for invitation
+                if email:
+                    try:
+                        invitation = ExperimentInvitation.objects.get(
+                            experiment=experiment,
+                            email=email,
+                            is_accepted=False,
+                            is_deleted=False
+                        )
+                        kwargs['initial'] = {'email': email}
+                    except ExperimentInvitation.DoesNotExist:
+                        pass
+            except Experiment.DoesNotExist:
                 pass
         return kwargs
         
     def get(self, request, *args, **kwargs):
-        # If no experiment/email in URL params, redirect to original signup
-        if not (request.GET.get('experiment') and request.GET.get('email')):
+        # Only redirect if no experiment is provided
+        if not request.GET.get('experiment'):
             return redirect('account_signup')
         return super().get(request, *args, **kwargs)
 
@@ -226,6 +232,51 @@ class CustomSignupView(SignupView):
     def get_success_url(self):
         # After successful signup, redirect to email verification
         return reverse('account_email_verification_sent')
+        
+    def form_valid(self, form):
+        # Call parent method to save the User
+        response = super().form_valid(form)
+        
+        user = self.user
+        experiment = form.experiment
+        
+        if user and experiment:
+            # Check if the user already has a profile for this experiment
+            profile, created = UserProfile.objects.get_or_create(
+                user=user,
+                experiment=experiment,
+                defaults={
+                    'username': form.cleaned_data.get('user_name'),
+                    'display_name': form.cleaned_data.get('display_name'),
+                    'bio': form.cleaned_data.get('bio'),
+                }
+            )
+            
+            # Upload profile/banner pictures if provided
+            if created:
+                if form.cleaned_data.get('profile_picture'):
+                    profile.profile_picture = form.cleaned_data.get('profile_picture')
+                if form.cleaned_data.get('banner_picture'):
+                    profile.banner_picture = form.cleaned_data.get('banner_picture')
+                profile.save()
+            
+            # If there was an invitation, mark it as accepted
+            email = form.cleaned_data.get('email')
+            if email:
+                try:
+                    invitation = ExperimentInvitation.objects.get(
+                        experiment=experiment,
+                        email=email,
+                        is_accepted=False,
+                        is_deleted=False
+                    )
+                    invitation.is_accepted = True
+                    invitation.save()
+                except ExperimentInvitation.DoesNotExist:
+                    # No invitation found, which is fine for direct signups
+                    pass
+                    
+        return response
 
 
 class CustomEmailVerificationSentView(EmailVerificationSentView):

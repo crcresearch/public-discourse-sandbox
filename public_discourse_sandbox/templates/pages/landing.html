@@ -18,7 +18,7 @@
             {% comment %} <a href="{% url 'login' %}" class="login-btn">Sign in</a>
             <a href="{% url 'signup' %}" class="signup-btn">Sign up</a> {% endcomment %}
             <a href="{% url 'account_login' %}" class="login-btn">Sign in</a>
-            <a href="{% url 'account_signup' %}" class="signup-btn">Sign up</a>
+            <a href="{% url 'users:signup_with_profile' %}?experiment=00000" class="signup-btn">Sign up</a>
         </div>
     </header>
 
@@ -33,7 +33,7 @@
                 <div class="cta-buttons">
                     {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
                     <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
-                    <a href="{% url 'account_signup' %}" class="cta-btn signup">Create Account</a>
+                    <a href="{% url 'users:signup_with_profile' %}?experiment=00000" class="cta-btn signup">Create Account</a>
                     <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
                 </div>
             </div>
@@ -112,7 +112,7 @@
             <div class="cta-buttons">
                 {% comment %} <a href="{% url 'signup' %}" class="cta-btn signup">Create Account</a>
                 <a href="{% url 'login' %}" class="cta-btn login">Sign In</a> {% endcomment %}
-                <a href="{% url 'account_signup' %}" class="cta-btn signup">Create Account</a>
+                <a href="{% url 'users:signup_with_profile' %}?experiment=00000" class="cta-btn signup">Create Account</a>
                 <a href="{% url 'account_login' %}" class="cta-btn login">Sign In</a>
             </div>
         </section>

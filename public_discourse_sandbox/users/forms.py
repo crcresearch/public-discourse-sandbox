@@ -86,24 +86,41 @@ class CustomSignupForm(SignupForm):
     # Hidden fields for experiment and email
     experiment = forms.CharField(
         widget=forms.HiddenInput(),
-        required=True
+        required=False  # Make optional for rendering
     )
     
     def __init__(self, *args, **kwargs):
         self.experiment = kwargs.pop('experiment', None)
         super().__init__(*args, **kwargs)
+        
+        # Apply styling to email field
+        self.fields['email'].widget.attrs['class'] = 'form-control'
+        
         if self.experiment:
-            self.fields['email'].widget.attrs['readonly'] = True
-            self.fields['email'].widget.attrs['class'] = 'form-control'
+            # Set experiment field value
             self.fields['experiment'].initial = self.experiment.identifier
+            
+            # If we have an email in initial data, make it readonly
+            if 'initial' in kwargs and kwargs['initial'].get('email'):
+                self.fields['email'].widget.attrs['readonly'] = True
     
     def clean(self):
         cleaned_data = super().clean()
-        if not self.experiment and cleaned_data.get('experiment'):
+        
+        # Get experiment from either the form field or the instance variable
+        experiment_id = cleaned_data.get('experiment') or (self.experiment.identifier if self.experiment else None)
+        
+        # Experiment is required for validation
+        if not experiment_id:
+            raise forms.ValidationError('Experiment identifier is required')
+            
+        # If we don't already have an experiment instance, try to get it
+        if not self.experiment and experiment_id:
             try:
-                self.experiment = Experiment.objects.get(identifier=cleaned_data['experiment'])
+                self.experiment = Experiment.objects.get(identifier=experiment_id)
             except Experiment.DoesNotExist:
                 raise forms.ValidationError('Invalid experiment identifier')
+                
         return cleaned_data
     
     def clean_user_name(self):
