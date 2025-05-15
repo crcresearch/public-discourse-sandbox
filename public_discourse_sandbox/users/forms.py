@@ -140,21 +140,14 @@ class CustomSignupForm(SignupForm):
                 else:
                     raise forms.ValidationError('Invalid experiment identifier')
         
-        # Validate username and display_name uniqueness together
+        # Validate username uniqueness
         if self.experiment:
             user_name = cleaned_data.get('user_name')
-            display_name = cleaned_data.get('display_name')
             
             if user_name and UserProfile.objects.filter(
                 experiment=self.experiment,
                 username=user_name
             ).exists():
                 self.add_error('user_name', 'This username is already taken in this experiment.')
-                
-            if display_name and UserProfile.objects.filter(
-                experiment=self.experiment,
-                display_name=display_name
-            ).exists():
-                self.add_error('display_name', 'This display name is already taken in this experiment.')
-                
+
         return cleaned_data
