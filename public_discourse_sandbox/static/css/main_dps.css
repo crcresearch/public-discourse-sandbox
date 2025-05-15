@@ -483,6 +483,11 @@ a.user-avatar {
     font-size: 13px;
 }
 
+.action-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Hashtag styling */
 .hashtag {
     color: var(--nd-blue);

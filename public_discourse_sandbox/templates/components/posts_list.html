@@ -1,12 +1,6 @@
 {% load static %}
 {% csrf_token %}
 <!-- Posts List -->
-<style>
-    .repost-button.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-</style>
 <div class="post-feed">
     {% for post in posts %}
         <article class="post" data-post-id="{{ post.id }}">
