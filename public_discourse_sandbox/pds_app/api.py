@@ -260,3 +260,50 @@ def delete_experiment(request, experiment_identifier):
         return JsonResponse({'status': 'error', 'message': 'Experiment not found.'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def repost(request, post_id):
+    """
+    Creates a new post that copies the content of the given post.
+    Will return an error if a user attempts to repost their own content.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        # Get the original post
+        original_post = Post.objects.get(id=post_id)
+        
+        # Check if user is trying to repost their own post
+        if original_post.user_profile.user == request.user:
+            return JsonResponse({'error': 'Cannot repost your own content'}, status=403)
+        
+        # Get the current user's profile for the current experiment
+        user_profile = UserProfile.objects.get(
+            user=request.user,
+            experiment=original_post.experiment
+        )
+        
+        # Create new post with the same content
+        new_post = Post.objects.create(
+            user_profile=user_profile,
+            experiment=original_post.experiment,
+            repost_source=original_post
+        )
+        
+        # Increment the share count on the original post
+        original_post.num_shares += 1
+        original_post.save(update_fields=['num_shares'])
+        
+        return JsonResponse({
+            'success': True,
+            'post_id': str(new_post.id),
+            'shares_count': original_post.num_shares
+        })
+    
+    except Post.DoesNotExist:
+        return JsonResponse({'error': 'Post not found'}, status=404)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

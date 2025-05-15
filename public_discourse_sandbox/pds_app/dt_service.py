@@ -205,10 +205,14 @@ class DTService:
 
         Flow: Called by generate_comment() as first step in response generation
         """
+        if post.repost_source:
+            post_content = post.repost_source.content
+        else:
+            post_content = post.content
         try:
             # Create a simpler context without API calls first
             context = {
-                'post_content': post.content,
+                'post_content': post_content,
                 'post_id': post.id,
                 'user': post.user_profile.username if post.user_profile.username else 'unknown',
                 'timestamp': post.created_date.isoformat() if post.created_date else None
@@ -217,8 +221,8 @@ class DTService:
             
             # Try to add sentiment and keywords if API is working
             try:
-                context['sentiment'] = self._analyze_sentiment(post.content)
-                context['keywords'] = self._extract_keywords(post.content)
+                context['sentiment'] = self._analyze_sentiment(post_content)
+                context['keywords'] = self._extract_keywords(post_content)
             except Exception as api_error:
                 print(f"API-related error in context analysis: {str(api_error)}")
                 context['sentiment'] = 'neutral'
@@ -229,7 +233,7 @@ class DTService:
         except Exception as e:
             print(f"Error analyzing context: {str(e)}")
             return {
-                'post_content': post.content,
+                'post_content': post_content,
                 'error': str(e)
             }
 
