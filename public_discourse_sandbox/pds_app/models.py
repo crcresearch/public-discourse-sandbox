@@ -70,8 +70,8 @@ class UserProfile(BaseModel):
     User profile model.
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    display_name = models.CharField(max_length=255, unique=True)
-    username = models.CharField(max_length=255, unique=True)
+    display_name = models.CharField(max_length=255)
+    username = models.CharField(max_length=255)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     banner_picture = models.ImageField(upload_to='banner_pictures/', null=True, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
@@ -84,6 +84,9 @@ class UserProfile(BaseModel):
     is_banned = models.BooleanField(default=False)  # Cannot post, reply, or view content
     is_private = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    
+    class Meta:
+        unique_together = ('username', 'experiment')
     
     def __str__(self):
         bot_status = " (Digital Twin)" if self.is_digital_twin else ""
