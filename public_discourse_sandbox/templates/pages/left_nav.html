@@ -50,9 +50,17 @@
             </a>
         </li>
         {% endif %}
+        <hr>
+        {% if user.is_authenticated %}
+        <li>
+            <a href="{% url 'settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                <i class="ri-settings-3-line"></i>
+                Settings
+            </a>
+        </li>
+        {% endif %}
         {% for group in user.groups.all %}
             {% if group.name == 'researcher' %}
-            <hr>
             <li>
                 <a href="{% url 'researcher_tools' %}" class="researcher-tools-link">
                     <i class="ri-tools-line"></i>
