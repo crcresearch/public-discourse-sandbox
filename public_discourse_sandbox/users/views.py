@@ -184,7 +184,7 @@ update_profile_view = UpdateProfileView.as_view()
 class CustomSignupView(SignupView):
     """
     Custom signup view that uses our form with profile fields.
-    If accessed without experiment parameter, redirects to original signup.
+    If accessed without experiment parameter, uses default experiment "00000".
     Email parameter is optional for initial signup from landing page.
     """
     form_class = CustomSignupForm
@@ -192,41 +192,45 @@ class CustomSignupView(SignupView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         # Get experiment and email from URL parameters or POST data
-        experiment_identifier = self.request.GET.get('experiment') or self.request.POST.get('experiment')
+        experiment_identifier = self.request.GET.get('experiment') or self.request.POST.get('experiment') or "00000"
         email = self.request.GET.get('email') or self.request.POST.get('email')
         
-        if experiment_identifier:
-            try:
-                experiment = Experiment.objects.get(identifier=experiment_identifier)
-                kwargs['experiment'] = experiment
-                
-                # If email is provided, check for invitation
-                if email:
-                    try:
-                        invitation = ExperimentInvitation.objects.get(
-                            experiment=experiment,
-                            email=email,
-                            is_accepted=False,
-                            is_deleted=False
-                        )
-                        kwargs['initial'] = {'email': email}
-                    except ExperimentInvitation.DoesNotExist:
-                        pass
-            except Experiment.DoesNotExist:
-                pass
+        try:
+            experiment = Experiment.objects.get(identifier=experiment_identifier)
+            kwargs['experiment'] = experiment
+            
+            # If email is provided, check for invitation
+            if email:
+                try:
+                    invitation = ExperimentInvitation.objects.get(
+                        experiment=experiment,
+                        email=email,
+                        is_accepted=False,
+                        is_deleted=False
+                    )
+                    kwargs['initial'] = {'email': email}
+                except ExperimentInvitation.DoesNotExist:
+                    pass
+        except Experiment.DoesNotExist:
+            # If the specified experiment doesn't exist, try to use the default "00000"
+            if experiment_identifier != "00000":
+                try:
+                    experiment = Experiment.objects.get(identifier="00000")
+                    kwargs['experiment'] = experiment
+                except Experiment.DoesNotExist:
+                    pass
+        
         return kwargs
         
     def get(self, request, *args, **kwargs):
-        # Only redirect if no experiment is provided
-        if not request.GET.get('experiment'):
-            return redirect('account_signup')
+        # We no longer redirect, as we always use a fallback experiment
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Add experiment and email to form context for hidden fields
-        context['experiment'] = self.request.GET.get('experiment')
-        context['email'] = self.request.GET.get('email')
+        # Add experiment (using fallback if not in request) and email to context for hidden fields
+        context['experiment'] = self.request.GET.get('experiment') or self.request.POST.get('experiment') or "00000"
+        context['email'] = self.request.GET.get('email') or self.request.POST.get('email')
         return context
 
     def get_success_url(self):
