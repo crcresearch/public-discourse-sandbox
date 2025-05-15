@@ -193,6 +193,17 @@
                     <i class="ri-robot-line"></i>
                     {% translate "Enroll Digital Twin" %}
                 </a>
+                {% if experiment.creator == request.user %}
+                    <button
+                        type="button"
+                        class="btn btn-danger"
+                        style="margin-left: 0.5rem;"
+                        onclick="showDeleteModal('{{ experiment.identifier }}', '{{ experiment.name|escapejs }}')"
+                    >
+                        <i class="ri-delete-bin-line"></i>
+                        {% translate "Delete Discourse" %}
+                    </button>
+                {% endif %}
             </div>
         </div>
     </div>
