@@ -212,7 +212,7 @@ class DigitalTwin(BaseModel):
     # user = models.OneToOneField(User, on_delete=models.CASCADE)
     user_profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
-    api_token = models.CharField(max_length=255, default='default_token')
+    api_token = models.CharField(max_length=255, null=True, blank=True)
     llm_url = models.CharField(max_length=255, null=True, blank=True)
     llm_model = models.CharField(max_length=255, null=True, blank=True)
     last_post = models.DateTimeField(null=True, blank=True)
