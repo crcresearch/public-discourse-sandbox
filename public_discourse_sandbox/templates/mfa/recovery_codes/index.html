@@ -14,6 +14,25 @@
         <header class="main-header">
             <h1>{% trans "Recovery Codes" %}</h1>
         </header>
+
+        <div class="alert alert-info mb-4">
+            <h4 class="alert-heading">{% trans "About Recovery Codes" %}</h4>
+            <p>{% trans "Recovery codes are one-time use backup codes that allow you to access your account if you lose access to your authentication device." %}</p>
+            
+            <h5 class="mt-3">{% trans "Why are these important?" %}</h5>
+            <p>{% trans "If you lose your phone or can't access your authenticator app, these codes are your backup method to log in. Without them, you might be permanently locked out of your account." %}</p>
+            
+            <h5 class="mt-3">{% trans "What should I do with them?" %}</h5>
+            <ul>
+                <li>{% trans "Download or save these codes in a secure location" %}</li>
+                <li>{% trans "Keep them separate from your primary device used for authentication" %}</li>
+                <li>{% trans "Each code can only be used once - after using a code, it will be marked as used" %}</li>
+                <li>{% trans "Generate new codes if you've used most of your existing ones or if you believe they have been compromised" %}</li>
+            </ul>
+            
+            <p class="mb-0"><strong>{% trans "Security note:" %}</strong> {% trans "Treat these codes like passwords. Don't share them with anyone, and store them securely." %}</p>
+        </div>
+
         <p>
             {% blocktrans count unused=unused_codes|length %}
                 There is {{ unused }} out of {{ total_count }} recovery code available.
