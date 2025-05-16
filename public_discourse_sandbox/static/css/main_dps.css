@@ -305,6 +305,14 @@ a.post-button:hover i {
     text-decoration: none !important;
 }
 
+/* Styling for disabled buttons */
+.post-button:disabled,
+.post-button[disabled] {
+    opacity: 0.65;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 /* Ensure link-buttons don't have underlines */
 a.post-button,
 a.logout-button,
