@@ -35,6 +35,7 @@ class Experiment(BaseModel):
     name = models.CharField(max_length=255)
     identifier = models.CharField(max_length=5, unique=True)
     description = models.TextField()
+    irb_additions = models.TextField(null=True, blank=True)
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # This defines what user "owns" this experiment
     is_deleted = models.BooleanField(default=False)
@@ -58,6 +59,41 @@ class Experiment(BaseModel):
             tries += 1
             return self.create_identifier()
         return identifier
+    
+    def get_option(self, option_key, default=None):
+        """
+        Get a specific option value from the options JSONField.
+        
+        Args:
+            option_key: The key to retrieve from the options dictionary
+            default: Value to return if the key doesn't exist (default: None)
+            
+        Returns:
+            The value associated with the option_key, or default if not found
+        """
+        return self.options.get(option_key, default)
+    
+    def set_option(self, option_key, value, save_changes=True):
+        """
+        Set a specific option value in the options JSONField.
+        
+        Args:
+            option_key: The key to set in the options dictionary
+            value: The value to set for the given key
+            save_changes: Whether to save the model after setting the option (default: True)
+            
+        Returns:
+            The updated value
+        """
+        if self.options is None:
+            self.options = {}
+        
+        self.options[option_key] = value
+        
+        if save_changes:
+            self.save(update_fields=['options', 'last_modified'])
+            
+        return value
     
     def save(self, *args, **kwargs):
         if not self.identifier:
