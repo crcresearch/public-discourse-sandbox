@@ -74,9 +74,8 @@ class EnrollDigitalTwinForm(forms.Form):
             ).exists():
                 raise forms.ValidationError('This username is already taken in this experiment.')
         else:
-            # Fallback to global check if no experiment is provided
-            if UserProfile.objects.filter(username=username).exists():
-                raise forms.ValidationError('This username is already taken.')
+            # Raise an error if no experiment is provided, as this should never happen
+            raise forms.ValidationError('No experiment defined. Cannot validate username.')
         return username
 
     def clean_email(self):
