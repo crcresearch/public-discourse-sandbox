@@ -57,6 +57,21 @@
                 {% endif %} -->
             </div>
             
+            <div class="form-group">
+                {{ form.irb_additions.label_tag }}
+                {{ form.irb_additions }}
+                {% if form.irb_additions.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.irb_additions.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <!-- {% if form.irb_additions.help_text %}
+                    <small class="form-text text-muted">{{ form.irb_additions.help_text }}</small>
+                {% endif %} -->
+            </div>
+            
             <div class="form-actions">
                 <a href="{% url 'researcher_tools' %}" class="post-button" style="text-decoration: none; color: white;">
                     {% translate "Cancel" %}
