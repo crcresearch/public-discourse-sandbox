@@ -104,41 +104,50 @@ class CustomSignupForm(SignupForm):
             if 'initial' in kwargs and kwargs['initial'].get('email'):
                 self.fields['email'].widget.attrs['readonly'] = True
     
+    def clean_email(self):
+        """
+        Validate that the email is unique across all users
+        """
+        email = self.cleaned_data.get('email')
+        if email:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            # Check if a user with this email already exists
+            if User.objects.filter(email__iexact=email).exists():
+                raise forms.ValidationError('A user with this email already exists.')
+        
+        return email
+    
     def clean(self):
         cleaned_data = super().clean()
         
         # Get experiment from either the form field or the instance variable
-        experiment_id = cleaned_data.get('experiment') or (self.experiment.identifier if self.experiment else None)
+        experiment_id = cleaned_data.get('experiment') or (self.experiment.identifier if self.experiment else None) or "00000"
         
-        # Experiment is required for validation
+        # Use default experiment if none provided
         if not experiment_id:
-            raise forms.ValidationError('Experiment identifier is required')
+            experiment_id = "00000"
             
         # If we don't already have an experiment instance, try to get it
         if not self.experiment and experiment_id:
             try:
                 self.experiment = Experiment.objects.get(identifier=experiment_id)
             except Experiment.DoesNotExist:
-                raise forms.ValidationError('Invalid experiment identifier')
-                
+                # For the default experiment, we should ensure it exists
+                if experiment_id == "00000":
+                    raise forms.ValidationError('Default experiment "00000" not found in database')
+                else:
+                    raise forms.ValidationError('Invalid experiment identifier')
+        
+        # Validate username uniqueness
+        if self.experiment:
+            user_name = cleaned_data.get('user_name')
+            
+            if user_name and UserProfile.objects.filter(
+                experiment=self.experiment,
+                username__iexact=user_name  # Case-insensitive check
+            ).exists():
+                self.add_error('user_name', 'This username is already taken in this experiment.')
+
         return cleaned_data
-    
-    def clean_user_name(self):
-        user_name = self.cleaned_data.get('user_name')
-        if user_name and self.experiment:
-            if UserProfile.objects.filter(
-                experiment=self.experiment,
-                username=user_name
-            ).exists():
-                raise forms.ValidationError('This username is already taken in this experiment.')
-        return user_name
-    
-    def clean_display_name(self):
-        display_name = self.cleaned_data.get('display_name')
-        if display_name and self.experiment:
-            if UserProfile.objects.filter(
-                experiment=self.experiment,
-                display_name=display_name
-            ).exists():
-                raise forms.ValidationError('This display name is already taken in this experiment.')
-        return display_name
