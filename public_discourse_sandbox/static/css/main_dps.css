@@ -966,6 +966,14 @@ a.user-avatar {
     margin-bottom: 16px;
 }
 
+/* Consent Modal */
+.consent-rule-card {
+    padding: 24px;
+    background-color: var(--background-gray);
+    border-radius: 12px;
+    text-align: left;
+}
+
 /* CTA Section */
 .cta-section {
     padding: 80px 40px;
