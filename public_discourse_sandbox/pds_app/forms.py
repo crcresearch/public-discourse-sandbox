@@ -32,10 +32,11 @@ class ExperimentForm(forms.ModelForm):
     """
     class Meta:
         model = Experiment
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'irb_additions']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter experiment name'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter experiment description', 'rows': 4}),
+            'irb_additions': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Enter IRB additions (optional)', 'rows': 3}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -43,6 +44,7 @@ class ExperimentForm(forms.ModelForm):
         # Add help text
         self.fields['name'].help_text = 'A descriptive name for your experiment'
         self.fields['description'].help_text = 'Detailed description of your experiment'
+        self.fields['irb_additions'].help_text = 'Additional IRB information for your experiment (optional)'
 
 class EnrollDigitalTwinForm(forms.Form):
     # User fields

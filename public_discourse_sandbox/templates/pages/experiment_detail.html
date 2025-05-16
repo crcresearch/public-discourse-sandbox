@@ -38,6 +38,13 @@
                 <p>{{ experiment.description }}</p>
             </div>
             
+            {% if experiment.irb_additions %}
+            <div class="experiment-irb-additions">
+                <h4>{% translate "IRB Additions" %}</h4>
+                <p>{{ experiment.irb_additions }}</p>
+            </div>
+            {% endif %}
+            
             {% if experiment.creator == request.user %}
                 <form method="post" class="experiment-form edit-form" style="display: none;">
                     {% csrf_token %}
@@ -67,6 +74,18 @@
                         {% if form.description.errors %}
                             <div class="alert alert-danger">
                                 {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.irb_additions.label_tag }}
+                        {{ form.irb_additions }}
+                        {% if form.irb_additions.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.irb_additions.errors %}
                                     {{ error }}
                                 {% endfor %}
                             </div>
