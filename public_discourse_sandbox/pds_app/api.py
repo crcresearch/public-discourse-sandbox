@@ -31,12 +31,20 @@ def create_comment(request, experiment_identifier):
                 parent_post=parent_post,
                 experiment=experiment,
                 depth=parent_post.depth + 1
+                # is_flagged will be automatically set in the save method via profanity check
             )
-            return JsonResponse({
+            
+            response_data = {
                 'status': 'success',
                 'id': str(comment.id),
                 'message': 'Comment created successfully'
-            })
+            }
+            
+            # Include flag information if the comment was flagged
+            if comment.is_flagged:
+                response_data['is_flagged'] = True
+                
+            return JsonResponse(response_data)
         except Post.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Parent post not found'}, status=404)
         except Exception as e:

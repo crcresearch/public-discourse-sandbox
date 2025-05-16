@@ -21,9 +21,9 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('user_profile', 'content_preview', 'depth', 'experiment', 'num_upvotes', 'num_downvotes', 'created_date', 'is_deleted')
+    list_display = ('user_profile', 'content_preview', 'depth', 'experiment', 'num_upvotes', 'num_downvotes', 'created_date', 'is_deleted', 'is_flagged')
     search_fields = ('content', 'user_profile__user__username')
-    list_filter = ('is_deleted', 'is_edited', 'is_pinned', 'experiment', 'created_date')
+    list_filter = ('is_deleted', 'is_edited', 'is_pinned', 'is_flagged', 'experiment', 'created_date')
     readonly_fields = ('created_date', 'last_modified', 'num_upvotes', 'num_downvotes', 'num_comments', 'num_shares')
     raw_id_fields = ('user_profile', 'experiment', 'parent_post')
     date_hierarchy = 'created_date'
@@ -32,6 +32,14 @@ class PostAdmin(admin.ModelAdmin):
     def content_preview(self, obj):
         return obj.content[:50] + "..." if len(obj.content) > 50 else obj.content
     content_preview.short_description = 'Content Preview'
+    
+    # # Add a custom action to unflag posts
+    # actions = ['unflag_posts']
+    
+    # def unflag_posts(self, request, queryset):
+    #     updated = queryset.update(is_flagged=False)
+    #     self.message_user(request, f"{updated} posts were successfully unflagged.")
+    # unflag_posts.short_description = "Mark selected posts as not containing profanity"
 
 @admin.register(Vote)
 class VoteAdmin(admin.ModelAdmin):
