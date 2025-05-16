@@ -100,10 +100,11 @@
                             <span>{{ post.comment_count }}</span>
                         </button>
         
-                        <button class="action-button repost-button {% if post.user_profile.user == request.user %}disabled{% endif %}" 
+                        <button class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}" 
                                data-post-id="{{ post.id }}" 
                                data-authenticated="true" 
                                data-is-own-post="{% if post.user_profile.user == request.user %}true{% else %}false{% endif %}"
+                               data-is-repost="{% if post.repost_source %}true{% else %}false{% endif %}"
                                onclick="handleRepost(this, '{{ post.id }}')">
                             <i class="ri-repeat-line"></i>
                             <span>{{ post.num_shares }}</span>
@@ -191,8 +192,13 @@ function togglePostMenu(postId) {
 function handleRepost(button, postId) {
     // Check if this is the user's own post
     if (button.dataset.isOwnPost === 'true') {
-        // alert("You cannot repost your own content");
         console.log("You cannot repost your own content");
+        return;
+    }
+    
+    // Check if the post is already a repost
+    if (button.dataset.isRepost === 'true') {
+        console.log("You cannot repost a repost");
         return;
     }
     
