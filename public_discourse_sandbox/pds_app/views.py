@@ -116,8 +116,15 @@ class LandingView(View):
                 return redirect('home_with_experiment', experiment_identifier=request.user.last_accessed.identifier)
             # Otherwise, redirect to home which will use ExperimentContextMixin to find an experiment
             return redirect('home')
+        
         # For unauthenticated users, show the landing page
-        return render(request, 'pages/landing.html')
+        # Fetch the default experiment to display IRB additions
+        try:
+            default_experiment = Experiment.objects.get(identifier="00000")
+            return render(request, 'pages/landing.html', {'experiment': default_experiment})
+        except Experiment.DoesNotExist:
+            # If default experiment doesn't exist, just render without it
+            return render(request, 'pages/landing.html')
 
 
 class HomeView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView):

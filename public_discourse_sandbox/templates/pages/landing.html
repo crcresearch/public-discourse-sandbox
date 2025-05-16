@@ -197,6 +197,10 @@
                         <p>
                             <b>Ethics Compliance</b> - Research follows university IRB guidelines and established ethical standards for human-subject research.
                         </p>
+                        <!-- if irb_additions is not empty, add it to the consent form -->
+                        {% if experiment.irb_additions %}
+                            <p>{{ experiment.irb_additions }}</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
