@@ -5,87 +5,95 @@
 {% block title %}{% trans "Accept Invitation" %}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-body">
-                    {% if error %}
-                        <div class="alert alert-danger">
-                            {{ error }}
-                        </div>
-                    {% elif already_accepted %}
-                        <div class="text-center">
-                            <h2 class="mb-4">{% trans "Invitation Already Accepted" %}</h2>
-                            <p class="lead">
-                                {% trans "It looks like you've already accepted this invitation and created a profile for this experiment." %}
-                            </p>
-                            <a href="{{ home_url }}" class="btn btn-primary mt-3">
-                                {% trans "Go To Discourse" %}
-                            </a>
-                        </div>
-                    {% else %}
-                        <h2 class="card-title text-center mb-4">{% trans "Accept Invitation" %}</h2>
-                        <div class="text-center mb-4">
-                            <h4>{{ experiment.name }}</h4>
-                            <p class="text-muted">{{ experiment.description }}</p>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <p class="mb-0">
-                                {% if existing_user %}
-                                    {% trans "You've been invited to participate in this discourse. Please create your profile to continue." %}
-                                {% else %}
-                                    {% trans "You've been invited to participate in this discourse. Please create an account and profile to continue." %}
-                                {% endif %}
-                            </p>
-                        </div>
+<!-- Left Sidebar -->
+{% include 'pages/left_nav.html' %}
 
-                        <div class="card mb-4">
-                            <div class="card-body">
-                                <h5 class="card-title">{% trans "User Consent Form" %}</h5>
-                                <p class="text-muted mb-3">
-                                    {% trans "This study has been approved by the University of Notre Dame IRB." %}
-                                </p>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="final-consent" name="consent" required>
-                                    <label class="form-check-label" for="final-consent">
-                                        {% trans "By creating an account, I confirm that I have read, understood, and agree to all platform rules, research consent terms, and mandatory security requirements." %}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="button"
-                               class="btn btn-primary" 
-                               id="createProfileBtn" 
-                               data-href="{% if existing_user %}{{ create_profile_url }}{% else %}{{ signup_url }}{% endif %}"
-                               disabled>
-                                {% trans "Create Profile For Discourse" %}
-                            </button>
-                        </div>
+<div class="main-content">
+    <header class="main-header">
+        <h1>{% trans "Accept Invitation" %}</h1>
+    </header>
 
-                        <script>
-                            const consentCheckbox = document.getElementById('final-consent');
-                            const createProfileBtn = document.getElementById('createProfileBtn');
-                            
-                            if (consentCheckbox && createProfileBtn) {
-                                consentCheckbox.addEventListener('change', function() {
-                                    createProfileBtn.disabled = !this.checked;
-                                });
-
-                                createProfileBtn.addEventListener('click', function() {
-                                    if (!this.disabled) {
-                                        window.location.href = this.getAttribute('data-href');
-                                    }
-                                });
-                            }
-                        </script>
-                    {% endif %}
+    <div class="card">
+        <div class="card-body">
+            {% if error %}
+                <div class="alert alert-danger">
+                    {{ error }}
                 </div>
-            </div>
+            {% elif already_accepted %}
+                <div class="text-center">
+                    <h2 class="mb-4">{% trans "Invitation Already Accepted" %}</h2>
+                    <p class="lead">
+                        {% trans "It looks like you've already accepted this invitation and created a profile for this experiment." %}
+                    </p>
+                    <a href="{{ home_url }}" class="post-button" style="background-color: #1d1e3a;">
+                        <i class="ri-home-line"></i>
+                        <span>{% trans "Go To Discourse" %}</span>
+                    </a>
+                </div>
+            {% else %}
+                <div class="text-center mb-4">
+                    <h4>{{ experiment.name }}</h4>
+                    <p class="text-muted">{{ experiment.description }}</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <p class="mb-0">
+                        {% if existing_user %}
+                            {% trans "You've been invited to participate in this discourse. Please create your profile to continue." %}
+                        {% else %}
+                            {% trans "You've been invited to participate in this discourse. Please create an account and profile to continue." %}
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">{% trans "User Consent Form" %}</h5>
+                        <p class="text-muted mb-3">
+                            {% trans "This study has been approved by the University of Notre Dame IRB." %}
+                        </p>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="final-consent" name="consent" required>
+                            <label class="form-check-label" for="final-consent">
+                                {% trans "By creating an account, I confirm that I have read, understood, and agree to all platform rules, research consent terms, and mandatory security requirements." %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button type="button"
+                        class="post-button" 
+                        style="background-color: #1d1e3a; transition: opacity 0.3s ease;"
+                        id="createProfileBtn" 
+                        data-href="{% if existing_user %}{{ create_profile_url }}{% else %}{{ signup_url }}{% endif %}"
+                        disabled>
+                        <i class="ri-user-add-line"></i>
+                        <span>{% trans "Create Profile For Discourse" %}</span>
+                    </button>
+                </div>
+
+                <script>
+                    const consentCheckbox = document.getElementById('final-consent');
+                    const createProfileBtn = document.getElementById('createProfileBtn');
+                    
+                    if (consentCheckbox && createProfileBtn) {
+                        consentCheckbox.addEventListener('change', function() {
+                            createProfileBtn.disabled = !this.checked;
+                        });
+
+                        createProfileBtn.addEventListener('click', function() {
+                            if (!this.disabled) {
+                                window.location.href = this.getAttribute('data-href');
+                            }
+                        });
+                    }
+                </script>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Right Sidebar -->
+{% include 'pages/right_content.html' %}
 {% endblock %} 

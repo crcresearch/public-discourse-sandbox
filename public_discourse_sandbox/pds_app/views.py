@@ -692,3 +692,11 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileR
     model = UserProfile
     template_name = 'pages/user_profile.html'
     context_object_name = 'profile'
+
+
+class SettingsView(LoginRequiredMixin, TemplateView):
+    """
+    Settings page view that displays user settings.
+    This view is accessible to all authenticated users and is experiment-independent.
+    """
+    template_name = 'pages/settings.html'

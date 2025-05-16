@@ -6,6 +6,7 @@ from public_discourse_sandbox.users.views import (
     user_update_view,
     user_profile_detail_view,
     update_profile_view,
+    update_name_view,
     CustomEmailVerificationSentView,
     CustomSignupView,
 )
@@ -20,4 +21,5 @@ urlpatterns = [
     path('email/verification-sent/', CustomEmailVerificationSentView.as_view(),
          name='account_email_verification_sent'),
     path('signup-with-profile/', CustomSignupView.as_view(), name='signup_with_profile'),
+    path('update-name/', view=update_name_view, name='update_name'),
 ]

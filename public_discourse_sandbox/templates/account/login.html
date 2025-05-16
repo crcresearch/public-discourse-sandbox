@@ -11,11 +11,11 @@
     {% include 'pages/left_nav.html' %}
     <div class="main-content">
         <header class="main-header">
-            {% trans "Sign In" %}
+            <h1>{% trans "Sign In" %}</h1>
         </header>
-        {% element h1 %}
+        <!-- {% element h1 %}
             {% trans "Sign In" %}
-        {% endelement %}
+        {% endelement %} -->
         {% if not SOCIALACCOUNT_ONLY %}
             {% setvar link %}
                 <a href="{{ signup_url }}">
@@ -35,27 +35,31 @@
                     {{ redirect_field }}
                 {% endslot %}
                 {% slot actions %}
-                    {% element button type="submit" tags="prominent,login" %}
-                        {% trans "Sign In" %}
-                    {% endelement %}
+                    <div style="text-align: right;">
+                        <button type="submit" class="post-button" style="background-color: #1d1e3a;">
+                            <i class="ri-login-box-line"></i>
+                            <span>{% trans "Sign In" %}</span>
+                        </button>
+                    </div>
                 {% endslot %}
             {% endelement %}
         {% endif %}
         {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
-            {% element hr %}
-            {% endelement %}
-            {% element button_group vertical=True %}
+            <hr style="margin: 30px 0;">
+            <div style="display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 15px;">
                 {% if PASSKEY_LOGIN_ENABLED %}
-                    {% element button type="submit" form="mfa_login" id="passkey_login" tags="prominent,login,outline,primary" %}
-                        {% trans "Sign in with a passkey" %}
-                    {% endelement %}
+                    <button type="submit" form="mfa_login" id="passkey_login" class="post-button" style="background-color: #6c757d;">
+                        <i class="ri-key-line"></i>
+                        <span>{% trans "Sign in with a passkey" %}</span>
+                    </button>
                 {% endif %}
                 {% if LOGIN_BY_CODE_ENABLED %}
-                    {% element button href=request_login_code_url tags="prominent,login,outline,primary" %}
-                        {% trans "Send me a sign-in code" %}
-                    {% endelement %}
+                    <a href="{{ request_login_code_url }}" class="post-button" style="background-color: #6c757d;">
+                        <i class="ri-message-3-line"></i>
+                        <span>{% trans "Send me a sign-in code" %}</span>
+                    </a>
                 {% endif %}
-            {% endelement %}
+            </div>
         {% endif %}
         {% if SOCIALACCOUNT_ENABLED %}
             {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}

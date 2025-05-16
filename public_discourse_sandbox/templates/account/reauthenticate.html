@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load allauth i18n %}
+
+{% block head_title %}
+    {% trans "Confirm Access" %}
+{% endblock head_title %}
+
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+    
+    <div class="main-content">
+        <header class="main-header">
+            <h1>{% trans "Confirm Access" %}</h1>
+        </header>
+        
+        <p>{% blocktranslate %}Enter your password:{% endblocktranslate %}</p>
+        
+        {% url 'account_reauthenticate' as action_url %}
+        {% element form form=form method="post" action=action_url %}
+            {% slot body %}
+                {% csrf_token %}
+                {% element fields form=form unlabeled=True %}
+                {% endelement %}
+                {{ redirect_field }}
+            {% endslot %}
+            {% slot actions %}
+                <div style="text-align: right;">
+                    <button type="submit" class="post-button">
+                        <i class="ri-lock-line"></i>
+                        <span>{% trans "Confirm" %}</span>
+                    </button>
+                </div>
+            {% endslot %}
+        {% endelement %}
+    </div>
+{% endblock content %} 

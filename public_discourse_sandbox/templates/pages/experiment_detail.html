@@ -26,9 +26,9 @@
                     <span class="experiment-date">Created: {{ experiment.created_date|date:"F j, Y" }}</span>
                 </div>
                 {% if experiment.creator == request.user %}
-                    <button class="btn btn-secondary" onclick="toggleEditForm()">
+                    <button class="post-button" style="background-color: #6c757d;" onclick="toggleEditForm()">
                         <i class="ri-edit-line"></i>
-                        {% translate "Edit" %}
+                        <span>{% translate "Edit" %}</span>
                     </button>
                 {% endif %}
             </div>
@@ -74,11 +74,13 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn btn-secondary" onclick="toggleEditForm()">
-                            {% translate "Cancel" %}
+                        <button type="button" class="post-button" style="background-color: #6c757d;" onclick="toggleEditForm()">
+                            <i class="ri-close-line"></i>
+                            <span>{% translate "Cancel" %}</span>
                         </button>
-                        <button type="submit" class="btn btn-primary">
-                            {% translate "Save Changes" %}
+                        <button type="submit" class="post-button" style="background-color: #1d1e3a;">
+                            <i class="ri-save-line"></i>
+                            <span>{% translate "Save Changes" %}</span>
                         </button>
                     </div>
                 </form>
@@ -126,10 +128,12 @@
                 <h3 style="margin-bottom: 0;">{% translate "Invitations" %}</h3>
                 <button
                     type="button"
-                    class="btn btn-primary"
+                    class="post-button"
+                    style="background-color: #1d1e3a;"
                     onclick="showInviteModal('{{ experiment.identifier }}', '{{ experiment.name|escapejs }}')"
                 >
-                    {% translate "Invite a user" %}
+                    <i class="ri-user-add-line"></i>
+                    <span>{% translate "Invite a user" %}</span>
                 </button>
             </div>
             {% if invitations and invitations|length > 0 %}
@@ -176,32 +180,33 @@
         <div class="quick-actions">
             <h3>{% translate "Quick Actions" %}</h3>
             <div class="action-buttons">
-                <a href="{% url 'home_with_experiment' experiment.identifier %}" class="btn btn-primary">
+                <a href="{% url 'home_with_experiment' experiment.identifier %}" class="post-button" style="background-color: #1d1e3a;">
                     <i class="ri-home-line"></i>
-                    {% translate "Go To Discourse" %}
+                    <span>{% translate "Go To Discourse" %}</span>
                 </a>
                 {% if experiment.creator == request.user %}
-                    <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="btn btn-secondary">
+                    <a href="{% url 'moderator_dashboard' experiment.identifier %}" class="post-button" style="background-color: #6c757d;">
                         <i class="ri-dashboard-line"></i>
-                        {% translate "Moderator Dashboard" %}
+                        <span>{% translate "Moderator Dashboard" %}</span>
                     </a>
                 {% endif %}
                 {# Enroll Digital Twin button, matches Researcher Tools #}
                 <a href="javascript:void(0);"
-                   class="btn btn-secondary"
+                   class="post-button"
+                   style="background-color: #6c757d;"
                    onclick="showEnrollDigitalTwinModal('{{ experiment.identifier }}')">
                     <i class="ri-robot-line"></i>
-                    {% translate "Enroll Digital Twin" %}
+                    <span>{% translate "Enroll Digital Twin" %}</span>
                 </a>
                 {% if experiment.creator == request.user %}
                     <button
                         type="button"
-                        class="btn btn-danger"
-                        style="margin-left: 0.5rem;"
+                        class="post-button"
+                        style="background-color: #dc3545; margin-left: 0.5rem;"
                         onclick="showDeleteModal('{{ experiment.identifier }}', '{{ experiment.name|escapejs }}')"
                     >
                         <i class="ri-delete-bin-line"></i>
-                        {% translate "Delete Discourse" %}
+                        <span>{% translate "Delete Discourse" %}</span>
                     </button>
                 {% endif %}
             </div>
@@ -217,7 +222,7 @@
 function toggleEditForm() {
     const form = document.querySelector('.edit-form');
     const description = document.querySelector('.experiment-description');
-    const editButton = document.querySelector('.btn-secondary');
+    const editButton = document.querySelector('.post-button');
     
     if (form.style.display === 'none') {
         form.style.display = 'block';

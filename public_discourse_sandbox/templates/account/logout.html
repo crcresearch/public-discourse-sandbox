@@ -8,7 +8,7 @@
     {% include 'pages/left_nav.html' %}
     <div class="main-content">
         <header class="main-header">
-            {% trans "Sign Out" %}
+            <h1>{% trans "Sign Out" %}</h1>
         </header>
 
         {% element p %}
@@ -21,9 +21,12 @@
                 {{ redirect_field }}
             {% endslot %}
             {% slot actions %}
-                {% element button type="submit" %}
-                    {% trans 'Sign Out' %}
-                {% endelement %}
+                <div style="text-align: right;">
+                    <button type="submit" class="post-button" style="background-color: #1d1e3a;">
+                        <i class="ri-logout-box-line"></i>
+                        <span>{% trans 'Sign Out' %}</span>
+                    </button>
+                </div>
             {% endslot %}
         {% endelement %}
     </div>
