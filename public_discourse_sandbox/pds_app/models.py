@@ -180,6 +180,7 @@ class Post(BaseModel):
     is_deleted = models.BooleanField(default=False)
     is_edited = models.BooleanField(default=False)
     is_pinned = models.BooleanField(default=False)
+    is_flagged = models.BooleanField(default=False)
     repost_source = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='reposts')
 
     def __str__(self):
