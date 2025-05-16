@@ -121,13 +121,13 @@
         <div class="no-posts">
             {% if empty_home_feed %}
                 <div class="empty-feed-message">
-                    <h3>Your home feed is empty</h3>
+                    <h3>Your <b>Home</b> feed is empty</h3>
                     
                     {% if not has_posted and not follows_anyone %}
-                        <p>Your feed shows posts from you and people you follow.</p>
+                        <p>This page shows posts from you and people you follow.</p>
                         <p>Get started by:</p>
                         <ul>
-                            <li>Creating your first post above</li>
+                            <li>Creating your first post</li>
                             <li>Visiting the <a href="{% url 'explore' %}">Explore</a> page to find people to follow</li>
                         </ul>
                     {% elif not has_posted %}
