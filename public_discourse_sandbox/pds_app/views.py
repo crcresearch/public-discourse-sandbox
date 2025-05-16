@@ -20,7 +20,7 @@ from django.shortcuts import resolve_url
 User = get_user_model()
 import json
 
-def get_active_posts(request, experiment=None, hashtag=None):
+def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None):
     """
     Helper function to get active posts. Used in HomeView and ExploreView.
     Get non-deleted top-level posts with related user data.
@@ -31,6 +31,7 @@ def get_active_posts(request, experiment=None, hashtag=None):
         hashtag: Optional hashtag to filter by. If provided, returns posts that either:
             - Have the hashtag directly, OR
             - Have replies containing the hashtag
+        profile_ids: Optional list of profile IDs to filter by
     """
     posts = Post.objects.filter(
         parent_post__isnull=True,  # Only show top-level posts, not replies
@@ -40,6 +41,10 @@ def get_active_posts(request, experiment=None, hashtag=None):
     # Filter by experiment if provided
     if experiment:
         posts = posts.filter(experiment=experiment)
+    
+    # Filter by profile IDs if provided 
+    if profile_ids:
+        posts = posts.filter(user_profile__in=profile_ids)
     
     # Filter by hashtag if provided - look for posts that either have the hashtag directly
     # or have replies containing the hashtag
@@ -95,11 +100,8 @@ def get_home_feed_posts(request, experiment=None):
     # Add the user's own profile to the list
     profile_ids = list(following_ids) + [user_profile.id]
     
-    # Get all active posts and then filter by user profiles
-    posts = get_active_posts(request, experiment)
-    posts = posts.filter(user_profile__in=profile_ids)
-    
-    return posts
+    # Get all active posts with filtering by profile IDs from the beginning
+    return get_active_posts(request, experiment, profile_ids=profile_ids)
 
 
 class LandingView(View):
