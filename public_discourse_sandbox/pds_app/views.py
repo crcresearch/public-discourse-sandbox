@@ -20,7 +20,7 @@ from django.shortcuts import resolve_url
 User = get_user_model()
 import json
 
-def get_active_posts(request, experiment=None, hashtag=None):
+def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None):
     """
     Helper function to get active posts. Used in HomeView and ExploreView.
     Get non-deleted top-level posts with related user data.
@@ -31,6 +31,7 @@ def get_active_posts(request, experiment=None, hashtag=None):
         hashtag: Optional hashtag to filter by. If provided, returns posts that either:
             - Have the hashtag directly, OR
             - Have replies containing the hashtag
+        profile_ids: Optional list of profile IDs to filter by
     """
     posts = Post.objects.filter(
         parent_post__isnull=True,  # Only show top-level posts, not replies
@@ -40,6 +41,10 @@ def get_active_posts(request, experiment=None, hashtag=None):
     # Filter by experiment if provided
     if experiment:
         posts = posts.filter(experiment=experiment)
+    
+    # Filter by profile IDs if provided 
+    if profile_ids:
+        posts = posts.filter(user_profile__in=profile_ids)
     
     # Filter by hashtag if provided - look for posts that either have the hashtag directly
     # or have replies containing the hashtag
@@ -72,6 +77,33 @@ def get_active_posts(request, experiment=None, hashtag=None):
     return posts
 
 
+def get_home_feed_posts(request, experiment=None):
+    """
+    Helper function to get posts for the home feed.
+    Only returns posts from the current user and users they follow.
+    
+    Args:
+        request: The current request object
+        experiment: Optional experiment to filter by
+    """
+    # Get the user's profile for this experiment
+    user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+    
+    if not user_profile:
+        return Post.objects.none()  # Return empty queryset if no profile
+    
+    # Get IDs of users the current user follows
+    following_ids = SocialNetwork.objects.filter(
+        source_node=user_profile
+    ).values_list('target_node', flat=True)
+    
+    # Add the user's own profile to the list
+    profile_ids = list(following_ids) + [user_profile.id]
+    
+    # Get all active posts with filtering by profile IDs from the beginning
+    return get_active_posts(request, experiment, profile_ids=profile_ids)
+
+
 class LandingView(View):
     """
     Landing page view that redirects authenticated users to their home page
@@ -95,12 +127,26 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin,
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_active_posts(request=self.request, experiment=self.experiment)
+        return get_home_feed_posts(request=self.request, experiment=self.experiment)
 
     def get_context_data(self, **kwargs):
         """Add the post form to the context."""
         context = super().get_context_data(**kwargs)
         context['form'] = PostForm()
+        
+        # Add flag for empty home feed to show guidance message
+        if not context['posts']:
+            user_profile = self.request.user.userprofile_set.filter(experiment=self.experiment).first()
+            if user_profile:
+                # Check if user follows anyone
+                follows_anyone = SocialNetwork.objects.filter(source_node=user_profile).exists()
+                # Check if user has posted anything
+                has_posted = Post.objects.filter(user_profile=user_profile, is_deleted=False).exists()
+                
+                context['empty_home_feed'] = True
+                context['follows_anyone'] = follows_anyone
+                context['has_posted'] = has_posted
+        
         return context
         
     @method_decorator(check_banned)

@@ -119,7 +119,32 @@
         </article>
     {% empty %}
         <div class="no-posts">
-            <p>No posts yet. Be the first to post!</p>
+            {% if empty_home_feed %}
+                <div class="empty-feed-message">
+                    <h3>Your <b>Home</b> feed is empty</h3>
+                    
+                    {% if not has_posted and not follows_anyone %}
+                        <p>This page shows posts from you and people you follow.</p>
+                        <p>Get started by:</p>
+                        <ul>
+                            <li>Creating your first post</li>
+                            <li>Visiting the <a href="{% url 'explore' %}">Explore</a> page to find people to follow</li>
+                        </ul>
+                    {% elif not has_posted %}
+                        <p>You're following some people, but they haven't posted anything yet.</p>
+                        <p>Why not start the conversation?</p>
+                        <ul>
+                            <li>Create your first post using the composer above</li>
+                            <li>Find more people to follow on the <a href="{% url 'explore' %}">Explore</a> page</li>
+                        </ul>
+                    {% elif not follows_anyone %}
+                        <p>You've made some posts, but your feed could use more activity.</p>
+                        <p>Find people to follow on the <a href="{% url 'explore' %}">Explore</a> page to see their posts here.</p>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p>No posts yet. Be the first to post!</p>
+            {% endif %}
         </div>
     {% endfor %}
 </div>
