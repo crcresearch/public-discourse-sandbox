@@ -738,6 +738,43 @@ a.user-avatar {
     font-size: 15px;
 }
 
+/* Empty feed message */
+.empty-feed-message {
+    background-color: var(--background-gray);
+    border-radius: 12px;
+    padding: 25px 20px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.empty-feed-message h3 {
+    color: var(--nd-blue);
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+
+.empty-feed-message p {
+    color: var(--text-color);
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.empty-feed-message ul {
+    text-align: left;
+    margin: 15px 0 15px 30px;
+    font-size: 16px;
+}
+
+.empty-feed-message a {
+    color: var(--nd-blue);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.empty-feed-message a:hover {
+    text-decoration: underline;
+}
+
 /* Mobile Styles */
 @media screen and (max-width: 768px) {
     .left-sidebar {

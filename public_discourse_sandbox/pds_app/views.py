@@ -72,6 +72,36 @@ def get_active_posts(request, experiment=None, hashtag=None):
     return posts
 
 
+def get_home_feed_posts(request, experiment=None):
+    """
+    Helper function to get posts for the home feed.
+    Only returns posts from the current user and users they follow.
+    
+    Args:
+        request: The current request object
+        experiment: Optional experiment to filter by
+    """
+    # Get the user's profile for this experiment
+    user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+    
+    if not user_profile:
+        return Post.objects.none()  # Return empty queryset if no profile
+    
+    # Get IDs of users the current user follows
+    following_ids = SocialNetwork.objects.filter(
+        source_node=user_profile
+    ).values_list('target_node', flat=True)
+    
+    # Add the user's own profile to the list
+    profile_ids = list(following_ids) + [user_profile.id]
+    
+    # Get all active posts and then filter by user profiles
+    posts = get_active_posts(request, experiment)
+    posts = posts.filter(user_profile__in=profile_ids)
+    
+    return posts
+
+
 class LandingView(View):
     """
     Landing page view that redirects authenticated users to their home page
@@ -95,12 +125,26 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin,
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_active_posts(request=self.request, experiment=self.experiment)
+        return get_home_feed_posts(request=self.request, experiment=self.experiment)
 
     def get_context_data(self, **kwargs):
         """Add the post form to the context."""
         context = super().get_context_data(**kwargs)
         context['form'] = PostForm()
+        
+        # Add flag for empty home feed to show guidance message
+        if not context['posts']:
+            user_profile = self.request.user.userprofile_set.filter(experiment=self.experiment).first()
+            if user_profile:
+                # Check if user follows anyone
+                follows_anyone = SocialNetwork.objects.filter(source_node=user_profile).exists()
+                # Check if user has posted anything
+                has_posted = Post.objects.filter(user_profile=user_profile, is_deleted=False).exists()
+                
+                context['empty_home_feed'] = True
+                context['follows_anyone'] = follows_anyone
+                context['has_posted'] = has_posted
+        
         return context
         
     @method_decorator(check_banned)
