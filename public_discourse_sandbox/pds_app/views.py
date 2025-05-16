@@ -235,10 +235,22 @@ class ModeratorDashboardView(LoginRequiredMixin, ExperimentContextMixin, Profile
             experiment=self.experiment,
             is_banned=True
         )
+        
+        # Recent posts for moderation (first tab)
         context['reported_posts'] = Post.objects.filter(
             experiment=self.experiment,
             is_deleted=False
         ).order_by('-created_date')[:10]
+        
+        # Flagged posts for profanity (second tab)
+        flagged_posts = Post.objects.filter(
+            experiment=self.experiment,
+            is_deleted=False,
+            is_flagged=True
+        ).order_by('-created_date')
+        
+        context['flagged_posts'] = flagged_posts
+        context['flagged_posts_count'] = flagged_posts.count()
         
         return context
 

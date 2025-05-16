@@ -52,40 +52,100 @@
       </div>
       
       <div class="dashboard-section">
-        <h2>Recent Posts</h2>
-        {% if reported_posts %}
-          <div class="posts-list">
-            {% for post in reported_posts %}
-              <div class="post-card card mb-3" data-post-id="{{ post.id }}">
-                <div class="card-body">
-                  <div class="post-header d-flex justify-content-between align-items-center mb-2">
-                    <div class="user-info">
-                      <a href="{% url 'users:detail' post.user_profile.user.id %}">
-                        <span class="username fw-bold">@{{ post.user_profile.username }}</span>
-                      </a>
-                      <span class="timestamp text-muted ms-2">{{ post.created_date|timesince }} ago</span>
-                    </div>
-                    <div class="post-actions">
-                      <button class="post-button" 
-                              style="background-color: #dc3545; padding: 4px 12px; min-height: 32px;"
-                              onclick="showDeleteModal('{{ post.id }}')">
-                        <i class="ri-delete-bin-line"></i>
-                        <span>Delete</span>
-                      </button>
+        <h2>Post Management</h2>
+        
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs" id="postsTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent-posts" 
+                    type="button" role="tab" aria-controls="recent-posts" aria-selected="true">
+              Recent Posts
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="flagged-tab" data-bs-toggle="tab" data-bs-target="#flagged-posts" 
+                    type="button" role="tab" aria-controls="flagged-posts" aria-selected="false">
+              Flagged Posts {% if flagged_posts_count %}<span class="badge bg-danger">{{ flagged_posts_count }}</span>{% endif %}
+            </button>
+          </li>
+        </ul>
+        
+        <!-- Tab Content -->
+        <div class="tab-content" id="postsTabContent">
+          <!-- Recent Posts Tab -->
+          <div class="tab-pane fade show active" id="recent-posts" role="tabpanel" aria-labelledby="recent-tab">
+            {% if reported_posts %}
+              <div class="posts-list">
+                {% for post in reported_posts %}
+                  <div class="post-card card mb-3" data-post-id="{{ post.id }}">
+                    <div class="card-body">
+                      <div class="post-header d-flex justify-content-between align-items-center mb-2">
+                        <div class="user-info">
+                          <a href="{% url 'users:detail' post.user_profile.user.id %}">
+                            <span class="username fw-bold">@{{ post.user_profile.username }}</span>
+                          </a>
+                          <span class="timestamp text-muted ms-2">{{ post.created_date|timesince }} ago</span>
+                        </div>
+                        <div class="post-actions">
+                          <button class="post-button" 
+                                  style="background-color: #dc3545; padding: 4px 12px; min-height: 32px;"
+                                  onclick="showDeleteModal('{{ post.id }}')">
+                            <i class="ri-delete-bin-line"></i>
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="mod-post-content">
+                        {{ post.content }}
+                      </div>
                     </div>
                   </div>
-                  <div class="mod-post-content">
-                    {{ post.content }}
-                  </div>
-                </div>
+                {% endfor %}
               </div>
-            {% endfor %}
+            {% else %}
+              <div class="alert alert-info mt-3">
+                <i class="ri-information-line"></i> No recent posts to moderate.
+              </div>
+            {% endif %}
           </div>
-        {% else %}
-          <div class="alert alert-info">
-            <i class="ri-information-line"></i> No recent posts to moderate.
+          
+          <!-- Flagged Posts Tab -->
+          <div class="tab-pane fade" id="flagged-posts" role="tabpanel" aria-labelledby="flagged-tab">
+            {% if flagged_posts %}
+              <div class="posts-list">
+                {% for post in flagged_posts %}
+                  <div class="post-card card mb-3" data-post-id="{{ post.id }}">
+                    <div class="card-body">
+                      <div class="post-header d-flex justify-content-between align-items-center mb-2">
+                        <div class="user-info">
+                          <a href="{% url 'users:detail' post.user_profile.user.id %}">
+                            <span class="username fw-bold">@{{ post.user_profile.username }}</span>
+                          </a>
+                          <span class="timestamp text-muted ms-2">{{ post.created_date|timesince }} ago</span>
+                        </div>
+                        <div class="post-actions">
+                          <button class="post-button" 
+                                  style="background-color: #dc3545; padding: 4px 12px; min-height: 32px;"
+                                  onclick="showDeleteModal('{{ post.id }}')">
+                            <i class="ri-delete-bin-line"></i>
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="mod-post-content">
+                        {{ post.content }}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="alert alert-info mt-3">
+                <i class="ri-information-line"></i> No flagged posts to moderate.
+              </div>
+            {% endif %}
           </div>
-        {% endif %}
+        </div>
       </div>
     {% else %}
       <div class="alert alert-danger">
