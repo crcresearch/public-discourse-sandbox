@@ -9,6 +9,8 @@
       <h2>Edit Profile</h2>
     </div>
     <div class="modal-body">
+      <div id="edit-form-errors" class="alert alert-danger" style="display: none; margin-bottom: 15px;"></div>
+      
       <form id="editProfileForm" enctype="multipart/form-data" class="profile-edit-form">
         {% csrf_token %}
         
@@ -56,17 +58,20 @@
         <div class="form-fields">
           <div class="form-group">
             <label for="display_name">Display Name</label>
-            <input type="text" id="display_name" name="display_name" value="{{ viewed_profile.display_name }}" required>
+            <input type="text" id="display_name" name="display_name" value="{{ viewed_profile.display_name }}" required class="form-control">
+            <div class="invalid-feedback" id="error-display_name"></div>
           </div>
           
           <div class="form-group">
             <label for="username">Username</label>
-            <input type="text" id="username" name="username" value="{{ viewed_profile.username }}" required>
+            <input type="text" id="username" name="username" value="{{ viewed_profile.username }}" required class="form-control">
+            <div class="invalid-feedback" id="error-username" style="color: #dc3545; margin-top: 5px; display: none;"></div>
           </div>
           
           <div class="form-group">
             <label for="bio">Bio</label>
-            <textarea id="bio" name="bio" rows="4">{{ viewed_profile.bio }}</textarea>
+            <textarea id="bio" name="bio" rows="4" class="form-control">{{ viewed_profile.bio }}</textarea>
+            <div class="invalid-feedback" id="error-bio"></div>
           </div>
         </div>
 
@@ -83,10 +88,54 @@
 <script>
   function showEditProfileModal() {
     document.getElementById('editProfileModal').style.display = 'flex';
+    clearFormErrors();
   }
 
   function closeEditProfileModal() {
     document.getElementById('editProfileModal').style.display = 'none';
+    clearFormErrors();
+  }
+  
+  function clearFormErrors() {
+    const errorContainer = document.getElementById('edit-form-errors');
+    errorContainer.style.display = 'none';
+    errorContainer.textContent = '';
+    
+    const errorElements = document.querySelectorAll('.invalid-feedback');
+    errorElements.forEach(element => {
+        element.textContent = '';
+        element.style.display = 'none';
+    });
+    
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+        input.classList.remove('is-invalid');
+    });
+  }
+  
+  function showErrorMessage(message) {
+    const errorContainer = document.getElementById('edit-form-errors');
+    errorContainer.textContent = message;
+    errorContainer.style.display = 'block';
+  }
+  
+  function showFieldError(field, message) {
+    const errorElement = document.getElementById(`error-${field}`);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        errorElement.style.color = '#dc3545';
+        errorElement.style.marginTop = '5px';
+        
+        const input = document.querySelector(`[name="${field}"]`);
+        if (input) {
+            input.classList.add('is-invalid');
+            input.style.borderColor = '#dc3545';
+        }
+    } else {
+        // If we can't find a specific field error container, show in general errors
+        showErrorMessage(`${field}: ${message}`);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -139,24 +188,114 @@
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       
+      clearFormErrors();
       const formData = new FormData(form);
       
       try {
+        console.log('Submitting profile update');
+        
         const response = await fetch('{% url "users:update_profile" experiment.identifier %}', {
           method: 'POST',
           body: formData,
-          credentials: 'same-origin'
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          }
         });
-
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          console.error('Error updating profile');
-          showToast('error', 'Failed to update profile');
+        
+        console.log('Response status:', response.status);
+        
+        const contentType = response.headers.get('content-type');
+        console.log('Response content type:', contentType);
+        
+        // Try to get response data
+        let responseData = {};
+        if (contentType && contentType.includes('application/json')) {
+            responseData = await response.json();
+            console.log('Response data:', responseData);
         }
+
+        if (!response.ok) {
+          // If we have structured error data
+          if (responseData.error) {
+              try {
+                  // Handle the specific case of username already taken
+                  if (typeof responseData.error === 'string' && responseData.error.toLowerCase().includes('username is already taken')) {
+                      showFieldError('username', responseData.error);
+                      return;
+                  }
+                  
+                  // Parse the errors JSON string into an object if it's a string
+                  const errors = typeof responseData.error === 'string' && responseData.error.startsWith('{') 
+                      ? JSON.parse(responseData.error) 
+                      : responseData.error;
+                  
+                  console.log('Parsed errors:', errors);
+                  
+                  // Handle different error formats
+                  if (typeof errors === 'string') {
+                      // Simple string error - check if it's related to username
+                      if (errors.toLowerCase().includes('username is already taken')) {
+                          showFieldError('username', errors);
+                      } else {
+                          showErrorMessage(errors);
+                      }
+                  } else {
+                      // Process field errors
+                      let hasDisplayedErrors = false;
+                      
+                      // Try to iterate through fields
+                      for (const field in errors) {
+                          let errorText = '';
+                          
+                          // Handle array of error objects
+                          if (Array.isArray(errors[field])) {
+                              errors[field].forEach(error => {
+                                  if (error.message) {
+                                      errorText += error.message + ' ';
+                                  } else if (typeof error === 'string') {
+                                      errorText += error + ' ';
+                                  }
+                              });
+                          } 
+                          // Handle string error
+                          else if (typeof errors[field] === 'string') {
+                              errorText = errors[field];
+                          }
+                          
+                          if (errorText) {
+                              showFieldError(field, errorText.trim());
+                              hasDisplayedErrors = true;
+                          }
+                      }
+                      
+                      // If we couldn't process any specific errors, show generic message
+                      if (!hasDisplayedErrors) {
+                          showErrorMessage("Form validation failed. Please check your inputs.");
+                      }
+                  }
+              } catch (parseError) {
+                  console.error('Error parsing error response:', parseError);
+                  
+                  // Check if the error string contains username information
+                  if (responseData.error && responseData.error.toLowerCase().includes('username is already taken')) {
+                      showFieldError('username', responseData.error);
+                  } else {
+                      showErrorMessage(responseData.error || "Request failed");
+                  }
+              }
+          } else {
+              // Generic error
+              showErrorMessage(responseData.message || "Request failed");
+          }
+          return;
+        }
+
+        // Success - reload the page
+        window.location.reload();
       } catch (error) {
         console.error('Error:', error);
-        showToast('error', 'An error occurred while updating your profile');
+        showErrorMessage(error.message || "An error occurred while updating your profile");
       }
     });
   });
