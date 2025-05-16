@@ -120,7 +120,7 @@ class LandingView(View):
         # For unauthenticated users, show the landing page
         # Fetch the default experiment to display IRB additions
         try:
-            default_experiment = Experiment.objects.get(identifier="00000")
+            default_experiment = Experiment.objects.get(identifier="00000")  # TODO: Find a better way to handle this
             return render(request, 'pages/landing.html', {'experiment': default_experiment})
         except Experiment.DoesNotExist:
             # If default experiment doesn't exist, just render without it
