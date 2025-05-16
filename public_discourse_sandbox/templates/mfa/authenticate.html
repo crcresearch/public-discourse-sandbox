@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load allauth %}
+{% load allauth static %}
+{% block head_title %}
+    {% trans "Sign In" %}
+{% endblock head_title %}
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+    
+    <div class="main-content">
+        <header class="main-header">
+            <h1>{% trans "Two-Factor Authentication" %}</h1>
+        </header>
+        
+        <p>{% blocktranslate %}Your account is protected by two-factor authentication. Please enter an authenticator code:{% endblocktranslate %}</p>
+        
+        {% url 'mfa_authenticate' as action_url %}
+        {% element form form=form method="post" action=action_url %}
+            {% slot body %}
+                {% csrf_token %}
+                {% element fields form=form unlabeled=True %}
+                {% endelement %}
+            {% endslot %}
+            {% slot actions %}
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    {% if "webauthn" not in MFA_SUPPORTED_TYPES %}
+                        <button type="submit" form="logout-from-stage" class="post-button" style="background-color: #6c757d;">
+                            <i class="ri-close-line"></i>
+                            <span>{% trans "Cancel" %}</span>
+                        </button>
+                    {% endif %}
+                    
+                    <button type="submit" class="post-button" style="background-color: #1d1e3a;">
+                        <i class="ri-login-box-line"></i>
+                        <span>{% trans "Sign In" %}</span>
+                    </button>
+                </div>
+            {% endslot %}
+        {% endelement %}
+        
+        {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+            <hr>
+            <h2>{% translate "Alternative options" %}</h2>
+            
+            <div class="webauthn-options" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                <button form="webauthn_form" id="mfa_webauthn_authenticate" type="button" class="post-button" style="background-color: #1d1e3a;">
+                    <i class="ri-key-line"></i>
+                    <span>{% trans "Use a security key" %}</span>
+                </button>
+                
+                <button type="submit" form="logout-from-stage" class="post-button" style="background-color: #6c757d;">
+                    <i class="ri-close-line"></i>
+                    <span>{% trans "Cancel" %}</span>
+                </button>
+            </div>
+            
+            {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+                {% element form id="webauthn_form" form=webauthn_form method="post" action=action_url no_visible_fields=True %}
+                    {% slot body %}
+                        {% csrf_token %}
+                        {% element fields form=webauthn_form %}
+                        {% endelement %}
+                    {% endslot %}
+                {% endelement %}
+                {{ js_data|json_script:"js_data" }}
+                {% include "mfa/webauthn/snippets/scripts.html" %}
+                <script>
+                    allauth.webauthn.forms.authenticateForm({
+                        ids: {
+                            authenticate: "mfa_webauthn_authenticate",
+                            credential: "{{ webauthn_form.credential.auto_id }}"
+                        },
+                        data: JSON.parse(document.getElementById('js_data').textContent)
+                    })
+                </script>
+            {% endif %}
+        {% endif %}
+        
+        <form id="logout-from-stage"
+              method="post"
+              action="{% url 'account_logout' %}">
+            <input type="hidden" name="next" value="{% url 'account_login' %}">
+            {% csrf_token %}
+        </form>
+    </div>
+    
+    <!-- Right Sidebar -->
+    {% include 'pages/right_content.html' %}
+{% endblock content %} 
