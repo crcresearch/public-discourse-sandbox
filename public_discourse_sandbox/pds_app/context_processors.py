@@ -6,6 +6,7 @@ from .models import Hashtag
 from django.core.cache import cache
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.urls.exceptions import Resolver404
 
 def active_bots(request):
     """
@@ -17,7 +18,13 @@ def active_bots(request):
         return {'active_bots': []}
     
     # Get the current experiment from the URL or session
-    experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    experiment_identifier = None
+    try:
+        if hasattr(request, 'resolver_match') and request.resolver_match:
+            experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    except (AttributeError, Resolver404):
+        pass
+    
     if not experiment_identifier:
         return {'active_bots': []}
     
@@ -50,7 +57,12 @@ def user_experiments(request):
     ).distinct().order_by('name')
     
     # Get the current experiment identifier from the URL
-    current_experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    current_experiment_identifier = None
+    try:
+        if hasattr(request, 'resolver_match') and request.resolver_match:
+            current_experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    except (AttributeError, Resolver404):
+        pass
     
     return {
         'user_experiments': experiments,
@@ -66,7 +78,13 @@ def is_moderator(request):
         return {'is_moderator': False}
     
     # Get the current experiment from the URL or session
-    experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    experiment_identifier = None
+    try:
+        if hasattr(request, 'resolver_match') and request.resolver_match:
+            experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    except (AttributeError, Resolver404):
+        pass
+    
     if not experiment_identifier:
         return {'is_moderator': False}
     
@@ -104,7 +122,13 @@ def trending_hashtags(request):
         return {'trending_hashtags': []}
     
     # Get the current experiment from the URL or session
-    experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    experiment_identifier = None
+    try:
+        if hasattr(request, 'resolver_match') and request.resolver_match:
+            experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    except (AttributeError, Resolver404):
+        pass
+    
     if not experiment_identifier:
         return {'trending_hashtags': []}
     
