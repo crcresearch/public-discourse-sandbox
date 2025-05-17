@@ -2,6 +2,7 @@ import uuid
 import hashlib
 from django.db import models
 from django.contrib.auth import get_user_model
+from .utils import check_profanity
 
 User = get_user_model()
 
@@ -216,6 +217,10 @@ class Post(BaseModel):
                         print(f"Error processing hashtag {hashtag}: {e}")
 
     def save(self, *args, **kwargs):
+        # Check for profanity in content
+        if not self.is_flagged:  # Only check if not already flagged
+            self.is_flagged = check_profanity(self.content)
+            
         self.parse_hashtags()
         super().save(*args, **kwargs)
 
