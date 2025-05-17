@@ -20,7 +20,7 @@ from django.shortcuts import resolve_url
 User = get_user_model()
 import json
 
-def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None):
+def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None, previous_post_id=None, page_size=10):
     """
     Helper function to get active posts. Used in HomeView and ExploreView.
     Get non-deleted top-level posts with related user data.
@@ -32,6 +32,8 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None):
             - Have the hashtag directly, OR
             - Have replies containing the hashtag
         profile_ids: Optional list of profile IDs to filter by
+        previous_post_id: Optional ID of the last post from previous page to paginate from
+        page_size: Number of posts to return per page (default: 20)
     """
     posts = Post.objects.filter(
         parent_post__isnull=True,  # Only show top-level posts, not replies
@@ -57,6 +59,15 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None):
                 post__is_deleted=False  # Only count non-deleted replies
             )
         ).distinct()  # Use distinct to avoid duplicate posts
+
+        # Determine next page of posts based on previous_post_id's created_date
+    if previous_post_id:
+        try:
+            previous_post = Post.objects.get(id=previous_post_id)
+            posts = posts.filter(created_date__lt=previous_post.created_date)
+        except Post.DoesNotExist:
+            # If previous_post_id is not found, start at current time. Case is when user first loads the page.
+            pass
     
     # Select related data for efficiency
     posts = posts.select_related(
@@ -65,6 +76,10 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None):
     ).prefetch_related(
         'vote_set'  # Prefetch votes to avoid N+1 queries
     ).order_by('-created_date')
+
+
+    # Limit results to page_size
+    posts = posts[:int(page_size)]
 
     # Add comment count and vote status using the get_comment_count method
     for post in posts:
@@ -77,7 +92,7 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None):
     return posts
 
 
-def get_home_feed_posts(request, experiment=None):
+def get_home_feed_posts(request, experiment=None, previous_post_id=None, page_size=10):
     """
     Helper function to get posts for the home feed.
     Only returns posts from the current user and users they follow.
@@ -101,7 +116,7 @@ def get_home_feed_posts(request, experiment=None):
     profile_ids = list(following_ids) + [user_profile.id]
     
     # Get all active posts with filtering by profile IDs from the beginning
-    return get_active_posts(request, experiment, profile_ids=profile_ids)
+    return get_active_posts(request, experiment, profile_ids=profile_ids, previous_post_id=previous_post_id, page_size=page_size)
 
 
 class LandingView(View):
@@ -134,7 +149,20 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin,
     context_object_name = 'posts'
 
     def get_queryset(self):
-        return get_home_feed_posts(request=self.request, experiment=self.experiment)
+        previous_post_id = self.request.GET.get('previous_post_id', None)
+        page_size = self.request.GET.get('page_size', None)
+
+        # Only pass pagination params if they were provided
+        kwargs = {
+            'request': self.request,
+            'experiment': self.experiment
+        }
+        if previous_post_id is not None:
+            kwargs['previous_post_id'] = previous_post_id
+        if page_size is not None:
+            kwargs['page_size'] = page_size
+
+        return get_home_feed_posts(**kwargs)
 
     def get_context_data(self, **kwargs):
         """Add the post form to the context."""
@@ -142,7 +170,7 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin,
         context['form'] = PostForm()
         
         # Add flag for empty home feed to show guidance message
-        if not context['posts']:
+        if not context['posts'] and not self.request.headers.get('HX-Request'):
             user_profile = self.request.user.userprofile_set.filter(experiment=self.experiment).first()
             if user_profile:
                 # Check if user follows anyone
@@ -155,6 +183,13 @@ class HomeView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin,
                 context['has_posted'] = has_posted
         
         return context
+    
+    @method_decorator(check_banned)
+    def get(self, request, *args, **kwargs):
+        """Override get to handle HTMX requests."""
+        if request.headers.get('HX-Request'):
+            self.template_name = 'partials/_post_list.html'
+        return super().get(request, *args, **kwargs)
         
     @method_decorator(check_banned)
     def post(self, request, *args, **kwargs):
@@ -195,13 +230,35 @@ class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMix
     def get_queryset(self):
         # Get hashtag from query parameters
         hashtag = self.request.GET.get('hashtag')
-        return get_active_posts(request=self.request, experiment=self.experiment, hashtag=hashtag)
+        previous_post_id = self.request.GET.get('previous_post_id', None)
+        page_size = self.request.GET.get('page_size', None)
+
+        # Only pass pagination params if they were provided
+        kwargs = {
+            'request': self.request,
+            'experiment': self.experiment,
+            'hashtag': hashtag
+        }
+        if previous_post_id is not None:
+            kwargs['previous_post_id'] = previous_post_id
+        if page_size is not None:
+            kwargs['page_size'] = page_size
+
+        return get_active_posts(**kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Add the current hashtag filter to the context
         context['current_hashtag'] = self.request.GET.get('hashtag')
         return context
+
+    @method_decorator(check_banned)
+    def get(self, request, *args, **kwargs):
+        """Override get to handle HTMX requests."""
+        if request.headers.get('HX-Request'):
+            self.template_name = 'partials/_post_list.html'
+        return super().get(request, *args, **kwargs)
+        
 
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):

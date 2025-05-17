@@ -21,6 +21,7 @@ from django.http import HttpResponseRedirect
 from public_discourse_sandbox.users.models import User
 from public_discourse_sandbox.pds_app.mixins import ExperimentContextMixin
 from public_discourse_sandbox.pds_app.models import UserProfile, SocialNetwork, Post, Experiment, ExperimentInvitation
+from public_discourse_sandbox.pds_app.decorators import check_banned
 from .forms import CustomSignupForm
 
 User = get_user_model()
@@ -107,13 +108,32 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         context['follower_count'] = SocialNetwork.objects.filter(target_node=self.object).count()
         context['following_count'] = SocialNetwork.objects.filter(source_node=self.object).count()
 
-        # Add posts by this user (not deleted, ordered by newest first)
-        context['user_posts'] = Post.all_objects.filter(user_profile=self.object, is_deleted=False).order_by('-created_date')
+        # Get pagination parameters
+        previous_post_id = self.request.GET.get('previous_post_id', None)
+        page_size = self.request.GET.get('page_size', 10)  # Default to 10 posts per page
+
+        # Get posts by this user (not deleted, ordered by newest first)
+        posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+
+        # If previous_post_id provided, paginate from that post
+        if previous_post_id:
+            try:
+                previous_post = Post.objects.get(id=previous_post_id)
+                posts = posts.filter(created_date__lt=previous_post.created_date)
+            except Post.DoesNotExist:
+                pass
+
+        # Order by newest first and limit to page size
+        context['user_posts'] = posts.order_by('-created_date')[:int(page_size)]
         # Annotate each post with comment_count and has_user_voted for template compatibility
         current_user = self.request.user
         for post in context['user_posts']:
             post.comment_count = post.get_comment_count()
             post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+
+        # If HTMX request, map user_posts to posts for template compatibility
+        if self.request.headers.get('HX-Request'):
+            context['posts'] = context['user_posts']
 
         # Add whether the current user is following the viewed profile
         current_user_profile = context.get('current_user_profile')
@@ -131,6 +151,13 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         context['following'] = UserProfile.objects.filter(id__in=following_links.values_list('target_node', flat=True))
         
         return context
+    
+    @method_decorator(check_banned)
+    def get(self, request, *args, **kwargs):
+        """Override get to handle HTMX requests."""
+        if request.headers.get('HX-Request'):
+            self.template_name = 'partials/_post_list.html'
+        return super().get(request, *args, **kwargs)
 
 user_profile_detail_view = UserProfileDetailView.as_view()
 
