@@ -36,6 +36,12 @@
                 <i class="ri-compass-3-line"></i>
                 Explore
             </a>
+        </li> 
+        <li>
+            <a href="{% if experiment %}{% url 'notifications_with_experiment' experiment.identifier %}{% else %}{% url 'notifications' %}{% endif %}" class="{% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+                <i class="ri-notification-3-line"></i>
+                Notifications
+            </a>
         </li>
         <li class="nav-item">
             <a href="{% if experiment %}{% url 'users:detail_with_experiment' experiment.identifier request.user.id %}{% else %}{% url 'users:detail' request.user.id %}{% endif %}" class="{% if request.resolver_match.namespace == 'users' and request.resolver_match.url_name == 'detail' %}active{% endif %}">

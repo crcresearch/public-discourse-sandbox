@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, TemplateView, View, DetailView
 from .forms import PostForm, ExperimentForm, EnrollDigitalTwinForm, UserProfileForm
-from .models import Post, UserProfile, Experiment, SocialNetwork, DigitalTwin, ExperimentInvitation
+from .models import Post, UserProfile, Experiment, SocialNetwork, DigitalTwin, ExperimentInvitation, Notification
 from .mixins import ExperimentContextMixin, ProfileRequiredMixin
 from django.core.exceptions import PermissionDenied
 from .decorators import check_banned
@@ -258,8 +258,16 @@ class ExploreView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMix
         if request.headers.get('HX-Request'):
             self.template_name = 'partials/_post_list.html'
         return super().get(request, *args, **kwargs)
+    
+class NotificationsView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView):
+    template_name = 'pages/notifications.html'
+    context_object_name = 'notifications'
         
-
+    def get_queryset(self):
+        """Get notifications for the current user in the current experiment."""
+        return Notification.objects.filter(
+            user_profile=self.user_profile
+        ).order_by('-created_date')
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
     """About page view that displays information about the application."""

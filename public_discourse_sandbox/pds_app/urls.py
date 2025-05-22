@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 
 # Import views using absolute import path for Celery compatibility
 from public_discourse_sandbox.pds_app.views import (
-    HomeView, ExploreView, AboutView, LandingView, 
+    HomeView, ExploreView, NotificationsView, AboutView, LandingView, 
     ModeratorDashboardView, FollowView, ResearcherToolsView,
     ExperimentDetailView, CreateExperimentView, InviteUserView, EnrollDigitalTwinView,
     AcceptInvitationView, CreateProfileView, UserProfileDetailView, SettingsView
@@ -27,6 +27,7 @@ urlpatterns = [
     path("<str:experiment_identifier>/about/", AboutView.as_view(), name="about_with_experiment"),
     path("<str:experiment_identifier>/home/", HomeView.as_view(), name="home_with_experiment"),
     path("<str:experiment_identifier>/explore/", ExploreView.as_view(), name="explore_with_experiment"),
+    path("<str:experiment_identifier>/notifications/", NotificationsView.as_view(), name="notifications_with_experiment"),
     path("<str:experiment_identifier>/moderator/", ModeratorDashboardView.as_view(), name="moderator_dashboard"),
     path("<str:experiment_identifier>/create-comment/", create_comment, name="create_comment_with_experiment"),
     path("<str:experiment_identifier>/get-replies/<uuid:post_id>/", get_post_replies, name="get_replies_with_experiment"),
@@ -45,6 +46,7 @@ urlpatterns = [
     # URLs without experiment identifier (will use last_accessed)
     path("home/", HomeView.as_view(), name="home"),
     path("explore/", ExploreView.as_view(), name="explore"),
+    path("notifications/", NotificationsView.as_view(), name="notifications"),
     path("get-replies/<uuid:post_id>/", get_post_replies, name="get_replies"),
     path("api/posts/<uuid:post_id>/delete/", delete_post, name="delete_post"),
     path("api/posts/<uuid:post_id>/like/", handle_like, name="like_post"),
