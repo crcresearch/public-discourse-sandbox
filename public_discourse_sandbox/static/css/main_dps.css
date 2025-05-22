@@ -345,7 +345,7 @@ a.back-link {
 }
 
 .filter-btn:hover {
-    background-color: rgba(212, 175, 55, 0.2); /* Slightly darker on hover */
+    background-color: var(--twitter-light-hover); /* Slightly darker on hover */
     transform: scale(1.05);
 }
 
