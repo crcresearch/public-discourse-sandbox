@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 import random
 from django.utils import timezone
 
-from public_discourse_sandbox.pds_app.models import DigitalTwin, Post
+from public_discourse_sandbox.pds_app.models import DigitalTwin, Post, Notification
 
 """
 DTService Execution Flow:
@@ -395,6 +395,14 @@ class DTService:
                 experiment=post.experiment,
                 depth=post.depth + 1
             )
+
+            # Create a notification for the parent post author
+            Notification.objects.create(
+                user_profile=post.user_profile,
+                event='post_replied',
+                content=f'@{twin.user_profile.username} replied to your post'
+            )
+
             
             logger.info(f"Created digital twin comment: {comment.content[:50]}...")
             responses.append(comment)

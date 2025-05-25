@@ -2,7 +2,7 @@ from .models import DigitalTwin
 from django.contrib.auth.models import User
 from public_discourse_sandbox.pds_app.models import Experiment
 from django.db.models import Count
-from .models import Hashtag
+from .models import Hashtag, Notification
 from django.core.cache import cache
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -180,3 +180,48 @@ def invalidate_trending_hashtags_cache(sender, instance, **kwargs):
         experiment = instance.post.experiment
         cache_key = f'trending_hashtags_{experiment.identifier}'
         cache.delete(cache_key)
+
+def unread_notifications(request):
+    """
+    Context processor that adds the count of unread notifications to the template context.
+    Only adds unread notifications count if the user is authenticated and has a profile in the current experiment.
+    
+    Returns:
+    - A dictionary with the 'unread_notifications_count' key
+    - The value is the count of unread notifications for the current user in the current experiment
+    - Returns 0 if the user is not authenticated or has no profile in the current experiment
+    """
+    if not request.user.is_authenticated:
+        return {'unread_notifications_count': 0}
+    
+    # Get the current experiment from the URL or session
+    experiment_identifier = None
+    try:
+        if hasattr(request, 'resolver_match') and request.resolver_match:
+            experiment_identifier = request.resolver_match.kwargs.get('experiment_identifier')
+    except (AttributeError, Resolver404):
+        pass
+    
+    if not experiment_identifier:
+        return {'unread_notifications_count': 0}
+    
+    try:
+        experiment = Experiment.objects.get(identifier=experiment_identifier)
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        
+        if not user_profile:
+            return {'unread_notifications_count': 0}
+        
+        # Count unread notifications for this user profile
+        unread_count = Notification.objects.filter(
+            user_profile=user_profile,
+            is_read=False
+        ).count()
+        
+        return {'unread_notifications_count': unread_count}
+    except Experiment.DoesNotExist:
+        return {'unread_notifications_count': 0}
+    except Exception as e:
+        # Log the error and return 0
+        print(f"Error in unread_notifications context processor: {str(e)}")
+        return {'unread_notifications_count': 0}

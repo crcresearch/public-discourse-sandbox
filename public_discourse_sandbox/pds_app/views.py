@@ -265,9 +265,75 @@ class NotificationsView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequi
         
     def get_queryset(self):
         """Get notifications for the current user in the current experiment."""
-        return Notification.objects.filter(
+        # Get filter parameter
+        filter_type = self.request.GET.get('filter')
+        previous_notification_id = self.request.GET.get('previous_notification_id')
+        page_size = self.request.GET.get('page_size', 20)  # Default to 20 notifications per page
+        
+        # Start with all notifications for this user profile
+        notifications = Notification.objects.filter(
             user_profile=self.user_profile
-        ).order_by('-created_date')
+        )
+        
+        # Apply filtering if specified
+        if filter_type and filter_type != 'all':
+            notifications = notifications.filter(event=filter_type)
+        
+        # Apply pagination if specified
+        if previous_notification_id:
+            try:
+                previous_notification = Notification.objects.get(id=previous_notification_id)
+                notifications = notifications.filter(created_date__lt=previous_notification.created_date)
+            except Notification.DoesNotExist:
+                pass
+        
+        # Order by most recent first and limit to page size
+        return notifications.order_by('-created_date')[:int(page_size)]
+    
+    def get(self, request, *args, **kwargs):
+        """
+        Override the get method to mark all notifications as read when the user
+        accesses the notifications page, but preserve which ones were unread.
+        Also handle HTMX requests for infinite scroll.
+        """
+        # First, get all unread notifications
+        unread_notifications = [str(id) for id in Notification.objects.filter(
+            user_profile=self.user_profile,
+            is_read=False
+        ).values_list('id', flat=True)]
+        
+        # Mark all unread notifications as read
+        Notification.objects.filter(
+            user_profile=self.user_profile,
+            is_read=False
+        ).update(is_read=True)
+        
+        # Store the IDs of previously unread notifications in the request
+        # so they can be accessed in get_context_data
+        request.unread_notification_ids = unread_notifications
+        
+        # For HTMX requests, return only the notification list partial
+        if request.headers.get('HX-Request'):
+            self.template_name = 'partials/_notification_list.html'
+        
+        # Call the parent get method to render the page as usual
+        return super().get(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        """Add information about which notifications were previously unread."""
+        context = super().get_context_data(**kwargs)
+        
+        # Get the list of previously unread notification IDs from the request
+        unread_ids = getattr(self.request, 'unread_notification_ids', [])
+        
+        # Mark notifications that were previously unread
+        for notification in context['notifications']:
+            notification.was_unread = str(notification.id) in unread_ids
+        
+        # Add the current filter to the context
+        context['current_filter'] = self.request.GET.get('filter', 'all')
+        
+        return context
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
     """About page view that displays information about the application."""
@@ -351,6 +417,12 @@ class FollowView(LoginRequiredMixin, View):
                     target_node=target_profile
                 )
                 is_following = True
+                # Create a notification for the target user
+                Notification.objects.create(
+                    user_profile=target_profile,
+                    event='follow',
+                    content=f'@{user_profile.username} followed you'
+                )
             
             return JsonResponse({
                 'status': 'success',

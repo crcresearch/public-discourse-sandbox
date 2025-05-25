@@ -41,6 +41,9 @@
             <a href="{% if experiment %}{% url 'notifications_with_experiment' experiment.identifier %}{% else %}{% url 'notifications' %}{% endif %}" class="{% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
                 <i class="ri-notification-3-line"></i>
                 Notifications
+                {% if unread_notifications_count > 0 %}
+                <span class="notification-badge">{{ unread_notifications_count }}</span>
+                {% endif %}
             </a>
         </li>
         <li class="nav-item">

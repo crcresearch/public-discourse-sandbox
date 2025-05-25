@@ -12,54 +12,46 @@
 
     <!-- Notification Filters -->
     <div class="notification-filters">
-        <button class="filter-btn active" data-filter="all">
+        <button class="filter-btn {% if not request.GET.filter %}active{% endif %}" 
+                hx-get="{{ request.path }}" 
+                hx-target="#notifications-container" 
+                hx-swap="innerHTML"
+                data-filter="all">
             <i class="ri-notification-3-line"></i> {% translate "All" %}
         </button>
-        <button class="filter-btn" data-filter="likes">
+        <button class="filter-btn {% if request.GET.filter == 'post_liked' %}active{% endif %}" 
+                hx-get="{{ request.path }}?filter=post_liked" 
+                hx-target="#notifications-container" 
+                hx-swap="innerHTML"
+                data-filter="post_liked">
             <i class="ri-heart-3-line"></i> {% translate "Likes" %}
         </button>
-        <button class="filter-btn" data-filter="comments">
+        <button class="filter-btn {% if request.GET.filter == 'post_replied' %}active{% endif %}" 
+                hx-get="{{ request.path }}?filter=post_replied" 
+                hx-target="#notifications-container" 
+                hx-swap="innerHTML"
+                data-filter="post_replied">
             <i class="ri-chat-1-line"></i> {% translate "Comments" %}
         </button>
-        <button class="filter-btn" data-filter="reposts">
+        <button class="filter-btn {% if request.GET.filter == 'post_reposted' %}active{% endif %}" 
+                hx-get="{{ request.path }}?filter=post_reposted" 
+                hx-target="#notifications-container" 
+                hx-swap="innerHTML"
+                data-filter="post_reposted">
             <i class="ri-repeat-line"></i> {% translate "Reposts" %}
         </button>
-        <button class="filter-btn" data-filter="follows">
+        <button class="filter-btn {% if request.GET.filter == 'follow' %}active{% endif %}" 
+                hx-get="{{ request.path }}?filter=follow" 
+                hx-target="#notifications-container" 
+                hx-swap="innerHTML"
+                data-filter="follow">
             <i class="ri-user-follow-line"></i> {% translate "Follows" %}
         </button>
     </div>
 
     <!-- Notifications List -->
-    <div class="notifications-list">
-        {% if notifications %}
-            {% for notification in notifications %}
-                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
-                     data-type="{{ notification.event }}">
-                    <div class="notification-icon">
-                        {% if notification.event == 'like' %}
-                            <i class="ri-heart-3-fill"></i>
-                        {% elif notification.event == 'comment' %}
-                            <i class="ri-chat-1-fill"></i>
-                        {% elif notification.event == 'repost' %}
-                            <i class="ri-repeat-fill"></i>
-                        {% elif notification.event == 'follow' %}
-                            <i class="ri-user-follow-fill"></i>
-                        {% else %}
-                            <i class="ri-notification-3-fill"></i>
-                        {% endif %}
-                    </div>
-                    <div class="notification-content">
-                        <div class="notification-text">{{ notification.content }}</div>
-                        <div class="notification-time">{{ notification.created_date|timesince }} ago</div>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="no-notifications">
-                <i class="ri-notification-off-line"></i>
-                <p>{% translate "No notifications yet" %}</p>
-            </div>
-        {% endif %}
+    <div class="notifications-list" id="notifications-container">
+        {% include 'partials/_notification_list.html' %}
     </div>
 </div>
 
@@ -67,28 +59,25 @@
 {% include 'pages/right_content.html' %}
 
 <script>
+// Enhance the UI for filter buttons
 document.addEventListener('DOMContentLoaded', function() {
     const filterButtons = document.querySelectorAll('.filter-btn');
-    const notificationItems = document.querySelectorAll('.notification-item');
-
+    
+    // Update the active state on button click
     filterButtons.forEach(button => {
         button.addEventListener('click', () => {
-            // Remove active class from all buttons
             filterButtons.forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
             button.classList.add('active');
-
-            const filter = button.dataset.filter;
-
-            // Show/hide notifications based on filter
-            notificationItems.forEach(item => {
-                if (filter === 'all' || item.dataset.type === filter) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
         });
+    });
+    
+    // Make sure the HTMX loading indicator appears
+    htmx.on('#notifications-container', 'htmx:beforeRequest', function(evt) {
+        evt.detail.target.classList.add('loading');
+    });
+    
+    htmx.on('#notifications-container', 'htmx:afterRequest', function(evt) {
+        evt.detail.target.classList.remove('loading');
     });
 });
 </script>

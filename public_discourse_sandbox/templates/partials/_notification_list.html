@@ -1,0 +1,43 @@
+{% for notification in notifications %}
+    <div class="notification-item {% if notification.was_unread %}unread{% endif %}" 
+         data-type="{{ notification.event }}"
+         {% if forloop.last %}hx-get="{{ request.path }}?previous_notification_id={{notification.id}}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" hx-trigger="revealed" hx-swap="afterend"{% endif %}>
+         <div class="notification-icon">
+            {% if notification.event == 'post_liked' %}
+                <i class="ri-heart-3-fill"></i>
+            {% elif notification.event == 'post_replied' %}
+                <i class="ri-chat-1-fill"></i>
+            {% elif notification.event == 'post_reposted' %}
+                <i class="ri-repeat-fill"></i>
+            {% elif notification.event == 'follow' %}
+                <i class="ri-user-follow-fill"></i>
+            {% else %}
+                <i class="ri-notification-3-fill"></i>
+            {% endif %}
+        </div>
+        <div class="notification-content">
+            <div class="notification-text">
+                {% if notification.was_unread %}
+                <span class="new-badge">New</span>
+                {% endif %}
+                {{ notification.content }}
+            </div>
+            <div class="notification-time">{{ notification.created_date|timesince }} ago</div>
+        </div>
+    </div>
+{% empty %}
+    {% if not request.GET.previous_notification_id %}
+    <div class="empty-notifications">
+        <i class="ri-notification-off-line"></i>
+        {% if request.GET.filter %}
+            <p>You don't have any 
+                {% if request.GET.filter == 'post_liked' %}Likes
+                {% elif request.GET.filter == 'post_replied' %}Comments
+                {% elif request.GET.filter == 'post_reposted' %}Repost
+                {% elif request.GET.filter == 'follow' %}Follow{% endif %} notifications.</p>
+        {% else %}
+            <p>You don't have any notifications yet.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+{% endfor %} 
