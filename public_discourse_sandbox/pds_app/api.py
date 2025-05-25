@@ -223,12 +223,6 @@ def handle_like(request, post_id):
             existing_vote.delete()
             post.num_upvotes -= 1
             post.save()
-            # Create a notification for the post author
-            Notification.objects.create(
-                user_profile=post.user_profile,
-                event='post_unliked',
-                content=f'@{user_profile.username} unliked your post'
-            )
             return JsonResponse({
                 'status': 'success',
                 'message': 'Post unliked',
