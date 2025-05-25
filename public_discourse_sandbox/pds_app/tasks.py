@@ -8,11 +8,15 @@ from .models import DigitalTwin
 
 logger = logging.getLogger(__name__)
 
-def get_random_digitial_twins(count=1, exclude_twin=None):
-    """Get random active twins, optionally excluding a specific twin"""
+def get_random_digitial_twins(count=1, exclude_twin=None, experiment_id=None):
+    """Get random active twins, optionally excluding a specific twin and/or filtering by experiment"""
     active_twins = DigitalTwin.objects.filter(is_active=True)
     if exclude_twin:
         active_twins = active_twins.exclude(id=exclude_twin.id)
+    
+    # Filter by experiment if provided
+    if experiment_id:
+        active_twins = active_twins.filter(user_profile__experiment_id=experiment_id)
     
     twin_count = active_twins.count()
     logger.info(f"Found {twin_count} eligible active twins")
@@ -58,3 +62,38 @@ def process_digital_twin_response(post_id: str, twin_id: str):
         
     except Exception as e:
         logger.error(f"Error processing bot response: {str(e)}", exc_info=True) 
+
+@shared_task
+def generate_digital_twin_post(experiment_id=None, force=False):
+    """
+    Celery task to make a DigitalTwin generate a new original post (not a reply).
+    
+    Args:
+        experiment_id (str, optional): UUID of the experiment to filter twins by.
+            If None, will select from all active twins across experiments.
+        force (bool, optional): If True, bypasses the should_post check. Default is False.
+    """
+    logger.info(f"Starting digital twin post generation. Experiment filter: {experiment_id}, Force: {force}")
+    
+    try:
+        # Get a random digital twin
+        twins = get_random_digitial_twins(count=1, experiment_id=experiment_id)
+        
+        if not twins:
+            logger.warning(f"No active digital twins found for experiment_id: {experiment_id}")
+            return
+            
+        twin = twins[0]
+        logger.info(f"Selected digital twin: {twin.user_profile.username}")
+
+        # Initialize the digital twin service
+        dt_service = DTService()
+        
+        # Use the service to create an original post, passing the force parameter
+        post_id = dt_service.create_original_post(twin, force=force)
+        
+        return post_id
+        
+    except Exception as e:
+        logger.error(f"Error generating digital twin post: {str(e)}", exc_info=True)
+        return None 
