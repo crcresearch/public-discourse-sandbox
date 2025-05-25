@@ -30,41 +30,17 @@
     </div>
 
     <!-- Notifications List -->
-    <div class="notifications-list">
+    <div class="notifications-list" id="notifications-container">
+       
         {% if notifications %}
-            {% for notification in notifications %}
-                <div class="notification-item {% if notification.was_unread %}unread{% endif %}" 
-                     data-type="{{ notification.event }}">
-                    <div class="notification-icon">
-                        {% if notification.event == 'post_liked' %}
-                            <i class="ri-heart-3-fill"></i>
-                        {% elif notification.event == 'post_replied' %}
-                            <i class="ri-chat-1-fill"></i>
-                        {% elif notification.event == 'post_reposted' %}
-                            <i class="ri-repeat-fill"></i>
-                        {% elif notification.event == 'follow' %}
-                            <i class="ri-user-follow-fill"></i>
-                        {% else %}
-                            <i class="ri-notification-3-fill"></i>
-                        {% endif %}
-                    </div>
-                    <div class="notification-content">
-                        <div class="notification-text">
-                            {% if notification.was_unread %}
-                            <span class="new-badge">New</span>
-                            {% endif %}
-                            {{ notification.content }}
-                        </div>
-                        <div class="notification-time">{{ notification.created_date|timesince }} ago</div>
-                    </div>
-                </div>
-            {% endfor %}
+            {% include 'partials/_notification_list.html' %}
         {% else %}
-            <div class="no-notifications">
-                <i class="ri-notification-off-line"></i>
-                <p>{% translate "No notifications yet" %}</p>
-            </div>
-        {% endif %}
+        <div class="no-notifications">
+            <i class="ri-notification-off-line"></i>
+            <p>{% translate "No notifications yet" %}</p>
+        </div>
+    {% endif %}
+
     </div>
 </div>
 
