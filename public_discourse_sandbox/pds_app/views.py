@@ -268,6 +268,44 @@ class NotificationsView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequi
         return Notification.objects.filter(
             user_profile=self.user_profile
         ).order_by('-created_date')
+    
+    def get(self, request, *args, **kwargs):
+        """
+        Override the get method to mark all notifications as read when the user
+        accesses the notifications page, but preserve which ones were unread.
+        """
+        # First, get all unread notifications
+        unread_notifications = [str(id) for id in Notification.objects.filter(
+            user_profile=self.user_profile,
+            is_read=False
+        ).values_list('id', flat=True)]
+        
+        # Mark all unread notifications as read
+        Notification.objects.filter(
+            user_profile=self.user_profile,
+            is_read=False
+        ).update(is_read=True)
+        
+        # Store the IDs of previously unread notifications in the request
+        # so they can be accessed in get_context_data
+        request.unread_notification_ids = unread_notifications
+        
+        # Call the parent get method to render the page as usual
+        return super().get(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        """Add information about which notifications were previously unread."""
+        context = super().get_context_data(**kwargs)
+        
+        # Get the list of previously unread notification IDs from the request
+        unread_ids = getattr(self.request, 'unread_notification_ids', [])
+        print("unread_ids", unread_ids)
+        
+        # Mark notifications that were previously unread
+        for notification in context['notifications']:
+            notification.was_unread = str(notification.id) in unread_ids
+        
+        return context
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
     """About page view that displays information about the application."""
@@ -351,6 +389,12 @@ class FollowView(LoginRequiredMixin, View):
                     target_node=target_profile
                 )
                 is_following = True
+                # Create a notification for the target user
+                Notification.objects.create(
+                    user_profile=target_profile,
+                    event='follow',
+                    content=f'@{user_profile.username} followed you'
+                )
             
             return JsonResponse({
                 'status': 'success',

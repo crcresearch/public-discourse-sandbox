@@ -15,16 +15,16 @@
         <button class="filter-btn active" data-filter="all">
             <i class="ri-notification-3-line"></i> {% translate "All" %}
         </button>
-        <button class="filter-btn" data-filter="likes">
+        <button class="filter-btn" data-filter="post_liked">
             <i class="ri-heart-3-line"></i> {% translate "Likes" %}
         </button>
-        <button class="filter-btn" data-filter="comments">
+        <button class="filter-btn" data-filter="post_replied">
             <i class="ri-chat-1-line"></i> {% translate "Comments" %}
         </button>
-        <button class="filter-btn" data-filter="reposts">
+        <button class="filter-btn" data-filter="post_reposted">
             <i class="ri-repeat-line"></i> {% translate "Reposts" %}
         </button>
-        <button class="filter-btn" data-filter="follows">
+        <button class="filter-btn" data-filter="follow">
             <i class="ri-user-follow-line"></i> {% translate "Follows" %}
         </button>
     </div>
@@ -33,14 +33,14 @@
     <div class="notifications-list">
         {% if notifications %}
             {% for notification in notifications %}
-                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
+                <div class="notification-item {% if notification.was_unread %}unread{% endif %}" 
                      data-type="{{ notification.event }}">
                     <div class="notification-icon">
-                        {% if notification.event == 'like' %}
+                        {% if notification.event == 'post_liked' %}
                             <i class="ri-heart-3-fill"></i>
-                        {% elif notification.event == 'comment' %}
+                        {% elif notification.event == 'post_replied' %}
                             <i class="ri-chat-1-fill"></i>
-                        {% elif notification.event == 'repost' %}
+                        {% elif notification.event == 'post_reposted' %}
                             <i class="ri-repeat-fill"></i>
                         {% elif notification.event == 'follow' %}
                             <i class="ri-user-follow-fill"></i>
@@ -49,7 +49,12 @@
                         {% endif %}
                     </div>
                     <div class="notification-content">
-                        <div class="notification-text">{{ notification.content }}</div>
+                        <div class="notification-text">
+                            {% if notification.was_unread %}
+                            <span class="new-badge">New</span>
+                            {% endif %}
+                            {{ notification.content }}
+                        </div>
                         <div class="notification-time">{{ notification.created_date|timesince }} ago</div>
                     </div>
                 </div>
