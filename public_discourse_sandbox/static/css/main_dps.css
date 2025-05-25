@@ -371,7 +371,34 @@ a.back-link {
 }
 
 .notifications-list {
-    padding: 1rem 0;
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+.notifications-list.loading::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.empty-notifications {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-color-secondary);
+}
+
+.empty-notifications p {
+    font-size: 16px;
+    margin-top: 10px;
 }
 
 .notification-item {

@@ -25,4 +25,19 @@
             <div class="notification-time">{{ notification.created_date|timesince }} ago</div>
         </div>
     </div>
+{% empty %}
+    {% if not request.GET.previous_notification_id %}
+    <div class="empty-notifications">
+        <i class="ri-notification-off-line"></i>
+        {% if request.GET.filter %}
+            <p>You don't have any 
+                {% if request.GET.filter == 'post_liked' %}Likes
+                {% elif request.GET.filter == 'post_replied' %}Comments
+                {% elif request.GET.filter == 'post_reposted' %}Repost
+                {% elif request.GET.filter == 'follow' %}Follow{% endif %} notifications.</p>
+        {% else %}
+            <p>You don't have any notifications yet.</p>
+        {% endif %}
+    </div>
+    {% endif %}
 {% endfor %} 

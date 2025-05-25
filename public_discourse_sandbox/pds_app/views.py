@@ -330,6 +330,9 @@ class NotificationsView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequi
         for notification in context['notifications']:
             notification.was_unread = str(notification.id) in unread_ids
         
+        # Add the current filter to the context
+        context['current_filter'] = self.request.GET.get('filter', 'all')
+        
         return context
 
 class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
