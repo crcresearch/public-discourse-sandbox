@@ -851,7 +851,7 @@ class AcceptInvitationView(View):
 
             # If user is authenticated and the email matches the current user, check if they already have a profile for this experiment
             if request.user.is_authenticated:
-                if request.user.username == email:
+                if str(request.user.email) == str(email):
                     # Check if user already has a profile for this experiment
                     try:
                         user_profile = UserProfile.objects.get(user=request.user, experiment=experiment)
