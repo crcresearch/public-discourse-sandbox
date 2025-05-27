@@ -68,12 +68,11 @@ def get_post_replies(request, post_id):
             parent_post__id=post_id,
         ).select_related(
             'user_profile',
-            'user_profile__user'
         ).order_by('created_date')
 
         replies_data = [{
             'id': str(reply.id),  # Convert UUID to string
-            'user_id': str(reply.user_profile.user.id),  # Add user ID
+            'user_profile_id': str(reply.user_profile.id),  # Add user profile ID (not user ID)
             'username': reply.user_profile.username,
             'display_name': reply.user_profile.display_name,
             'content': reply.content,
