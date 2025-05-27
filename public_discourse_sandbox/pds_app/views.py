@@ -17,8 +17,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import redirect_to_login
 from django.shortcuts import resolve_url
+from django.utils.translation import gettext_lazy as _
 User = get_user_model()
 import json
+
 
 def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None, previous_post_id=None, page_size=10):
     """
@@ -847,20 +849,36 @@ class AcceptInvitationView(View):
                 next_url = request.get_full_path()
                 return redirect_to_login(next_url, login_url)
 
-            # If user is authenticated
+            # If user is authenticated and the email matches the current user, check if they already have a profile for this experiment
             if request.user.is_authenticated:
-                # Check if user already has a profile for this experiment
-                if UserProfile.objects.filter(user=request.user, experiment=experiment).exists():
+                if request.user.username == email:
+                    # Check if user already has a profile for this experiment
+                    try:
+                        user_profile = UserProfile.objects.get(user=request.user, experiment=experiment)
+                        return render(request, 'pages/accept_invitation.html', {
+                            'experiment': experiment,
+                            'already_accepted': True,
+                            'home_url': reverse('home_with_experiment', kwargs={'experiment_identifier': experiment_identifier}),
+                            'current_user_profile': user_profile
+                        })
+                    except UserProfile.DoesNotExist:
+                        return render(request, 'pages/accept_invitation.html', {
+                            'experiment': experiment,
+                            'existing_user': True,
+                            'create_profile_url': reverse('create_profile', kwargs={'experiment_identifier': experiment_identifier}),
+                            'current_user_profile': None
+                        })
+                else:
+                    # User Profile is needed for left nav context
+                    try:
+                        user_profile = UserProfile.objects.get(user=request.user, experiment=experiment)
+                    except UserProfile.DoesNotExist:
+                        user_profile = None
                     return render(request, 'pages/accept_invitation.html', {
                         'experiment': experiment,
-                        'already_accepted': True,
-                        'home_url': reverse('home', kwargs={'experiment_identifier': experiment_identifier})
+                        'error': _('You are logged in as ' + str(request.user) + ' but the invitation link is for ' + str(email) + '. To check invitation status, please either log in as ' + str(email) + ' or log out and try again.'),
+                        'current_user_profile': user_profile
                     })
-                return render(request, 'pages/accept_invitation.html', {
-                    'experiment': experiment,
-                    'existing_user': True,
-                    'create_profile_url': reverse('create_profile', kwargs={'experiment_identifier': experiment_identifier})
-                })
             else:
                 # If the email does not match a user, proceed to signup
                 signup_url = reverse('users:signup_with_profile') + f'?experiment={experiment_identifier}&email={email}'

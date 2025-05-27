@@ -6,7 +6,7 @@
 
     <!-- Add My Account Link -->
     {% if user.is_authenticated and experiment and not hide_main_nav %}
-    <a href="{% if experiment %}{% url 'user_profile_detail' experiment.identifier current_user_profile.id %}{% else %}{% url 'users:detail' request.user.id %}{% endif %}" class="my-account-link {% if '/users/' in request.path %}active{% endif %}">
+    <a href="{% if experiment and current_user_profile %}{% url 'user_profile_detail' experiment.identifier current_user_profile.id %}{% else %}{% url 'users:detail' request.user.id %}{% endif %}" class="my-account-link {% if '/users/' in request.path %}active{% endif %}">
         <div class="my-account-content">
             <div class="my-account-photo">
                 {% if current_user_profile.profile_picture %}
@@ -47,7 +47,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="{% if experiment %}{% url 'user_profile_detail' experiment.identifier current_user_profile.id %}{% else %}{% url 'users:detail' request.user.id %}{% endif %}" class="{% if request.resolver_match.namespace == 'users' and request.resolver_match.url_name == 'detail' %}active{% endif %}">
+            <a href="{% if experiment and current_user_profile %}{% url 'user_profile_detail' experiment.identifier current_user_profile.id %}{% else %}{% url 'users:detail' request.user.id %}{% endif %}" class="{% if request.resolver_match.namespace == 'users' and request.resolver_match.url_name == 'detail' %}active{% endif %}">
                 <i class="ri-user-3-line"></i>
                 {% translate "My Profile" %}
             </a>
