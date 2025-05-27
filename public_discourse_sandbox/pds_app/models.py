@@ -202,20 +202,28 @@ class Post(BaseModel):
     def parse_hashtags(self):
         """
         Returns a list of hashtags for this post.
+        Uses regex to find Twitter-style hashtags that contain only alphanumeric chars and underscores.
         """
+        import re
+        
         if self.content:
-            # Process hashtags
-            for word in self.content.split():
-                if word.startswith('#'):
-                    hashtag = word[1:]  # Remove the # symbol
-                    print("Hashtag: ", hashtag)
-                    try:
-                        hashtag, created = Hashtag.objects.get_or_create(
-                            tag=hashtag.lower(),
-                            post=self
-                        )
-                    except Exception as e:
-                        print(f"Error processing hashtag {hashtag}: {e}")
+            print("Parsing hashtags for post: ", self.content)
+            # Find all hashtags using regex
+            # Matches # followed by word chars (letters, numbers, underscore)
+            # The (?<!\S) ensures the # has whitespace or start-of-string before it
+            hashtag_pattern = r'(?<!\S)#([a-zA-Z0-9_]+)'
+            matches = re.finditer(hashtag_pattern, self.content)
+            
+            for match in matches:
+                hashtag = match.group(1)  # group(1) gets just the tag without the #
+                print("Hashtag: ", hashtag)
+                try:
+                    hashtag, created = Hashtag.objects.get_or_create(
+                        tag=hashtag.lower(),
+                        post=self
+                    )
+                except Exception as e:
+                    print(f"Error processing hashtag {hashtag}: {e}")
 
     def save(self, *args, **kwargs):
         # Check for profanity in content

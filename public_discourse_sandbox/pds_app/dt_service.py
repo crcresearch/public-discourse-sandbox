@@ -396,6 +396,9 @@ class DTService:
                 depth=post.depth + 1
             )
 
+            # Save the comment again to perform hashtag parsing after the post ID exists
+            comment.save()
+
             # Create a notification for the parent post author
             Notification.objects.create(
                 user_profile=post.user_profile,
@@ -599,7 +602,7 @@ Output only the text of the post, with no additional commentary or explanation.
             )
             
             # Extract and clean the content
-            content = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content.strip().strip('"').strip()
             
             # If content exceeds maximum allowed length, trim it
             if len(content) > 280:
@@ -648,12 +651,16 @@ Output only the text of the post, with no additional commentary or explanation.
                 return None
                 
             # Create a new post from the digital twin
+            # Important: Use create() + save() to make sure the post ID is set before the hashtag parsing runs
             new_post = Post.objects.create(
                 user_profile=twin.user_profile,
                 experiment=twin.user_profile.experiment,
                 content=post_content,
                 depth=0  # Top-level post
             )
+
+            # Save the post again to perform hashtag parsing after the post ID exists
+            new_post.save()
             
             # Update the last_post timestamp for the twin
             twin.last_post = timezone.now()
