@@ -164,3 +164,12 @@ document.addEventListener('DOMContentLoaded', function() {
         makeHashtagsClickable(modal);
     });
 });
+
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+    // Get the container that was just updated
+    const container = evt.detail.target.parentElement;
+    console.log("htmx:afterSwap", container);
+    if (container) {
+        makeHashtagsClickable(container);
+    }
+});
