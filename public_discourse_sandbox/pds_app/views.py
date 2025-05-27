@@ -951,6 +951,13 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileR
         context['following'] = UserProfile.objects.filter(id__in=following_links.values_list('target_node', flat=True))
         
         return context
+    
+    @method_decorator(check_banned)
+    def get(self, request, *args, **kwargs):
+        """Override get to handle HTMX requests."""
+        if request.headers.get('HX-Request'):
+            self.template_name = 'partials/_post_list.html'
+        return super().get(request, *args, **kwargs)
 
 
 class SettingsView(LoginRequiredMixin, TemplateView):
