@@ -47,9 +47,6 @@ class ExperimentForm(forms.ModelForm):
         self.fields['irb_additions'].help_text = 'Additional IRB information for your experiment (optional)'
 
 class EnrollDigitalTwinForm(forms.Form):
-    # User fields
-    name = forms.CharField(max_length=255, required=True)
-    email = forms.EmailField(required=True)
     # UserProfile fields
     display_name = forms.CharField(max_length=255, required=True)
     username = forms.CharField(max_length=255, required=True)
@@ -79,12 +76,6 @@ class EnrollDigitalTwinForm(forms.Form):
             # Raise an error if no experiment is provided, as this should never happen
             raise forms.ValidationError('No experiment defined. Cannot validate username.')
         return username
-
-    def clean_email(self):
-        email = self.cleaned_data['email']
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError('A user with this email already exists.')
-        return email
 
 class UserProfileForm(forms.ModelForm):
     """

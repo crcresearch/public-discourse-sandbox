@@ -713,15 +713,8 @@ class EnrollDigitalTwinView(LoginRequiredMixin, View):
                 return JsonResponse({'error': form.errors.as_json()}, status=400)
                 
             with transaction.atomic():
-                # Create User (custom user model: only email, name, password)
-                user = User.objects.create_user(
-                    email=form.cleaned_data['email'],
-                    password=User.objects.make_random_password(),
-                    name=form.cleaned_data['name']
-                )
                 # Create UserProfile
                 user_profile = UserProfile.objects.create(
-                    user=user,
                     display_name=form.cleaned_data['display_name'],
                     username=form.cleaned_data['username'],
                     experiment=experiment,
@@ -892,8 +885,72 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileR
     View for displaying a user's profile.
     """
     model = UserProfile
-    template_name = 'pages/user_profile.html'
-    context_object_name = 'profile'
+    template_name = 'users/user_profile_detail.html'
+    context_object_name = 'viewed_profile'
+    slug_url_kwarg = 'user_profile_id'
+
+
+    def get_context_data(self, **kwargs):
+        """
+        Add experiment and profile context to template context.
+        """
+        context = super().get_context_data(**kwargs)
+        # The ExperimentContextMixin already adds:
+        # - experiment
+        # - current_user_profile (the current user's profile in this experiment)
+        # - is_moderator (current user's moderator status)
+        
+        # Add the viewed profile's role information
+        context['viewed_profile'] = self.object
+        context['is_creator'] = self.object.user == self.experiment.creator
+
+        # Add follower and following counts
+        context['follower_count'] = SocialNetwork.objects.filter(target_node=self.object).count()
+        context['following_count'] = SocialNetwork.objects.filter(source_node=self.object).count()
+
+        # Get pagination parameters
+        previous_post_id = self.request.GET.get('previous_post_id', None)
+        page_size = self.request.GET.get('page_size', 10)  # Default to 10 posts per page
+
+        # Get posts by this user (not deleted, ordered by newest first)
+        posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+
+        # If previous_post_id provided, paginate from that post
+        if previous_post_id:
+            try:
+                previous_post = Post.objects.get(id=previous_post_id)
+                posts = posts.filter(created_date__lt=previous_post.created_date)
+            except Post.DoesNotExist:
+                pass
+
+        # Order by newest first and limit to page size
+        context['user_posts'] = posts.order_by('-created_date')[:int(page_size)]
+        # Annotate each post with comment_count and has_user_voted for template compatibility
+        current_user = self.request.user
+        for post in context['user_posts']:
+            post.comment_count = post.get_comment_count()
+            post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+
+        # If HTMX request, map user_posts to posts for template compatibility
+        if self.request.headers.get('HX-Request'):
+            context['posts'] = context['user_posts']
+
+        # Add whether the current user is following the viewed profile
+        current_user_profile = context.get('current_user_profile')
+        if current_user_profile:
+            context['is_following_viewed_profile'] = SocialNetwork.objects.filter(source_node=current_user_profile, target_node=self.object).exists()
+        else:
+            context['is_following_viewed_profile'] = False
+        
+        # Followers: UserProfiles that follow this profile
+        follower_links = SocialNetwork.objects.filter(target_node=self.object)
+        context['followers'] = UserProfile.objects.filter(id__in=follower_links.values_list('source_node', flat=True))
+
+        # Following: UserProfiles that this profile follows
+        following_links = SocialNetwork.objects.filter(source_node=self.object)
+        context['following'] = UserProfile.objects.filter(id__in=following_links.values_list('target_node', flat=True))
+        
+        return context
 
 
 class SettingsView(LoginRequiredMixin, TemplateView):
