@@ -12,17 +12,6 @@
             
             <form id="enroll-digital-twin-form" enctype="multipart/form-data" autocomplete="off" onsubmit="handleEnrollDigitalTwinSubmit(event)">
                 {% csrf_token %}
-                <h4>{% translate "User Information" %}</h4>
-                <div class="form-group">
-                    <label for="dt_name">{% translate "Name" %}</label>
-                    <input type="text" id="dt_name" name="name" required class="form-control">
-                    <div class="invalid-feedback" id="error-name"></div>
-                </div>
-                <div class="form-group">
-                    <label for="dt_email">{% translate "Email" %}</label>
-                    <input type="email" id="dt_email" name="email" required class="form-control">
-                    <div class="invalid-feedback" id="error-email"></div>
-                </div>
                 <h4>{% translate "Profile Information" %}</h4>
                 <div class="form-group">
                     <label for="dt_display_name">{% translate "Display Name" %}</label>
