@@ -10,60 +10,57 @@
     <!-- Left Sidebar -->
     {% include 'pages/left_nav.html' %}
     <div class="main-content">
-        <header class="main-header">
+        <div class="signup-card">
             <h1>{% trans "Sign In" %}</h1>
-        </header>
-        <!-- {% element h1 %}
-            {% trans "Sign In" %}
-        {% endelement %} -->
-        {% if not SOCIALACCOUNT_ONLY %}
-            {% setvar link %}
-                <a href="{{ signup_url }}">
+            {% if not SOCIALACCOUNT_ONLY %}
+                {% setvar link %}
+                    <a href="{{ signup_url }}">
                 {% endsetvar %}
                 {% setvar end_link %}
-                </a>
-            {% endsetvar %}
-            {% element p %}
-                {% blocktranslate %}If you have not created an account yet, then please {{ link }}sign up{{ end_link }} first.{% endblocktranslate %}
-            {% endelement %}
-            {% url 'account_login' as login_url %}
-            {% element form form=form method="post" action=login_url tags="entrance,login" %}
-                {% slot body %}
-                    {% csrf_token %}
-                    {% element fields form=form unlabeled=True %}
-                    {% endelement %}
-                    {{ redirect_field }}
-                {% endslot %}
-                {% slot actions %}
-                    <div style="text-align: right;">
-                        <button type="submit" class="post-button" style="background-color: #1d1e3a;">
-                            <i class="ri-login-box-line"></i>
-                            <span>{% trans "Sign In" %}</span>
-                        </button>
-                    </div>
-                {% endslot %}
-            {% endelement %}
-        {% endif %}
-        {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
-            <hr style="margin: 30px 0;">
-            <div style="display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 15px;">
-                {% if PASSKEY_LOGIN_ENABLED %}
-                    <button type="submit" form="mfa_login" id="passkey_login" class="post-button" style="background-color: #6c757d;">
-                        <i class="ri-key-line"></i>
-                        <span>{% trans "Sign in with a passkey" %}</span>
-                    </button>
-                {% endif %}
-                {% if LOGIN_BY_CODE_ENABLED %}
-                    <a href="{{ request_login_code_url }}" class="post-button" style="background-color: #6c757d;">
-                        <i class="ri-message-3-line"></i>
-                        <span>{% trans "Send me a sign-in code" %}</span>
                     </a>
-                {% endif %}
-            </div>
-        {% endif %}
-        {% if SOCIALACCOUNT_ENABLED %}
-            {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
-        {% endif %}
+                {% endsetvar %}
+                <p>
+                    {% blocktranslate %}If you have not created an account yet, then please {{ link }}sign up{{ end_link }} first.{% endblocktranslate %}
+                </p>
+                {% url 'account_login' as login_url %}
+                {% element form form=form method="post" action=login_url tags="entrance,login" %}
+                    {% slot body %}
+                        {% csrf_token %}
+                        {% element fields form=form unlabeled=True %}
+                        {% endelement %}
+                        {{ redirect_field }}
+                    {% endslot %}
+                    {% slot actions %}
+                        <div class="form-actions">
+                            <button type="submit" class="post-button">
+                                <i class="ri-login-box-line"></i>
+                                <span>{% trans "Sign In" %}</span>
+                            </button>
+                        </div>
+                    {% endslot %}
+                {% endelement %}
+            {% endif %}
+            {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
+                <hr style="margin: 30px 0;">
+                <div class="form-actions" style="flex-direction: column; gap: 15px; align-items: flex-start;">
+                    {% if PASSKEY_LOGIN_ENABLED %}
+                        <button type="submit" form="mfa_login" id="passkey_login" class="post-button secondary">
+                            <i class="ri-key-line"></i>
+                            <span>{% trans "Sign in with a passkey" %}</span>
+                        </button>
+                    {% endif %}
+                    {% if LOGIN_BY_CODE_ENABLED %}
+                        <a href="{{ request_login_code_url }}" class="post-button secondary">
+                            <i class="ri-message-3-line"></i>
+                            <span>{% trans "Send me a sign-in code" %}</span>
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% if SOCIALACCOUNT_ENABLED %}
+                {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+            {% endif %}
+        </div>
     </div>
 
     <!-- Right Sidebar -->
