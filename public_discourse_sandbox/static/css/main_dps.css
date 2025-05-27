@@ -948,6 +948,7 @@ a.user-avatar {
     font-weight: 600;
     text-decoration: none;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .login-btn {
