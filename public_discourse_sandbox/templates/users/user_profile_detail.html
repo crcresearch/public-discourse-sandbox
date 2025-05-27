@@ -111,7 +111,7 @@
                     <ul class="list-group">
                       {% for follower in followers %}
                         <li class="list-group-item d-flex align-items-center">
-                          <a href="{% url 'users:detail' follower.user.id %}" class="user-avatar me-2">
+                          <a href="{% url 'user_profile_detail' experiment.identifier follower.id %}" class="user-avatar me-2">
                             {% if follower.profile_picture %}
                               <img src="{{ follower.profile_picture.url }}" alt="Profile Picture">
                             {% else %}
@@ -119,10 +119,10 @@
                             {% endif %}
                           </a>
                           <div>
-                            <a href="{% url 'users:detail' follower.user.id %}" class="user-name" style="text-decoration: none;">
+                            <a href="{% url 'user_profile_detail' experiment.identifier follower.id %}" class="user-name" style="text-decoration: none;">
                               {{ follower.display_name }}
                             </a>
-                            <a href="{% url 'users:detail' follower.user.id %}" class="user-handle" style="text-decoration: none;">
+                            <a href="{% url 'user_profile_detail' experiment.identifier follower.id %}" class="user-handle" style="text-decoration: none;">
                               @{{ follower.username }}
                             </a>
                           </div>
@@ -141,7 +141,7 @@
                       {% for followee in following %}
                         <li class="list-group-item d-flex align-items-center justify-content-between">
                           <div class="d-flex align-items-center">
-                            <a href="{% url 'users:detail' followee.user.id %}" class="user-avatar me-2">
+                            <a href="{% url 'user_profile_detail' experiment.identifier followee.id %}" class="user-avatar me-2">
                               {% if followee.profile_picture %}
                                 <img src="{{ followee.profile_picture.url }}" alt="Profile Picture">
                               {% else %}
@@ -149,10 +149,10 @@
                               {% endif %}
                             </a>
                             <div>
-                              <a href="{% url 'users:detail' followee.user.id %}" class="user-name" style="text-decoration: none;">
+                              <a href="{% url 'user_profile_detail' experiment.identifier followee.id %}" class="user-name" style="text-decoration: none;">
                                 {{ followee.display_name }}
                               </a>
-                              <a href="{% url 'users:detail' followee.user.id %}" class="user-handle" style="text-decoration: none;">
+                              <a href="{% url 'user_profile_detail' experiment.identifier followee.id %}" class="user-handle" style="text-decoration: none;">
                                 @{{ followee.username }}
                               </a>
                             </div>

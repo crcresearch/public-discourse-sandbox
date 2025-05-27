@@ -191,6 +191,7 @@ document.addEventListener('click', function(event) {
 
 function renderReplies(replies) {
     const repliesList = document.getElementById('repliesList');
+    const user_profile_url = "{% url 'user_profile_detail' experiment.identifier '00000000-0000-0000-0000-000000000000' %}";
     repliesList.innerHTML = replies.map(reply => `
         <div class="reply-item" data-reply-id="${reply.id}">
             <div class="post-header">
@@ -201,8 +202,8 @@ function renderReplies(replies) {
                             '<i class="ri-user-3-line"></i>'}
                     </div>
                     <div>
-                        <a href="/users/${reply.user_id}/" class="user-name">${reply.display_name}</a>
-                        <a href="/users/${reply.user_id}/" class="user-handle">@${reply.username}</a>
+                        <a href="${user_profile_url.replace('00000000-0000-0000-0000-000000000000', reply.user_profile_id)}" class="user-name">${reply.display_name}</a>
+                        <a href="${user_profile_url.replace('00000000-0000-0000-0000-000000000000', reply.user_profile_id)}" class="user-handle">@${reply.username}</a>
                         <span class="dot">·</span>
                         <span class="time">${formatDate(reply.created_date)}</span>
                     </div>

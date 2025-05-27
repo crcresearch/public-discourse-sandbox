@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from .models import Post, UserProfile, Experiment, Vote
+from .models import Post, UserProfile, Experiment, Vote, Notification
 from .decorators import check_banned
 import json
 
@@ -32,6 +32,12 @@ def create_comment(request, experiment_identifier):
                 experiment=experiment,
                 depth=parent_post.depth + 1
                 # is_flagged will be automatically set in the save method via profanity check
+            )
+            # Create a notification for the parent post author
+            Notification.objects.create(
+                user_profile=parent_post.user_profile,
+                event='post_replied',
+                content=f'@{user_profile.username} replied to your post'
             )
             
             response_data = {
@@ -62,12 +68,11 @@ def get_post_replies(request, post_id):
             parent_post__id=post_id,
         ).select_related(
             'user_profile',
-            'user_profile__user'
         ).order_by('created_date')
 
         replies_data = [{
             'id': str(reply.id),  # Convert UUID to string
-            'user_id': str(reply.user_profile.user.id),  # Add user ID
+            'user_profile_id': str(reply.user_profile.id),  # Add user profile ID (not user ID)
             'username': reply.user_profile.username,
             'display_name': reply.user_profile.display_name,
             'content': reply.content,
@@ -232,6 +237,12 @@ def handle_like(request, post_id):
             )
             post.num_upvotes += 1
             post.save()
+            # Create a notification for the post author
+            Notification.objects.create(
+                user_profile=post.user_profile,
+                event='post_liked',
+                content=f'@{user_profile.username} liked your post'
+            )
             return JsonResponse({
                 'status': 'success',
                 'message': 'Post liked',
@@ -307,6 +318,12 @@ def repost(request, post_id):
         # Increment the share count on the original post
         original_post.num_shares += 1
         original_post.save(update_fields=['num_shares'])
+        # Create a notification for the original post author
+        Notification.objects.create(
+            user_profile=original_post.user_profile,
+            event='post_reposted',
+            content=f'@{user_profile.username} reposted your post'
+        )
         
         return JsonResponse({
             'success': True,

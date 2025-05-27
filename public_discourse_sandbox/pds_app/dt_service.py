@@ -5,8 +5,10 @@ from typing import Any, Dict, List
 from django.conf import settings
 import uuid
 from django.core.exceptions import ObjectDoesNotExist
+import random
+from django.utils import timezone
 
-from public_discourse_sandbox.pds_app.models import DigitalTwin, Post
+from public_discourse_sandbox.pds_app.models import DigitalTwin, Post, Notification
 
 """
 DTService Execution Flow:
@@ -393,6 +395,14 @@ class DTService:
                 experiment=post.experiment,
                 depth=post.depth + 1
             )
+
+            # Create a notification for the parent post author
+            Notification.objects.create(
+                user_profile=post.user_profile,
+                event='post_replied',
+                content=f'@{twin.user_profile.username} replied to your post'
+            )
+
             
             logger.info(f"Created digital twin comment: {comment.content[:50]}...")
             responses.append(comment)
@@ -401,3 +411,257 @@ class DTService:
 
         except Exception as e:
             logger.error(f"Error in twin {twin.user_profile.username} response: {str(e)}", exc_info=True)
+
+    def should_twin_post(self, twin: DigitalTwin) -> bool:
+        """
+        Determines if a digital twin should post based on activity patterns.
+        Uses probabilistic approach based on recent post history and time since last post.
+        
+        Args:
+            twin (DigitalTwin): The digital twin to check
+            
+        Returns:
+            bool: True if the twin should post, False otherwise
+        """
+        skip_probability = 0.0
+
+        # Factor 1: Time since last post
+        if twin.last_post:
+            hours_since_last = (timezone.now() - twin.last_post).total_seconds() / 3600
+            if hours_since_last < 1:
+                skip_probability += 0.8  # High chance to skip if posted in last hour
+            elif hours_since_last < 4:
+                skip_probability += 0.5  # Medium chance if posted in last 4 hours
+            elif hours_since_last < 8:
+                skip_probability += 0.3  # Lower chance if posted in last 8 hours
+
+        # Factor 2: Recent post ratio
+        recent_posts = Post.objects.filter(
+            experiment=twin.user_profile.experiment,
+            parent_post=None,  # Only top-level posts
+            created_date__gte=timezone.now() - timezone.timedelta(hours=24)
+        ).order_by('-created_date')[:20]
+
+        if recent_posts:
+            twin_post_count = sum(1 for post in recent_posts if post.user_profile_id == twin.user_profile_id)
+            twin_ratio = twin_post_count / len(recent_posts)
+            skip_probability += min(0.7, twin_ratio)  # Up to 0.7 based on ratio
+
+        # Make skip decision (return False if should skip)
+        if random.random() < skip_probability:
+            logger.info(f"Digital twin {twin.user_profile.username} chose not to post (p={skip_probability:.2f})")
+            return False
+            
+        return True
+
+    def get_recent_post_context(self, twin: DigitalTwin, max_posts: int = 10) -> List[Dict]:
+        """
+        Gets context from recent posts to inform the twin's new post.
+        Excludes the twin's own posts to avoid self-reference.
+        
+        Args:
+            twin (DigitalTwin): The digital twin creating the post
+            max_posts (int): Maximum number of posts to include in context
+            
+        Returns:
+            List[Dict]: List of post context dictionaries
+        """
+        recent_posts = Post.objects.filter(
+            experiment=twin.user_profile.experiment,
+            parent_post=None,  # Only top-level posts
+            created_date__gte=timezone.now() - timezone.timedelta(hours=24)
+        ).order_by('-created_date')[:20]
+        
+        post_contexts = []
+        for post in recent_posts[:max_posts]:
+            # Skip posts by this twin to avoid self-reference
+            if post.user_profile_id != twin.user_profile_id:
+                post_contexts.append({
+                    'author': post.user_profile.username,
+                    'content': post.content,
+                    'timestamp': post.created_date.isoformat()
+                })
+                
+        return post_contexts
+
+    def determine_post_length(self) -> Dict:
+        """
+        Randomly determines post length based on a probability distribution.
+        Uses weighted random selection to vary post lengths naturally.
+        
+        Returns:
+            Dict: Selected length category with range and name
+        """
+        # Define post length categories with probability distribution
+        length_distribution = [
+            {"name": "very short", "range": (20, 80), "probability": 0.35},
+            {"name": "short", "range": (80, 140), "probability": 0.35},
+            {"name": "medium", "range": (140, 200), "probability": 0.20},
+            {"name": "long", "range": (200, 280), "probability": 0.10}
+        ]
+        
+        # Randomly select length category based on probability distribution
+        rand_val = random.random()
+        cumulative_prob = 0
+        
+        for length_cat in length_distribution:
+            cumulative_prob += length_cat["probability"]
+            if rand_val <= cumulative_prob:
+                min_chars, max_chars = length_cat["range"]
+                target_length = random.randint(min_chars, max_chars)
+                
+                # Add target_length to the returned dictionary
+                result = length_cat.copy()
+                result["target_length"] = target_length
+                
+                logger.info(f"Selected {length_cat['name']} post length ({min_chars}-{max_chars} chars)")
+                return result
+                
+        # Fallback to short length if something goes wrong
+        return {"name": "short", "range": (80, 140), "target_length": 100}
+
+    def generate_original_post_content(self, twin: DigitalTwin, post_contexts: List[Dict]) -> str:
+        """
+        Generates original post content using the LLM based on the twin's persona.
+        Handles the full prompt creation and LLM interaction for new posts.
+        
+        Args:
+            twin (DigitalTwin): The digital twin creating the post
+            post_contexts (List[Dict]): Context from recent posts
+            
+        Returns:
+            str: The generated post content
+        """
+        try:
+            self.current_twin = twin  # Set the current twin
+            
+            # Format context posts
+            context_text = ""
+            if post_contexts:
+                context_text = "Recent posts in the community:\n"
+                for i, post in enumerate(post_contexts, 1):
+                    context_text += f"{i}. @{post['author']}: \"{post['content']}\"\n"
+            
+            # Get length parameters
+            length_params = self.determine_post_length()
+            min_chars, max_chars = length_params["range"]
+            target_length = length_params["target_length"]
+            
+            # Construct the prompt with specific length guidance
+            prompt = f"""You are {twin.user_profile.username}, with the following persona:
+{twin.persona}
+
+Create a new post based on your persona. This should be an original thought, not a reply to anyone specific.
+
+{context_text}
+
+Instructions:
+1. Your post should be approximately {target_length} characters long (between {min_chars}-{max_chars} characters)
+2. Write as your persona would write naturally
+3. Don't explicitly reference being an AI or digital twin
+4. You can reference recent community discussions if relevant
+5. Your post should feel authentic and natural
+6. Some posts should be very concise, others more detailed - vary your style
+7. Use natural language patterns that reflect how real people write social media posts
+8. If you decide to mention another user, use their username with an @ symbol immediately preceding it
+
+Output only the text of the post, with no additional commentary or explanation.
+"""
+
+            # Use the OpenAI client with the twin's configured API details
+            if twin.api_token:
+                api_key = twin.api_token
+            else:
+                api_key = settings.OPENAI_API_KEY
+
+            if twin.llm_url:
+                base_url = twin.llm_url
+            else:
+                base_url = settings.OPENAI_BASE_URL
+
+            if twin.llm_model:
+                llm_model = twin.llm_model
+            else:
+                llm_model = settings.LLM_MODEL
+                
+            client = openai.OpenAI(
+                base_url=base_url,
+                api_key=api_key
+            )
+            
+            # Make the API call
+            response = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": "You are a digital twin participating in social media discussions. Your goal is to create authentic, natural posts that reflect your assigned persona and engage meaningfully with the community."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            # Extract and clean the content
+            content = response.choices[0].message.content.strip()
+            
+            # If content exceeds maximum allowed length, trim it
+            if len(content) > 280:
+                content = content[:277] + "..."
+                
+            # Log the actual content length for monitoring
+            logger.info(f"Generated post with {len(content)} characters (target was {target_length})")
+                
+            return content
+            
+        except Exception as e:
+            logger.error(f"Error in generate_original_post_content: {str(e)}", exc_info=True)
+            return None
+        finally:
+            self.current_twin = None  # Clear the current twin when done
+
+    def create_original_post(self, twin: DigitalTwin, force: bool = False) -> str:
+        """
+        Entry point for digital twin original post creation.
+        Manages the full flow from context gathering to post creation.
+        Updates the twin's last_post timestamp after creating the post.
+        
+        Args:
+            twin (DigitalTwin): The digital twin that will create the post
+            force (bool, optional): If True, bypasses the should_post check. Default is False.
+            
+        Returns:
+            str: ID of the created post, or None on failure
+        """
+        try:
+            logger.info(f"Starting original post generation for {twin.user_profile.username}")
+            
+            # Check if the twin should post based on activity, unless force=True
+            if not force and not self.should_twin_post(twin):
+                logger.info(f"Post generation skipped for {twin.user_profile.username} due to should_post check")
+                return None
+                
+            # Get context from recent posts
+            post_contexts = self.get_recent_post_context(twin)
+            
+            # Generate the post content using LLM
+            post_content = self.generate_original_post_content(twin, post_contexts)
+            
+            if not post_content:
+                logger.error(f"Failed to generate post content for {twin.user_profile.username}")
+                return None
+                
+            # Create a new post from the digital twin
+            new_post = Post.objects.create(
+                user_profile=twin.user_profile,
+                experiment=twin.user_profile.experiment,
+                content=post_content,
+                depth=0  # Top-level post
+            )
+            
+            # Update the last_post timestamp for the twin
+            twin.last_post = timezone.now()
+            twin.save(update_fields=['last_post', 'last_modified'])
+            
+            logger.info(f"Created new post by {twin.user_profile.username}: {new_post.id}")
+            return str(new_post.id)
+            
+        except Exception as e:
+            logger.error(f"Error creating original post: {str(e)}", exc_info=True)
+            return None

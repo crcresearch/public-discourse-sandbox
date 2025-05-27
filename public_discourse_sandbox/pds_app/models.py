@@ -106,7 +106,7 @@ class UserProfile(BaseModel):
     """
     User profile model.
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     display_name = models.CharField(max_length=255)
     username = models.CharField(max_length=255)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
@@ -145,16 +145,17 @@ class UserProfile(BaseModel):
 
     def save(self, *args, **kwargs):
         # Update the user's last_accessed experiment
-        self.user.last_accessed = self.experiment
-        self.user.save(update_fields=['last_accessed'])
+        if not self.is_digital_twin:
+            self.user.last_accessed = self.experiment
+            self.user.save(update_fields=['last_accessed'])
 
-        # Find and update any pending invitations for this user and experiment
-        ExperimentInvitation.objects.filter(
-            experiment=self.experiment,
-            email=self.user.email,
-            is_accepted=False,
-            is_deleted=False
-        ).update(is_accepted=True)
+            # Find and update any pending invitations for this user and experiment
+            ExperimentInvitation.objects.filter(
+                experiment=self.experiment,
+                email=self.user.email,
+                is_accepted=False,
+                is_deleted=False
+            ).update(is_accepted=True)
 
         super().save(*args, **kwargs)
 
