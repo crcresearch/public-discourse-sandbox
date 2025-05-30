@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load allauth i18n %}
+{% block head_title %}
+    {% trans "Signup" %}
+{% endblock head_title %}
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+    
+    <div class="main-content">
+        <div class="signup-card">
+            <h1>{% trans "Sign Up" %}</h1>
+            <p>
+                {% blocktranslate %}Already have an account? Then please <a href="{{ login_url }}">sign in</a>.{% endblocktranslate %}
+            </p>
+            
+            {% if not SOCIALACCOUNT_ONLY %}
+                {% url 'account_signup' as action_url %}
+                {% element form form=form method="post" action=action_url %}
+                    {% slot body %}
+                        {% csrf_token %}
+                        {% element fields form=form unlabeled=True %}
+                        {% endelement %}
+                        {{ redirect_field }}
+                    {% endslot %}
+                    {% slot actions %}
+                        <div class="form-actions">
+                            <button type="submit" class="post-button">
+                                <i class="ri-user-add-line"></i>
+                                <span>{% trans "Sign Up" %}</span>
+                            </button>
+                        </div>
+                    {% endslot %}
+                {% endelement %}
+            {% endif %}
+            
+            {% if PASSKEY_SIGNUP_ENABLED %}
+                <hr>
+                <div class="form-actions">
+                    <a href="{{ signup_by_passkey_url }}" class="post-button secondary">
+                        <i class="ri-key-line"></i>
+                        <span>{% trans "Sign up using a passkey" %}</span>
+                    </a>
+                </div>
+            {% endif %}
+            
+            {% if SOCIALACCOUNT_ENABLED %}
+                {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Right Sidebar -->
+    {% include 'pages/right_content.html' %}
+{% endblock content %}

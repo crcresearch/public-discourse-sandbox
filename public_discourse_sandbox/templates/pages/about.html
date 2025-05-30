@@ -1,3 +1,47 @@
 {% extends "base.html" %}
 
+{% load static %}
 
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="main-header">
+            <h1>About Public Discourse Sandbox</h1>
+        </header>
+        
+        <div class="about-container">
+            <div class="about-content">
+                <p>Public Discourse is a research platform developed by the Center for Research Computing at University of Notre Dame to study and improve community engagement in social media contexts.</p>
+                
+                <h2>Our Mission</h2>
+                <p>We aim to understand and enhance online community interactions through controlled research environments that promote meaningful discussions and constructive dialogue.</p>
+                
+                <h2>Research Focus</h2>
+                <ul>
+                    <li>Community engagement patterns</li>
+                    <li>Social media interaction dynamics</li>
+                    <li>Digital communication effectiveness</li>
+                    <li>Online discourse analysis</li>
+                </ul>
+                
+                <h2>Contact</h2>
+                <p>For inquiries about the research platform, please contact: <a href="mailto:sandbox-list@nd.edu">sandbox-list@nd.edu</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    {% include 'pages/right_content.html' %}
+
+    {% endblock %}
+
+    {% block inline_javascript %}
+    <script>
+    function closeComposePopup() {
+        document.getElementById('compose-popup').style.display = 'none';
+    }
+    </script>
+{% endblock %} 

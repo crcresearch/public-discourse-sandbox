@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  User Profile: {{ viewed_profile.display_name }}
+{% endblock title %}
+
+{% block content %}
+  {% csrf_token %}
+  <!-- Left Sidebar -->
+  {% include 'pages/left_nav.html' %}
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Profile Header -->
+    <div class="profile-header">
+      {% if viewed_profile.banner_picture %}
+        <img src="{{ viewed_profile.banner_picture.url }}" alt="Banner" class="banner-image">
+      {% else %}
+        <div class="banner-placeholder"></div>
+      {% endif %}
+      
+      <!-- Edit Profile Button -->
+      {% if viewed_profile.user == request.user %}
+        <div class="edit-profile-button-container">
+          <button type="button" class="post-button" onclick="showEditProfileModal()">
+            <i class="ri-edit-line"></i>
+            <span>Edit Profile</span>
+          </button>
+        </div>
+      {% elif viewed_profile.user != request.user %}
+        <div class="edit-profile-button-container" style="display: flex; gap: 0.5rem;">
+          <button type="button" class="post-button" onclick="handleFollow('{{ viewed_profile.id }}')">
+            {% if is_following_viewed_profile %}
+              <i class="ri-user-unfollow-line"></i> Unfollow
+            {% else %}
+              <i class="ri-user-follow-line"></i> Follow
+            {% endif %}
+          </button>
+          {% if is_moderator %}
+            {% if not viewed_profile.is_banned %}
+              <button type="button" class="post-button bg-danger text-white" onclick="showBanModal('{{ viewed_profile.id }}', 'ban')">
+                <i class="ri-user-unfollow-line"></i>
+                <span>Ban User</span>
+              </button>
+            {% else %}
+              <button type="button" class="post-button bg-success text-white" onclick="showBanModal('{{ viewed_profile.id }}', 'unban')">
+                <i class="ri-user-follow-line"></i>
+                <span>Unban User</span>
+              </button>
+            {% endif %}
+          {% endif %}
+        </div>
+      {% endif %}
+      
+      <div class="profile-info">
+        <div class="profile-picture">
+          {% if viewed_profile.profile_picture %}
+            <img src="{{ viewed_profile.profile_picture.url }}" alt="Profile Picture">
+          {% else %}
+            <div class="avatar-placeholder">
+              <i class="ri-user-line"></i>
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="profile-details">
+          <h1>{{ viewed_profile.display_name }}</h1>
+          <div class="username-container">
+            <p class="username">@{{ viewed_profile.username }}</p>
+            {% if is_creator %}
+              <div class="badge badge-primary">Creator</div>
+            {% endif %}
+            {% if viewed_profile.is_collaborator %}
+              <div class="badge badge-secondary">Collaborator</div>
+            {% endif %}
+            {% if viewed_profile.is_experiment_moderator %}
+              <div class="badge badge-info">Moderator</div>
+            {% endif %}
+            {% if viewed_profile.is_digital_twin %}
+              <div class="badge badge-warning">Digital Twin</div>
+            {% endif %}
+          </div>
+          {% if viewed_profile.bio %}
+            <p class="bio">{{ viewed_profile.bio }}</p>
+          {% endif %}
+          
+          <!-- Tabbed Navigation -->
+          <div class="profile-tabs mt-4">
+            <ul class="nav nav-tabs" id="profileTab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab" aria-controls="posts" aria-selected="true">Posts</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followers" type="button" role="tab" aria-controls="followers" aria-selected="false">Followers ({{ follower_count }})</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="following-tab" data-bs-toggle="tab" data-bs-target="#following" type="button" role="tab" aria-controls="following" aria-selected="false">Following ({{ following_count }})</button>
+              </li>
+            </ul>
+            <div class="tab-content" id="profileTabContent">
+              <div class="tab-pane fade show active" id="posts" role="tabpanel" aria-labelledby="posts-tab">
+                <div class="user-posts-list mt-4">
+                  {% include 'components/posts_list.html' with posts=user_posts %}
+                </div>
+              </div>
+              <div class="tab-pane fade" id="followers" role="tabpanel" aria-labelledby="followers-tab">
+                <div class="user-followers-list mt-4">
+                  {% if followers %}
+                    <ul class="list-group">
+                      {% for follower in followers %}
+                        <li class="list-group-item d-flex align-items-center">
+                          <a href="{% url 'user_profile_detail' experiment.identifier follower.id %}" class="user-avatar me-2">
+                            {% if follower.profile_picture %}
+                              <img src="{{ follower.profile_picture.url }}" alt="Profile Picture">
+                            {% else %}
+                              <div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+                            {% endif %}
+                          </a>
+                          <div>
+                            <a href="{% url 'user_profile_detail' experiment.identifier follower.id %}" class="user-name" style="text-decoration: none;">
+                              {{ follower.display_name }}
+                            </a>
+                            <a href="{% url 'user_profile_detail' experiment.identifier follower.id %}" class="user-handle" style="text-decoration: none;">
+                              @{{ follower.username }}
+                            </a>
+                          </div>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="no-followers">No followers yet.</div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="tab-pane fade" id="following" role="tabpanel" aria-labelledby="following-tab">
+                <div class="user-following-list mt-4">
+                  {% if following %}
+                    <ul class="list-group">
+                      {% for followee in following %}
+                        <li class="list-group-item d-flex align-items-center justify-content-between">
+                          <div class="d-flex align-items-center">
+                            <a href="{% url 'user_profile_detail' experiment.identifier followee.id %}" class="user-avatar me-2">
+                              {% if followee.profile_picture %}
+                                <img src="{{ followee.profile_picture.url }}" alt="Profile Picture">
+                              {% else %}
+                                <div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+                              {% endif %}
+                            </a>
+                            <div>
+                              <a href="{% url 'user_profile_detail' experiment.identifier followee.id %}" class="user-name" style="text-decoration: none;">
+                                {{ followee.display_name }}
+                              </a>
+                              <a href="{% url 'user_profile_detail' experiment.identifier followee.id %}" class="user-handle" style="text-decoration: none;">
+                                @{{ followee.username }}
+                              </a>
+                            </div>
+                          </div>
+                          {% if followee.user != request.user %}
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="handleFollow('{{ followee.id }}')">
+                              <i class="ri-user-unfollow-line"></i> Unfollow
+                            </button>
+                          {% endif %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="no-following">Not following anyone yet.</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Status -->
+    {% if viewed_profile.is_banned %}
+      <div class="alert alert-warning mt-4">
+        <h4>Account Suspended</h4>
+        <p>This account has been suspended for violating community guidelines.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Sidebar -->
+  {% include 'pages/right_content.html' %}
+
+  <!-- Profile Edit Modal -->
+  {% if viewed_profile.user == request.user %}
+    {% include 'components/edit_profile_modal.html' %}
+  {% endif %}
+
+  <!-- Ban/Unban Confirmation Modal -->
+  {% include 'components/ban_modal.html' %}
+{% endblock content %}
+
+{% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
+{% endblock inline_javascript %} 

@@ -1,0 +1,67 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Research Study Invitation - Public Discourse Sandbox{% endblock %}
+
+{% block content %}
+<h2>Research Study Invitation</h2>
+
+<!-- <p>Hello {{ user.get_full_name }},</p> -->
+
+<p>You have been invited by {{ study.contact_name }} to participate in a research study on <b>Public Discourse Sandbox</b>. We believe your perspective would be valuable for this research.</p>
+
+<div class="card">
+    <h3 style="margin-top: 0;">Study Details</h3>
+    <div style="display: grid; gap: 16px;">
+        <div>
+            <p style="margin-bottom: 4px; color: var(--secondary-text);">Study Title</p>
+            <p style="margin-bottom: 0; font-weight: 500;">{{ study.title }}</p>
+        </div>
+        <div>
+            <p style="margin-bottom: 4px; color: var(--secondary-text);">Duration</p>
+            <p style="margin-bottom: 0; font-weight: 500;">{{ study.duration }}</p>
+        </div>
+        <div>
+            <p style="margin-bottom: 4px; color: var(--secondary-text);">Compensation</p>
+            <p style="margin-bottom: 0; font-weight: 500;">{{ study.compensation }}</p>
+        </div>
+        <div>
+            <p style="margin-bottom: 4px; color: var(--secondary-text);">Description</p>
+            <p style="margin-bottom: 0;">{{ study.description }}</p>
+        </div>
+        <div>
+            <p style="margin-bottom: 4px; color: var(--secondary-text);">Contact</p>
+            <p style="margin-bottom: 0;">{{ study.contact_name }}</p>
+        </div>
+    </div>
+</div>
+
+<p>Participation is completely voluntary, and you can withdraw at any time. Your privacy and data protection are our top priorities.</p>
+
+<!-- <p>By accepting this invitation, you agree to the following:</p>
+
+<div class="card">
+    <h3 style="margin-top: 0;">User Consent Form</h3>
+    <div style="display: grid; gap: 16px;">
+        <p style="margin-bottom: 0;">{{ study.irb_information }}</p>
+        <div class="final-consent">
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="final-consent" name="consent" required style="margin-right: 8px; border: 1px ;">
+                <span class="consent-text">
+                    By creating an account, I confirm that I have read, understood, and agree to all platform rules,
+                    research consent terms, and mandatory security requirements. 
+                </span>
+            </div>
+        </div>
+
+    </div>
+</div> -->
+
+<div style="text-align: center; margin-top: 32px;">
+    <a href="{{ accept_url }}" class="button" style="margin-right: 16px;">Accept Invitation</a>
+    <!-- <a href="{{ landing_url }}" class="button" style="background-color: transparent; color: var(--navy); border: 1px solid var(--navy);">Decline Invitation</a> -->
+</div>
+
+<p style="margin: 32px 0 24px;">If you have any questions about the study, please contact the Principal Investigator of the research team at <a href="mailto:{{ study.contact_email }}" style="color: var(--navy); text-decoration: underline;">{{ study.contact_email }}</a>.</p>
+
+<p style="margin-bottom: 0; color: var(--secondary-text);">Best regards,<br><b>The Public Discourse Sandbox Research Team</b></p>
+{% endblock %} 

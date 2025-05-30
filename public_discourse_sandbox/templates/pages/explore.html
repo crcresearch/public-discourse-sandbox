@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="main-header">
+            <h1>Explore</h1>
+            {% if current_hashtag %}
+                <div class="hashtag-filter">
+                    <span>Showing posts with hashtag: </span>
+                    <a href="{% if experiment %}{% url 'explore_with_experiment' experiment.identifier %}{% else %}{% url 'explore' %}{% endif %}" class="hashtag-filter-remove">
+                        <i class="ri-close-line"></i>
+                    </a>
+                    <span class="hashtag">#{{ current_hashtag }}</span>
+                </div>
+            {% endif %}
+        </header>
+        {% include "components/posts_list.html" %}
+    </div>
+
+    <!-- Right Sidebar -->
+    {% include 'pages/right_content.html' %}
+{% endblock %}
+
+{% block inline_javascript %}
+<script>
+function closeComposePopup() {
+    document.getElementById('compose-popup').style.display = 'none';
+}
+</script>
+{% endblock %} 

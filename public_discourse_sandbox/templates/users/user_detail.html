@@ -3,39 +3,105 @@
 {% load static %}
 
 {% block title %}
-  User: 
-  
-    {{ object.name }}
-  
-  
+  User: {{ object.name }}
 {% endblock title %}
 {% block content %}
-  <div class="container">
-    <div class="row">
+  {% csrf_token %}
+  <!-- Left Sidebar -->
+  {% include 'pages/left_nav.html' %}
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="row mt-5">
       <div class="col-sm-12">
-        <h2>
-        
-        
-          {{ object.name }}
-        
-      </h2>
+        <h2>{{ object.name }}</h2>
+      </div>
     </div>
-  </div>
-  {% if object == request.user %}
+    {% if object == request.user %}
     <!-- Action buttons -->
     <div class="row">
       <div class="col-sm-12">
         <a class="btn btn-primary" href="{% url 'users:update' %}" role="button">My Info</a>
         <a class="btn btn-primary"
-           href="{% url 'account_email' %}"
-           role="button">E-Mail</a>
+          href="{% url 'account_email' %}"
+          role="button">E-Mail</a>
         <a class="btn btn-primary"
-           href="{% url 'mfa_index' %}"
-           role="button">MFA</a>
+          href="{% url 'mfa_index' %}"
+          role="button">MFA</a>
         <!-- Your Stuff: Custom user template urls -->
       </div>
     </div>
+    {% endif %}
+    {% if object == request.user and object.userprofile.is_banned %}
+    <div class="row mt-4">
+      <div class="col-sm-12">
+        <div class="card border-0 bg-light">
+          <div class="card-body">
+            <h2 class="mb-3">Your account is suspended</h2>
+            <p class="text-secondary fs-5">
+              After careful review, we determined your account broke the Community Rules. 
+              Your account is in read-only mode, which means you can't post, comment, or like content. 
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% elif object != request.user and object.userprofile.is_banned %}
+    <div class="row mt-4">
+      <div class="col-sm-12">
+        <div class="card border-0 bg-light">
+          <div class="card-body">
+            <h2 class="mb-3">This account is suspended</h2>
+            <p class="text-secondary fs-5">
+              We reserve the right to suspend accounts that violate Community Rules.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- End Action buttons -->
-  {% endif %}
-</div>
+
+    {% if request.user.userprofile.is_moderator and object != request.user %}
+    <!-- Moderator Actions -->
+    <div class="row">
+      <div class="col-sm-12">
+        <button class="btn btn-danger" id="banUserBtn" data-user-id="{{ object.userprofile.id }}">
+          {% if object.userprofile.is_banned %}
+          Unban User
+          {% else %}
+          Ban User
+          {% endif %}
+        </button>
+      </div>
+    </div>
+    <!-- Ban User Confirmation Modal -->
+    <div id="banUserModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="popup-header">
+          <button type="button" class="close-popup" onclick="closeBanUserModal()">
+            <i class="ri-close-line"></i>
+          </button>
+          <h2>Confirm Action</h2>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to <span id="banActionText">ban</span> {{ object.name }}?</p>
+          <div class="form-actions">
+            <button type="button" class="post-button" onclick="closeBanUserModal()">Cancel</button>
+            <button type="button" class="post-button" id="confirmBanBtn">Confirm</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <!-- Right Sidebar -->
+  {% include 'pages/right_content.html' %}
+
+  <!-- Ban/Unban Confirmation Modal -->
+  {% include 'components/ban_modal.html' %}
 {% endblock content %}
+
+{% block inline_javascript %}
+<script src="{% static 'js/shared.js' %}"></script>
+{% endblock inline_javascript %}

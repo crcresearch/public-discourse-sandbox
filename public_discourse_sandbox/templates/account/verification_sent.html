@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load allauth %}
+{% block head_title %}
+    {% trans "Verify Your Email Address" %}
+{% endblock head_title %}
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+    
+    <div class="main-content">
+        <header class="main-header">
+            <h1>{% trans "Verify Your Email Address" %}</h1>
+        </header>
+        
+        <div class="alert alert-info">
+            <i class="ri-mail-check-line" style="margin-right: 8px;"></i>
+            {% blocktrans %}We have sent an email to you for verification. Follow the link provided to finalize the signup process. If you do not see the verification email in your main inbox, check your spam folder. Please contact us if you do not receive the verification email within a few minutes.{% endblocktrans %}
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{% url 'account_login' %}" class="post-button" style="background-color: #1d1e3a;">
+                <i class="ri-login-box-line"></i>
+                <span>{% trans "Return to Sign In" %}</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Right Sidebar -->
+    {% include 'pages/right_content.html' %}
+{% endblock content %} 

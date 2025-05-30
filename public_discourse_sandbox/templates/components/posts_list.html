@@ -1,0 +1,122 @@
+{% load static %}
+{% csrf_token %}
+<!-- Posts List -->
+<div class="post-feed">
+    <div id="posts-container">
+        {% include 'partials/_post_list.html' %}
+    </div>
+    
+</div>
+
+{% include 'components/comment_modal.html' %}
+
+<!-- Delete Confirmation Modal -->
+{% include 'components/delete_modal.html' %}
+
+<!-- Ban User Modal -->
+{% include 'components/ban_modal.html' %}
+
+<script src="{% static 'js/shared.js' %}"></script>
+<script>
+function togglePostMenu(postId) {
+    const menu = document.getElementById(`post-menu-${postId}`);
+    const allMenus = document.querySelectorAll('.post-menu-dropdown');
+    
+    // Close all other menus
+    allMenus.forEach(m => {
+        if (m.id !== `post-menu-${postId}`) {
+            m.style.display = 'none';
+        }
+    });
+    
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    
+    // Close menu when clicking outside
+    const closeMenu = (e) => {
+        if (!e.target.closest('.post-menu')) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    
+    if (menu.style.display === 'block') {
+        // Add event listener with a slight delay to avoid immediate triggering
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 0);
+    }
+}
+
+function handleRepost(button, postId) {
+    // Check if this is the user's own post
+    if (button.dataset.isOwnPost === 'true') {
+        console.log("You cannot repost your own content");
+        return;
+    }
+    
+    // Check if the post is already a repost
+    if (button.dataset.isRepost === 'true') {
+        console.log("You cannot repost a repost");
+        return;
+    }
+    
+    // Check for user confirmation
+    if (confirm('Repost this post?')) {
+        makeRequest(
+            '{% url "repost_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId),
+            'POST'
+        )
+        .then(data => {
+            if (data.success) {
+                // Update the share count
+                const countSpan = button.querySelector('span');
+                countSpan.textContent = data.shares_count;
+                
+                // Show success message
+                alert('Post has been reposted successfully!');
+                
+                // Refresh the page to show the new post
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            if (error.response && error.response.status === 403) {
+                // alert('You cannot repost your own content');
+                console.log('You cannot repost your own content');
+            } else {
+                console.error('Error:', error);
+                alert('An error occurred while reposting');
+            }
+        });
+    }
+}
+
+function handleLike(button, postId) {
+    makeRequest(
+        '{% url "like_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId),
+        'POST'
+    )
+    .then(data => {
+        // Update the like count
+        const countSpan = button.querySelector('span');
+        countSpan.textContent = data.upvotes;
+        
+        // Toggle the like button style
+        const icon = button.querySelector('i');
+        if (data.is_liked) {
+            icon.classList.remove('ri-heart-line');
+            icon.classList.add('ri-heart-fill');
+            button.classList.add('liked');
+        } else {
+            icon.classList.remove('ri-heart-fill');
+            icon.classList.add('ri-heart-line');
+            button.classList.remove('liked');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while liking the post');
+    });
+}
+
+</script>

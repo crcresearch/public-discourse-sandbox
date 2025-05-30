@@ -1,21 +1,82 @@
 from __future__ import annotations
 
 import typing
+from typing import Any
 
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
+from django.http import HttpRequest
+from allauth.account.utils import user_email, user_field, user_username
+from allauth.utils import valid_email_or_none
+from public_discourse_sandbox.pds_app.models import UserProfile, Experiment
 
 if typing.TYPE_CHECKING:
     from allauth.socialaccount.models import SocialLogin
-    from django.http import HttpRequest
-
     from public_discourse_sandbox.users.models import User
 
 
 class AccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request: HttpRequest) -> bool:
         return getattr(settings, "ACCOUNT_ALLOW_REGISTRATION", True)
+
+    def save_user(self, request, user, form, commit=True):
+        """
+        This is called when saving user via allauth registration.
+        We save the user as usual, then create the UserProfile if needed.
+        """
+        # First save the user using the default adapter
+        user = super().save_user(request, user, form, commit=False)
+        
+        # Get any custom fields from the form
+        if hasattr(form, 'cleaned_data'):
+            # Get profile-specific fields if they exist
+            display_name = form.cleaned_data.get('display_name')
+            user_name = form.cleaned_data.get('user_name') or display_name
+            bio = form.cleaned_data.get('bio', '')
+            profile_picture = form.cleaned_data.get('profile_picture')
+            banner_picture = form.cleaned_data.get('banner_picture')
+            experiment_id = form.cleaned_data.get('experiment') or "00000"
+            
+            # Save the user first
+            if commit:
+                user.save()
+            
+            # Get experiment from form or form data
+            experiment = getattr(form, 'experiment', None)
+            if not experiment and experiment_id:
+                try:
+                    experiment = Experiment.objects.get(identifier=experiment_id)
+                except Experiment.DoesNotExist:
+                    if experiment_id == "00000":
+                        # Log error but continue - default experiment should exist
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.error(f"Default experiment '00000' not found when creating user {user.email}")
+                    pass
+            
+            if experiment:
+                try:
+                    # Create the UserProfile
+                    profile = UserProfile.objects.create(
+                        user=user,
+                        experiment=experiment,
+                        display_name=display_name,
+                        username=user_name,
+                        bio=bio,
+                        profile_picture=profile_picture,
+                        banner_picture=banner_picture
+                    )
+                    
+                    # Set last_accessed experiment
+                    user.last_accessed = experiment
+                    user.save()
+                except Exception as e:
+                    raise
+        elif commit:
+            user.save()
+            
+        return user
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):

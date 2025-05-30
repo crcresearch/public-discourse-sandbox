@@ -1,0 +1,139 @@
+{% block right_content %}
+      <div class="right-sidebar">
+        {% if user.is_authenticated %}
+            <!-- Experiment Selection Dropdown -->
+            <div class="trending-section">
+                <h2>Discourses</h2>
+                <select id="experiment-dropdown" class="form-select">
+                    {% for experiment in user_experiments %}
+                        <option value="{{ experiment.identifier }}" {% if experiment.identifier == current_experiment_identifier %}selected{% endif %}>{{ experiment.name }}</option>
+                    {% empty %}
+                        <option value="" disabled>No experiments available</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="trending-section">
+                <h2>Trending</h2>
+                {% if trending_hashtags %}
+                    <div class="trending-topics">
+                        {% for hashtag in trending_hashtags %}
+                            <div class="trending-topic">
+                                <div class="topic-meta">
+                                    <a href="{% if experiment %}{% url 'explore_with_experiment' experiment.identifier %}?hashtag={{ hashtag.tag }}{% else %}{% url 'explore' %}?hashtag={{ hashtag.tag }}{% endif %}" class="topic-name hashtag">#{{ hashtag.tag }}: {{ hashtag.count }}</a>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="no-trends">
+                                No trending hashtags yet
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-trends">
+                        {% if user.is_authenticated %}
+                            No trending hashtags yet
+                        {% else %}
+                            Sign in to see trending hashtags
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Include Active Bots Section -->
+            {% include 'partials/_active_bots.html' %}
+
+            <!-- Research Request Section -->
+
+            <div class="feedback-section">
+                <h2>Research Request</h2>
+                <p>To request a research/training access, please fill out the form.</p>
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSdmpjgnbhcK4R4TX7X1447MCfAhZuY9nmnGlghtkmmfFaaCkw/viewform?usp=header" class="feedback-button">Research Request</a>
+            </div>
+
+            <!-- Feedback Section -->
+            <div class="feedback-section">
+                <h2>Feedback</h2>
+                <p>We're always looking for ways to improve our platform. Please share your thoughts with us.</p>
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSdbmvUaaixxbZV3zuSiUumYM4mZeG1NldmZ_3-re9uzX9dveQ/viewform?usp=sharing" class="feedback-button" target="_blank">Share Feedback</a>
+            </div>
+
+            {% block right_sidebar_content %}
+                <!-- Default right sidebar content -->
+            {% endblock %}
+            
+            {% block right_sidebar_extra %}
+                <!-- Additional content for specific pages -->
+            {% endblock %}
+        {% else %}
+            <div class="trending-section">
+                <h2>Welcome back</h2>
+                <p>Sign in to access the research platform.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    {% block inline_javascript %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const experimentDropdown = document.getElementById('experiment-dropdown');
+            if (experimentDropdown) {
+                experimentDropdown.addEventListener('change', function() {
+                    const selectedIdentifier = this.value;
+                    const currentPath = window.location.pathname;
+                    const pathParts = currentPath.split('/').filter(Boolean); // Remove empty strings
+                    
+                    // Define our URL patterns
+                    const namespacePatterns = ['users', 'api', 'accounts'];
+                    const isNamespaced = namespacePatterns.includes(pathParts[0]);
+                    
+                    let newPath;
+                    
+                    if (isNamespaced) {
+                        // For namespaced URLs, the experiment identifier should be at index 1
+                        if (pathParts[1] && pathParts[1].length === 5) {
+                            // Replace existing identifier
+                            pathParts[1] = selectedIdentifier;
+                        } else {
+                            // Insert identifier after namespace
+                            pathParts.splice(1, 0, selectedIdentifier);
+                        }
+                        newPath = '/' + pathParts.join('/');
+                    } else {
+                        // For non-namespaced URLs, the experiment identifier should be at index 0
+                        if (pathParts[0] && pathParts[0].length === 5) {
+                            // Replace existing identifier
+                            pathParts[0] = selectedIdentifier;
+                        } else {
+                            // Add identifier at the beginning
+                            pathParts.unshift(selectedIdentifier);
+                        }
+                        newPath = '/' + pathParts.join('/');
+                    }
+
+                    // Update the user's last_accessed experiment
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch('{% url "update_last_accessed" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken,
+                        },
+                        body: JSON.stringify({
+                            experiment_identifier: selectedIdentifier
+                        }),
+                        credentials: 'same-origin'
+                    }).then(() => {
+                        // Navigate to the new URL after updating last_accessed
+                        window.location.href = newPath;
+                    }).catch(error => {
+                        console.error('Error updating last accessed experiment:', error);
+                        // Still navigate even if the update fails
+                        window.location.href = newPath;
+                    });
+                });
+            }
+        });
+    </script>
+    {% endblock %}
+{% endblock %}

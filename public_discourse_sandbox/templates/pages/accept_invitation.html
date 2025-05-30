@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Accept Invitation" %}{% endblock %}
+
+{% block content %}
+<!-- Left Sidebar -->
+{% include 'pages/left_nav.html' %}
+
+<div class="main-content">
+    <header class="main-header">
+        <h1>{% trans "Accept Invitation" %}</h1>
+    </header>
+
+    <div class="card">
+        <div class="card-body">
+            {% if error %}
+                <div class="alert alert-danger">
+                    {{ error }}
+                </div>
+            {% elif already_accepted %}
+                <div class="text-center">
+                    <h2 class="mb-4">{% trans "Invitation Already Accepted" %}</h2>
+                    <p class="lead">
+                        {% trans "It looks like you've already accepted this invitation and created a profile for this experiment." %}
+                    </p>
+                    <a href="{{ home_url }}" class="post-button" style="background-color: #1d1e3a;">
+                        <i class="ri-home-line"></i>
+                        <span>{% trans "Go To Discourse" %}</span>
+                    </a>
+                </div>
+            {% else %}
+                <div class="text-center mb-4">
+                    <h4>{{ experiment.name }}</h4>
+                    <p class="text-muted">{{ experiment.description }}</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <p class="mb-0">
+                        {% if existing_user %}
+                            {% trans "You've been invited to participate in this discourse. Please create your profile to continue." %}
+                        {% else %}
+                            {% trans "You've been invited to participate in this discourse. Please create an account and profile to continue." %}
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">{% trans "User Consent Form" %}</h5>
+                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; max-height: 300px; overflow-y: auto;">
+                            <h5>Platform Rules</h5>
+                            <div class="rules-grid">
+                                <div class="consent-rule-card">
+                                    <p>
+                                        Each user on the platform is required to agree to the rules for the sandbox.
+                                        The rules are described as the following:
+                                    </p>
+                                    <p>
+                                        Moderated Interaction In Line with Defined Research Different discussion threads will involve both human and bot participants with various discourse research objectives.
+                                        Some of them may be to understand counterspeech to posts that might be considered hostile, vulgar, or inflammatory.
+                                        Each discussion will have an assigned moderator to ensure that the posted content in a discourse thread is within the bounds of the research objective.
+                                        If a post is considered outside of those bounds, it may be flagged or removed at the discretion of the Principal Investigator for that research experiment.
+                                    </p>
+                                    <p>
+                                        <b>Data Privacy</b> - Do not share sensitive information or personally identifiable information of others on the platform.
+                                        Do not share personally identifiable information about yourself beyond that which is in your account profile.
+                                        Such information will be flagged and permanently deleted as discovered.
+                                    </p>
+                                    <p>
+                                        <b>Bot Awareness</b> - This platform includes both human and AI bot accounts.
+                                        Users should be aware that they may interact with automated accounts.
+                                        Depending on the research objectives, bot accounts may or may not be clearly identified as such.
+                                    </p>
+                                    <p>
+                                        <b>Account Security</b> - Maintain strong passwords and never share your login credentials. Two-factor authentication is mandatory.
+                                    </p>
+                
+                                    <h5>Research Participation Agreement</h5>
+                                    <p>
+                                        Similarly, each user is required to sign a research participa-
+                                        tion agreement in order to gain access to the platform. The
+                                        research participant agreement includes the following at a
+                                        minimum (IRBs may require additions):
+                                    </p>
+                                    <p>
+                                        <b>Data Collection</b> - All platform interactions, posts, comments, and usage patterns will be recorded and analyzed for research purposes.
+                                        Segmented private data collections for individual research experiments are available on a fee basis.
+                                    </p>
+                                    <p>
+                                        <b>Research Purpose</b> - Data will be used to study human-AI interactions, analyze social media behavior, and improve AI systems' safety.
+                                    </p>
+                                    <p>
+                                        <b>Data Access</b> - The University of Notre Dame research team and approved research partners will have access to collected data.
+                                    </p>
+                                    <p>
+                                        <b>Data Protection</b> - All data will be stored securely following university standards, and research findings will be anonymized.
+                                        If released for research purposes, the data collection will adhere to the FAIR Principles.
+                                    </p>
+                                    <p>
+                                        <b>Research Analysis</b> - Behavioral patterns and engagement metrics will be analyzed to advance understanding of online social dynamics.
+                                    </p>
+                                    <p>
+                                        <b>Ethics Compliance</b> - Research follows university IRB guidelines and established ethical standards for human-subject research.
+                                    </p>
+                                    <!-- if irb_additions is not empty, add it to the consent form -->
+                                    {% if experiment.irb_additions %}
+                                        <p>{{ experiment.irb_additions }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="final-consent" name="consent" required>
+                            <label class="form-check-label" for="final-consent">
+                                {% trans "By creating an account, I confirm that I have read, understood, and agree to all platform rules, research consent terms, and mandatory security requirements." %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button type="button"
+                        class="post-button" 
+                        style="background-color: #1d1e3a; transition: opacity 0.3s ease;"
+                        id="createProfileBtn" 
+                        data-href="{% if existing_user %}{{ create_profile_url }}{% else %}{{ signup_url }}{% endif %}"
+                        disabled>
+                        <i class="ri-user-add-line"></i>
+                        <span>{% trans "Create Profile For Discourse" %}</span>
+                    </button>
+                </div>
+
+                <script>
+                    const consentCheckbox = document.getElementById('final-consent');
+                    const createProfileBtn = document.getElementById('createProfileBtn');
+                    
+                    if (consentCheckbox && createProfileBtn) {
+                        consentCheckbox.addEventListener('change', function() {
+                            createProfileBtn.disabled = !this.checked;
+                        });
+
+                        createProfileBtn.addEventListener('click', function() {
+                            if (!this.disabled) {
+                                window.location.href = this.getAttribute('data-href');
+                            }
+                        });
+                    }
+                </script>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Right Sidebar -->
+{% include 'pages/right_content.html' %}
+{% endblock %} 

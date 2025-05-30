@@ -1,0 +1,35 @@
+{% extends "account/base_manage.html" %}
+{% load allauth i18n %}
+{% block head_title %}
+    {% trans "Sign Out" %}
+{% endblock head_title %}
+{% block content %}
+    <!-- Left Sidebar -->
+    {% include 'pages/left_nav.html' %}
+    <div class="main-content">
+        <header class="main-header">
+            <h1>{% trans "Sign Out" %}</h1>
+        </header>
+
+        {% element p %}
+            {% trans 'Are you sure you want to sign out?' %}
+        {% endelement %}
+        {% url 'account_logout' as action_url %}
+        {% element form method="post" action=action_url no_visible_fields=True %}
+            {% slot body %}
+                {% csrf_token %}
+                {{ redirect_field }}
+            {% endslot %}
+            {% slot actions %}
+                <div style="text-align: right;">
+                    <button type="submit" class="post-button" style="background-color: #1d1e3a;">
+                        <i class="ri-logout-box-line"></i>
+                        <span>{% trans 'Sign Out' %}</span>
+                    </button>
+                </div>
+            {% endslot %}
+        {% endelement %}
+    </div>
+    <!-- Right Sidebar -->
+    {% include 'pages/right_content.html' %}
+{% endblock content %}

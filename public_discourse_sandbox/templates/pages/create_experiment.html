@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<!-- Left Sidebar -->
+{% include 'pages/left_nav.html' %}
+
+<div class="no-xp-main-content">
+    <header class="main-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">{% translate "Create New Discourse" %}</h1>
+            <a href="{% url 'researcher_tools' %}" class="back-link ms-3">
+                <i class="ri-arrow-left-line"></i>
+                {% translate "Back to Researcher Tools" %}
+            </a>
+        </div>
+    </header>
+    
+    <div class="experiment-info-section">
+        <form method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-group">
+                {{ form.name.label_tag }}
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <!-- {% if form.name.help_text %}
+                    <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                {% endif %} -->
+            </div>
+            
+            <div class="form-group">
+                {{ form.description.label_tag }}
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.description.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <!-- {% if form.description.help_text %}
+                    <small class="form-text text-muted">{{ form.description.help_text }}</small>
+                {% endif %} -->
+            </div>
+            
+            <div class="form-group">
+                {{ form.irb_additions.label_tag }}
+                {{ form.irb_additions }}
+                {% if form.irb_additions.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.irb_additions.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <!-- {% if form.irb_additions.help_text %}
+                    <small class="form-text text-muted">{{ form.irb_additions.help_text }}</small>
+                {% endif %} -->
+            </div>
+            
+            <div class="form-actions">
+                <a href="{% url 'researcher_tools' %}" class="post-button" style="text-decoration: none; color: white;">
+                    {% translate "Cancel" %}
+                </a>
+                <button type="submit" class="post-button" style="text-decoration: none; color: white;">
+                    <i class="ri-add-line"></i>
+                    {% translate "Create Experiment" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 
