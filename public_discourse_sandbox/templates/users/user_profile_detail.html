@@ -90,7 +90,10 @@
           <div class="profile-tabs mt-4">
             <ul class="nav nav-tabs" id="profileTab" role="tablist">
               <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab" aria-controls="posts" aria-selected="true">Posts</button>
+                <button class="nav-link active" id="posts-tab" data-bs-toggle="tab" data-bs-target="#posts" type="button" role="tab" aria-controls="posts" aria-selected="true">Posts ({{ original_posts_count }})</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="replies-tab" data-bs-toggle="tab" data-bs-target="#replies" type="button" role="tab" aria-controls="replies" aria-selected="false">Replies ({{ replies_count }})</button>
               </li>
               <li class="nav-item" role="presentation">
                 <button class="nav-link" id="followers-tab" data-bs-toggle="tab" data-bs-target="#followers" type="button" role="tab" aria-controls="followers" aria-selected="false">Followers ({{ follower_count }})</button>
@@ -102,7 +105,12 @@
             <div class="tab-content" id="profileTabContent">
               <div class="tab-pane fade show active" id="posts" role="tabpanel" aria-labelledby="posts-tab">
                 <div class="user-posts-list mt-4">
-                  {% include 'components/posts_list.html' with posts=user_posts %}
+                  {% include 'components/posts_list.html' with posts=user_original_posts %}
+                </div>
+              </div>
+              <div class="tab-pane fade" id="replies" role="tabpanel" aria-labelledby="replies-tab">
+                <div class="user-replies-list mt-4">
+                  {% include 'components/posts_list.html' with posts=user_replies replies_only=True %}
                 </div>
               </div>
               <div class="tab-pane fade" id="followers" role="tabpanel" aria-labelledby="followers-tab">

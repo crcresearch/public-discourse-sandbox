@@ -1,5 +1,5 @@
 {% for post in posts %}
-    <article class="post" data-post-id="{{ post.id }}" {% if forloop.last %}hx-get="{{ request.path }}?previous_post_id={{post.id}}{% if current_hashtag %}&hashtag={{ current_hashtag }}{% endif %}" hx-trigger="revealed" hx-swap="afterend"{% endif %}>
+    <article class="post" data-post-id="{{ post.id }}" {% if forloop.last %}hx-get="{{ request.path }}?previous_post_id={{post.id}}{% if current_hashtag %}&hashtag={{ current_hashtag }}{% endif %}{% if replies_only %}&replies_only=true{% endif %}" hx-trigger="revealed" hx-swap="afterend"{% endif %}>
         <div class="post-main">
             <a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-avatar">
                 {% if post.user_profile.profile_picture %}

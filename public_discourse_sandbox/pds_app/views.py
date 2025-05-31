@@ -37,10 +37,17 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None, p
         previous_post_id: Optional ID of the last post from previous page to paginate from
         page_size: Number of posts to return per page (default: 20)
     """
-    posts = Post.objects.filter(
-        parent_post__isnull=True,  # Only show top-level posts, not replies
-        is_deleted=False  # Only show non-deleted posts
-    )
+
+
+    # Filter by hashtag if provided - look for posts that either have the hashtag directly
+    # or have replies containing the hashtag
+    if hashtag:
+        posts = Post.objects.filter(hashtag__tag=hashtag.lower()).distinct()  # Use distinct to avoid duplicate posts
+    else:
+        posts = Post.objects.filter(
+            parent_post__isnull=True,  # Only show top-level posts, not replies
+            is_deleted=False  # Only show non-deleted posts
+        )
     
     # Filter by experiment if provided
     if experiment:
@@ -50,17 +57,6 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None, p
     if profile_ids:
         posts = posts.filter(user_profile__in=profile_ids)
     
-    # Filter by hashtag if provided - look for posts that either have the hashtag directly
-    # or have replies containing the hashtag
-    if hashtag:
-        posts = posts.filter(
-            # Posts that have the hashtag directly OR have replies with the hashtag
-            models.Q(hashtag__tag=hashtag.lower()) |  # Direct hashtag match
-            models.Q(  # Replies containing the hashtag
-                post__hashtag__tag=hashtag.lower(),
-                post__is_deleted=False  # Only count non-deleted replies
-            )
-        ).distinct()  # Use distinct to avoid duplicate posts
 
         # Determine next page of posts based on previous_post_id's created_date
     if previous_post_id:
@@ -897,7 +893,6 @@ class AcceptInvitationView(View):
                 'error': _('Invalid or expired invitation link.')
             })
 
-
 class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView):
     """
     View for displaying a user's profile.
@@ -929,25 +924,45 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileR
         # Get pagination parameters
         previous_post_id = self.request.GET.get('previous_post_id', None)
         page_size = self.request.GET.get('page_size', 10)  # Default to 10 posts per page
+        replies_only = self.request.GET.get('replies_only', False)  # New param to optionally show replies only
 
-        # Get posts by this user (not deleted, ordered by newest first)
-        posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+        # Get all posts by this user (not deleted, ordered by newest first)
+        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+
+        # Separate original posts and replies
+        original_posts = all_posts.filter(parent_post__isnull=True)
+        replies = all_posts.filter(parent_post__isnull=False)
 
         # If previous_post_id provided, paginate from that post
         if previous_post_id:
             try:
                 previous_post = Post.objects.get(id=previous_post_id)
-                posts = posts.filter(created_date__lt=previous_post.created_date)
+                original_posts = original_posts.filter(created_date__lt=previous_post.created_date)
+                replies = replies.filter(created_date__lt=previous_post.created_date)
             except Post.DoesNotExist:
                 pass
 
         # Order by newest first and limit to page size
-        context['user_posts'] = posts.order_by('-created_date')[:int(page_size)]
+        context['user_original_posts'] = original_posts.order_by('-created_date')[:int(page_size)]
+        context['user_replies'] = replies.order_by('-created_date')[:int(page_size)]
+        
+        # Add counts for the tabs
+        context['original_posts_count'] = original_posts.count()
+        context['replies_count'] = replies.count()
+
+        # Keep the original user_posts for backward compatibility (all posts)
+        # If replies_only is True, show only replies, otherwise show only original posts
+        if replies_only:
+            context['user_posts'] = replies.order_by('-created_date')[:int(page_size)]
+        else:
+            context['user_posts'] = original_posts.order_by('-created_date')[:int(page_size)]
+        
         # Annotate each post with comment_count and has_user_voted for template compatibility
         current_user = self.request.user
-        for post in context['user_posts']:
-            post.comment_count = post.get_comment_count()
-            post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+        for post_list in [context['user_original_posts'], context['user_replies'], context['user_posts']]:
+            for post in post_list:
+                post.comment_count = post.get_comment_count()
+                post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
 
         # If HTMX request, map user_posts to posts for template compatibility
         if self.request.headers.get('HX-Request'):
