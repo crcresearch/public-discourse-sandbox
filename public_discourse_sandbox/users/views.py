@@ -113,7 +113,14 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         page_size = self.request.GET.get('page_size', 10)  # Default to 10 posts per page
 
         # Get all posts by this user (not deleted, ordered by newest first)
-        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+        # Add select_related and prefetch_related for efficient queries
+        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False).select_related(
+            'user_profile',
+            'user_profile__user',
+            'parent_post',
+            'parent_post__user_profile',
+            'parent_post__user_profile__user'
+        ).prefetch_related('vote_set')
 
         # Separate original posts and replies
         original_posts = all_posts.filter(parent_post__isnull=True)

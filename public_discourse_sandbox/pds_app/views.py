@@ -42,7 +42,14 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None, p
     # Filter by hashtag if provided - look for posts that either have the hashtag directly
     # or have replies containing the hashtag
     if hashtag:
-        posts = Post.objects.filter(hashtag__tag=hashtag.lower()).distinct()  # Use distinct to avoid duplicate posts
+        posts = Post.objects.filter(
+            models.Q(hashtag__tag=hashtag.lower(), parent_post__isnull=True) |  # Top-level posts with hashtag
+            models.Q(  # Replies with hashtag where parent exists and isn't deleted
+                hashtag__tag=hashtag.lower(),
+                parent_post__isnull=False,
+                parent_post__is_deleted=False
+            )
+        ).distinct()  # Use distinct to avoid duplicate posts
     else:
         posts = Post.objects.filter(
             parent_post__isnull=True,  # Only show top-level posts, not replies
@@ -927,7 +934,13 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileR
         replies_only = self.request.GET.get('replies_only', False)  # New param to optionally show replies only
 
         # Get all posts by this user (not deleted, ordered by newest first)
-        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False).select_related(
+            'user_profile',
+            'user_profile__user',
+            'parent_post',
+            'parent_post__user_profile',
+            'parent_post__user_profile__user'
+        ).prefetch_related('vote_set')
 
         # Separate original posts and replies
         original_posts = all_posts.filter(parent_post__isnull=True)
