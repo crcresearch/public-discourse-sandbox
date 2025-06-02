@@ -129,7 +129,7 @@ class Command(BaseCommand):
                     # name=bot_config['display_name'],
                     persona=persona_description,
                     is_active=file_path in active_files,  # Only activate selected bots
-                    api_token=api_token
+                    api_token=None
                 )
                 self.stdout.write(f"Created digital twin: {bot_config['display_name']} (Active: {digital_twin.is_active})")
 

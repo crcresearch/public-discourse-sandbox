@@ -64,10 +64,16 @@ def get_post_replies(request, post_id):
     """Get replies for a specific post."""
     try:
         # Filter replies that are not deleted and not from banned users
+        # Also ensure the parent post is not deleted
         replies = Post.objects.filter(
             parent_post__id=post_id,
+            parent_post__is_deleted=False,
+            is_deleted=False  # Only show non-deleted replies
         ).select_related(
             'user_profile',
+            'user_profile__user'  # Also select related user for checking banned status
+        ).exclude(
+            user_profile__user__groups__name='Banned'  # Exclude replies from banned users
         ).order_by('created_date')
 
         replies_data = [{

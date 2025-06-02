@@ -1457,7 +1457,7 @@ input[type="checkbox"] {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1530,12 +1530,6 @@ input[type="checkbox"] {
     padding: 8px;
     cursor: pointer;
     margin-right: 20px;
-    color: var(--text-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    left: 15px;
 }
 
 .close-popup:hover {
@@ -2633,5 +2627,53 @@ Profile Tabs Custom Styling
     .post-actions {
         justify-content: space-around;
         gap: 10px;
+    }
+}
+
+/* Reply Layout Styles - Ultra Simple */
+.reply-context-simple {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--secondary-text);
+    line-height: 1.4;
+}
+
+.reply-context-simple i {
+    color: var(--nd-metallic-gold);
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.parent-user-link {
+    color: var(--nd-blue);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.parent-user-link:hover {
+    text-decoration: underline;
+}
+
+.parent-content-snippet {
+    color: var(--text-color);
+    font-style: italic;
+    transition: opacity 0.2s ease;
+}
+
+.parent-content-snippet:hover {
+    opacity: 0.7;
+}
+
+@media screen and (max-width: 768px) {
+    .reply-context-simple {
+        font-size: 13px;
+        flex-wrap: wrap;
+    }
+    
+    .reply-context-simple i {
+        font-size: 14px;
     }
 }

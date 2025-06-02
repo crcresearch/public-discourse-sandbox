@@ -112,24 +112,46 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         previous_post_id = self.request.GET.get('previous_post_id', None)
         page_size = self.request.GET.get('page_size', 10)  # Default to 10 posts per page
 
-        # Get posts by this user (not deleted, ordered by newest first)
-        posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+        # Get all posts by this user (not deleted, ordered by newest first)
+        # Add select_related and prefetch_related for efficient queries
+        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False).select_related(
+            'user_profile',
+            'user_profile__user',
+            'parent_post',
+            'parent_post__user_profile',
+            'parent_post__user_profile__user'
+        ).prefetch_related('vote_set')
+
+        # Separate original posts and replies
+        original_posts = all_posts.filter(parent_post__isnull=True)
+        replies = all_posts.filter(parent_post__isnull=False)
 
         # If previous_post_id provided, paginate from that post
         if previous_post_id:
             try:
                 previous_post = Post.objects.get(id=previous_post_id)
-                posts = posts.filter(created_date__lt=previous_post.created_date)
+                original_posts = original_posts.filter(created_date__lt=previous_post.created_date)
+                replies = replies.filter(created_date__lt=previous_post.created_date)
             except Post.DoesNotExist:
                 pass
 
         # Order by newest first and limit to page size
-        context['user_posts'] = posts.order_by('-created_date')[:int(page_size)]
+        context['user_original_posts'] = original_posts.order_by('-created_date')[:int(page_size)]
+        context['user_replies'] = replies.order_by('-created_date')[:int(page_size)]
+        
+        # Add counts for the tabs
+        context['original_posts_count'] = original_posts.count()
+        context['replies_count'] = replies.count()
+
+        # Keep the original user_posts for backward compatibility (all posts)
+        context['user_posts'] = all_posts.order_by('-created_date')[:int(page_size)]
+        
         # Annotate each post with comment_count and has_user_voted for template compatibility
         current_user = self.request.user
-        for post in context['user_posts']:
-            post.comment_count = post.get_comment_count()
-            post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+        for post_list in [context['user_original_posts'], context['user_replies'], context['user_posts']]:
+            for post in post_list:
+                post.comment_count = post.get_comment_count()
+                post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
 
         # If HTMX request, map user_posts to posts for template compatibility
         if self.request.headers.get('HX-Request'):

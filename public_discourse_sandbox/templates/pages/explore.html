@@ -25,6 +25,9 @@
 
     <!-- Right Sidebar -->
     {% include 'pages/right_content.html' %}
+
+    <!-- Comment Modal - placed outside main content for proper z-index -->
+    {% include 'components/comment_modal.html' %}
 {% endblock %}
 
 {% block inline_javascript %}
