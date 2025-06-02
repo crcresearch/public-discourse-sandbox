@@ -86,13 +86,27 @@ def get_active_posts(request, experiment=None, hashtag=None, profile_ids=None, p
     # Limit results to page_size
     posts = posts[:int(page_size)]
 
-    # Add comment count and vote status using the get_comment_count method
+    # Get current user's profile for follow state checks
+    current_user_profile = None
+    if request.user.is_authenticated and experiment:
+        current_user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+
+    # Add comment count, vote status, and follow state using the get_comment_count method
     for post in posts:
         post.comment_count = post.get_comment_count()
         # Add whether the current user has voted
         post.has_user_voted = post.vote_set.filter(
             user_profile__user=request.user
         ).exists()
+        
+        # Add follow state for each post
+        if current_user_profile and post.user_profile.user != request.user:
+            post.is_following = SocialNetwork.objects.filter(
+                source_node=current_user_profile,
+                target_node=post.user_profile
+            ).exists()
+        else:
+            post.is_following = False
     
     return posts
 
@@ -944,7 +958,7 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileR
 
         # Separate original posts and replies
         original_posts = all_posts.filter(parent_post__isnull=True)
-        replies = all_posts.filter(parent_post__isnull=False)
+        replies = all_posts.filter(parent_post__isnull=False, parent_post__is_deleted=False)
 
         # If previous_post_id provided, paginate from that post
         if previous_post_id:
@@ -972,17 +986,26 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileR
         
         # Annotate each post with comment_count and has_user_voted for template compatibility
         current_user = self.request.user
+        current_user_profile = context.get('current_user_profile')
         for post_list in [context['user_original_posts'], context['user_replies'], context['user_posts']]:
             for post in post_list:
                 post.comment_count = post.get_comment_count()
                 post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+                
+                # Add follow state for each post
+                if current_user_profile and post.user_profile.user != current_user:
+                    post.is_following = SocialNetwork.objects.filter(
+                        source_node=current_user_profile,
+                        target_node=post.user_profile
+                    ).exists()
+                else:
+                    post.is_following = False
 
         # If HTMX request, map user_posts to posts for template compatibility
         if self.request.headers.get('HX-Request'):
             context['posts'] = context['user_posts']
 
         # Add whether the current user is following the viewed profile
-        current_user_profile = context.get('current_user_profile')
         if current_user_profile:
             context['is_following_viewed_profile'] = SocialNetwork.objects.filter(source_node=current_user_profile, target_node=self.object).exists()
         else:
@@ -1012,3 +1035,94 @@ class SettingsView(LoginRequiredMixin, TemplateView):
     This view is accessible to all authenticated users and is experiment-independent.
     """
     template_name = 'pages/settings.html'
+
+
+class CommentDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView):
+    """
+    View for displaying comment detail modal content via HTMX.
+    Returns the modal content for a specific post and its replies.
+    """
+    model = Post
+    template_name = 'partials/_comment_modal_content.html'
+    context_object_name = 'post'
+    slug_field = 'id'
+    slug_url_kwarg = 'post_id'
+    
+    def get_queryset(self):
+        """Filter posts by experiment and ensure they're not deleted."""
+        return Post.objects.filter(
+            experiment=self.experiment,
+            is_deleted=False
+        ).select_related(
+            'user_profile',
+            'user_profile__user'
+        ).prefetch_related('vote_set')
+    
+    def get_context_data(self, **kwargs):
+        """Add replies and other context data for the modal."""
+        context = super().get_context_data(**kwargs)
+        post = self.object
+        
+        # Get current user's profile for follow state checks
+        current_user_profile = context.get('current_user_profile')
+        
+        # Add comment count and vote status for the main post
+        post.comment_count = post.get_comment_count()
+        post.has_user_voted = post.vote_set.filter(
+            user_profile__user=self.request.user
+        ).exists()
+        
+        # Add follow state for the main post
+        if current_user_profile and post.user_profile.user != self.request.user:
+            post.is_following = SocialNetwork.objects.filter(
+                source_node=current_user_profile,
+                target_node=post.user_profile
+            ).exists()
+        else:
+            post.is_following = False
+        
+        # Get replies for this post
+        replies = Post.objects.filter(
+            parent_post=post,
+            is_deleted=False
+        ).select_related(
+            'user_profile',
+            'user_profile__user'
+        ).prefetch_related('vote_set').order_by('created_date')
+        
+        # Add comment count, vote status, and follow state for each reply
+        for reply in replies:
+            reply.comment_count = reply.get_comment_count()
+            reply.has_user_voted = reply.vote_set.filter(
+                user_profile__user=self.request.user
+            ).exists()
+            # Add permission flags for template
+            reply.is_author = reply.user_profile.user == self.request.user
+            reply.is_moderator = self.is_moderator(self.request.user, self.experiment)
+            
+            # Add follow state for each reply
+            if current_user_profile and reply.user_profile.user != self.request.user:
+                reply.is_following = SocialNetwork.objects.filter(
+                    source_node=current_user_profile,
+                    target_node=reply.user_profile
+                ).exists()
+            else:
+                reply.is_following = False
+        
+        context['replies'] = replies
+        
+        # Add user profile URL template for JavaScript
+        context['user_profile_url_template'] = reverse(
+            'user_profile_detail', 
+            kwargs={
+                'experiment_identifier': self.experiment.identifier,
+                'pk': '00000000-0000-0000-0000-000000000000'
+            }
+        )
+        
+        return context
+    
+    @method_decorator(check_banned)
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests for comment modal content."""
+        return super().get(request, *args, **kwargs)

@@ -196,6 +196,9 @@
   <!-- Right Sidebar -->
   {% include 'pages/right_content.html' %}
 
+  <!-- Comment Modal - placed outside tab content for proper z-index -->
+  {% include 'components/comment_modal.html' %}
+
   <!-- Profile Edit Modal -->
   {% if viewed_profile.user == request.user %}
     {% include 'components/edit_profile_modal.html' %}

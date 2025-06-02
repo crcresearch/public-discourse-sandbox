@@ -92,15 +92,15 @@ function handleFollow(userProfileId) {
     )
     .then(data => {
         if (data.status === 'success') {
-            // Update the follow button state
-            const followButton = document.querySelector(`button[onclick=\"handleFollow('${userProfileId}')\"]`);
-            if (followButton) {
+            // Update ALL follow buttons for this user (there might be multiple on the page)
+            const followButtons = document.querySelectorAll(`button[onclick=\"handleFollow('${userProfileId}')\"]`);
+            followButtons.forEach(followButton => {
                 if (data.is_following) {
                     followButton.innerHTML = '<i class="ri-user-unfollow-line"></i> Unfollow';
                 } else {
                     followButton.innerHTML = '<i class="ri-user-follow-line"></i> Follow';
                 }
-            }
+            });
         } else {
             alert(data.message || 'An error occurred while following the user');
         }

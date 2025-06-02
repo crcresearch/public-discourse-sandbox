@@ -196,6 +196,7 @@ class Post(BaseModel):
     def get_comment_count(self):
         """
         Returns the number of posts that have this post as their parent.
+        Also only non-deleted posts because of the custom modelManager
         """
         return Post.objects.filter(parent_post=self).count()
 

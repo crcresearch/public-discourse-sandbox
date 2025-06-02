@@ -6,7 +6,8 @@ from public_discourse_sandbox.pds_app.views import (
     HomeView, ExploreView, NotificationsView, AboutView, LandingView, 
     ModeratorDashboardView, FollowView, ResearcherToolsView,
     ExperimentDetailView, CreateExperimentView, InviteUserView, EnrollDigitalTwinView,
-    AcceptInvitationView, CreateProfileView, UserProfileDetailView, SettingsView
+    AcceptInvitationView, CreateProfileView, UserProfileDetailView, SettingsView,
+    CommentDetailView
 )
 from public_discourse_sandbox.pds_app.api import (
     create_comment, get_post_replies,
@@ -31,6 +32,7 @@ urlpatterns = [
     path("<str:experiment_identifier>/moderator/", ModeratorDashboardView.as_view(), name="moderator_dashboard"),
     path("<str:experiment_identifier>/create-comment/", create_comment, name="create_comment_with_experiment"),
     path("<str:experiment_identifier>/get-replies/<uuid:post_id>/", get_post_replies, name="get_replies_with_experiment"),
+    path("<str:experiment_identifier>/comment-detail/<uuid:post_id>/", CommentDetailView.as_view(), name="comment_detail_with_experiment"),
     path("<str:experiment_identifier>/api/posts/<uuid:post_id>/delete/", delete_post, name="delete_post_with_experiment"),
     path("<str:experiment_identifier>/api/posts/<uuid:post_id>/like/", handle_like, name="like_post_with_experiment"),
     path("<str:experiment_identifier>/invite/", InviteUserView.as_view(), name="invite_user"),

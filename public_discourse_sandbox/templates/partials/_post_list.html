@@ -38,7 +38,11 @@
                             {% endif %}
                             {% if post.user_profile.user != request.user %}
                                 <button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
-                                    <i class="ri-user-follow-line"></i> Follow
+                                    {% if post.is_following %}
+                                        <i class="ri-user-unfollow-line"></i> Unfollow
+                                    {% else %}
+                                        <i class="ri-user-follow-line"></i> Follow
+                                    {% endif %}
                                 </button>
                             {% endif %}
                         </div>
@@ -53,7 +57,11 @@
                             @{{ post.parent_post.user_profile.username }}
                         </a>:
                         <span class="parent-content-snippet" onclick="showCommentPopup('{{ post.parent_post.id }}')" style="cursor: pointer;">
-                            "{{ post.parent_post.content|truncatewords:8 }}"
+                            {% if post.parent_post.repost_source %}
+                                "{{ post.parent_post.repost_source.content|truncatewords:8 }}"
+                            {% else %}
+                                "{{ post.parent_post.content|truncatewords:8 }}"
+                            {% endif %}
                         </span>
                     </span>
                 </div>
@@ -128,7 +136,11 @@
                             {% endif %}
                             {% if post.user_profile.user != request.user %}
                                 <button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
-                                    <i class="ri-user-follow-line"></i> Follow
+                                    {% if post.is_following %}
+                                        <i class="ri-user-unfollow-line"></i> Unfollow
+                                    {% else %}
+                                        <i class="ri-user-follow-line"></i> Follow
+                                    {% endif %}
                                 </button>
                             {% endif %}
                         </div>
