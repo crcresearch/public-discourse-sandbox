@@ -3,7 +3,6 @@
 
 import ssl
 from pathlib import Path
-import os
 
 import environ
 
@@ -19,9 +18,9 @@ if READ_DOT_ENV_FILE:
 
 # OpenAI API settings
 # No default value so that Django will raise an error if the variable is not set
-OPENAI_API_KEY = env.str('OPENAI_API_KEY')
-OPENAI_BASE_URL = env.str('OPENAI_BASE_URL')
-LLM_MODEL = env.str('LLM_MODEL')
+OPENAI_API_KEY = env.str("OPENAI_API_KEY")
+OPENAI_BASE_URL = env.str("OPENAI_BASE_URL")
+LLM_MODEL = env.str("LLM_MODEL")
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -353,8 +352,11 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    # "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
