@@ -41,6 +41,17 @@ http:
         # https://doc.traefik.io/traefik/routing/routers/#certresolver
         certResolver: letsencrypt
 
+    # API router with rate limiting
+    api-secure-router:
+      rule: 'Host(`pds.crc.nd.edu`) && PathPrefix(`/api/v1/`)'
+      entryPoints:
+        - web-secure
+      middlewares:
+        - api-rate-limit
+      service: django
+      tls:
+        certResolver: letsencrypt
+
     flower-secure-router:
       rule: 'Host(`pds.crc.nd.edu`)'
       entryPoints:
@@ -66,6 +77,19 @@ http:
       # https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
       headers:
         hostsProxyHeaders: ['X-CSRFToken']
+
+    # Rate limiting for API endpoints
+    api-rate-limit:
+      # https://doc.traefik.io/traefik/master/middlewares/http/ratelimit/
+      rateLimit:
+        # Allow 100 requests per hour for free tier
+        average: 100
+        period: 1h
+        burst: 20
+        # Use client IP for rate limiting
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
 
   services:
     django:

@@ -3,8 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.response import Response
+from rest_framework import status
 from .models import Post, UserProfile, Experiment, Vote, Notification
 from .decorators import check_banned
+from .serializers import PostSerializer, UserProfileSerializer, PostCreateSerializer, ExperimentSerializer, PostReplySerializer
 import json
 
 @login_required
@@ -343,3 +349,498 @@ def repost(request, post_id):
         return JsonResponse({'error': 'User profile not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+# =============================================================================
+# EXTERNAL API ENDPOINTS (Similar to X API)
+# =============================================================================
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def api_home_timeline(request):
+    """
+    Get home timeline posts for the authenticated user.
+    Similar to X's home timeline endpoint.
+    
+    Query Parameters:
+    - experiment_id: UUID of the experiment (required)
+    - max_results: Number of posts to return (default: 20, max: 100)
+    - since_id: Return posts after this ID
+    - until_id: Return posts before this ID
+    - pagination_token: Token for pagination
+    """
+    try:
+        # Get experiment from query parameters
+        experiment_id = request.query_params.get('experiment_id')
+        if not experiment_id:
+            return Response({
+                'error': 'experiment_id parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get experiment
+        try:
+            experiment = Experiment.objects.get(identifier=experiment_id)
+        except Experiment.DoesNotExist:
+            return Response({
+                'error': 'Experiment not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            return Response({
+                'error': 'User does not have access to this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if user_profile.is_banned:
+            return Response({
+                'error': 'User is banned from this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Get pagination parameters
+        max_results = min(int(request.query_params.get('max_results', 20)), 100)
+        since_id = request.query_params.get('since_id')
+        until_id = request.query_params.get('until_id')
+
+        # Get posts using the existing get_home_feed_posts function
+        from .views import get_home_feed_posts
+        posts = list(get_home_feed_posts(
+            request=request,
+            experiment=experiment,
+            page_size=max_results
+        ))
+
+        # Apply additional filters based on since_id and until_id
+        if since_id:
+            try:
+                since_post = Post.objects.get(id=since_id)
+                posts = posts.filter(created_date__gt=since_post.created_date)
+            except Post.DoesNotExist:
+                pass
+
+        if until_id:
+            try:
+                until_post = Post.objects.get(id=until_id)
+                posts = posts.filter(created_date__lt=until_post.created_date)
+            except Post.DoesNotExist:
+                pass
+
+        # Serialize posts
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+
+        # Prepare response data similar to X API format
+        response_data = {
+            'data': serializer.data,
+            'meta': {
+                'result_count': len(serializer.data),
+                'newest_id': str(posts[0].id) if len(posts) > 0 else None,
+                'oldest_id': str(posts[-1].id) if len(posts) > 0 else None,
+            }
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def api_search_posts(request):
+    """
+    Search for posts by content or hashtags.
+    Similar to X's search endpoint.
+    
+    Query Parameters:
+    - experiment_id: UUID of the experiment (required)
+    - query: Search query (required)
+    - max_results: Number of posts to return (default: 20, max: 100)
+    - since_id: Return posts after this ID
+    - until_id: Return posts before this ID
+    """
+    try:
+        # Get experiment from query parameters
+        experiment_id = request.query_params.get('experiment_id')
+        if not experiment_id:
+            return Response({
+                'error': 'experiment_id parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get search query
+        query = request.query_params.get('query')
+        if not query:
+            return Response({
+                'error': 'query parameter is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get experiment
+        try:
+            experiment = Experiment.objects.get(id=experiment_id)
+        except Experiment.DoesNotExist:
+            return Response({
+                'error': 'Experiment not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            return Response({
+                'error': 'User does not have access to this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if user_profile.is_banned:
+            return Response({
+                'error': 'User is banned from this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Get pagination parameters
+        max_results = min(int(request.query_params.get('max_results', 20)), 100)
+        since_id = request.query_params.get('since_id')
+        until_id = request.query_params.get('until_id')
+
+        # Search posts by content or hashtags
+        from django.db import models
+        posts = Post.objects.filter(
+            experiment=experiment,
+            is_deleted=False,
+            parent_post__isnull=True  # Only top-level posts
+        ).filter(
+            models.Q(content__icontains=query) |
+            models.Q(hashtag__tag__icontains=query.lower())
+        ).select_related(
+            'user_profile',
+            'user_profile__user'
+        ).prefetch_related(
+            'vote_set',
+            'hashtag_set'
+        ).order_by('-created_date')
+
+        # Apply additional filters based on since_id and until_id
+        if since_id:
+            try:
+                since_post = Post.objects.get(id=since_id)
+                posts = posts.filter(created_date__gt=since_post.created_date)
+            except Post.DoesNotExist:
+                pass
+
+        if until_id:
+            try:
+                until_post = Post.objects.get(id=until_id)
+                posts = posts.filter(created_date__lt=until_post.created_date)
+            except Post.DoesNotExist:
+                pass
+
+        # Limit results
+        posts = posts[:max_results]
+
+        # Add comment count and vote status
+        for post in posts:
+            post.comment_count = post.get_comment_count()
+            post.user_has_voted = Vote.objects.filter(
+                user_profile=user_profile,
+                post=post,
+                is_upvote=True
+            ).exists()
+
+        # Serialize posts
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+
+        # Prepare response data similar to X API format
+        response_data = {
+            'data': serializer.data,
+            'meta': {
+                'result_count': len(serializer.data),
+                'newest_id': str(posts[0].id) if len(posts) > 0 else None,
+                'oldest_id': str(posts[-1].id) if len(posts) > 0 else None,
+            }
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def api_get_post(request, post_id):
+    """
+    Get a specific post by ID.
+    Similar to X's post lookup endpoint.
+    
+    Path Parameters:
+    - post_id: UUID of the post
+    """
+    try:
+        # Get the post
+        try:
+            post = Post.objects.get(id=post_id, is_deleted=False)
+        except Post.DoesNotExist:
+            return Response({
+                'error': 'Post not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=post.experiment).first()
+        if not user_profile:
+            return Response({
+                'error': 'User does not have access to this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if user_profile.is_banned:
+            return Response({
+                'error': 'User is banned from this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Add comment count and vote status
+        post.comment_count = post.get_comment_count()
+        post.user_has_voted = Vote.objects.filter(
+            user_profile=user_profile,
+            post=post,
+            is_upvote=True
+        ).exists()
+
+        # Serialize post
+        serializer = PostSerializer(post, context={'request': request})
+
+        return Response({
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def api_create_post(request):
+    """
+    Create a new post.
+    Similar to X's post creation endpoint.
+    
+    Request Body:
+    - text: Post content (required, max 500 characters)
+    - experiment_id: UUID of the experiment (required)
+    """
+    try:
+        # Get experiment from request data
+        experiment_id = request.data.get('experiment_id')
+        if not experiment_id:
+            return Response({
+                'error': 'experiment_id is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get experiment
+        try:
+            experiment = Experiment.objects.get(id=experiment_id)
+        except Experiment.DoesNotExist:
+            return Response({
+                'error': 'Experiment not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            return Response({
+                'error': 'User does not have access to this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if user_profile.is_banned:
+            return Response({
+                'error': 'User is banned from this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Create post using serializer
+        serializer = PostCreateSerializer(
+            data=request.data,
+            context={'request': request, 'experiment': experiment}
+        )
+
+        if serializer.is_valid():
+            post = serializer.save()
+
+            # Serialize the created post for response
+            response_serializer = PostSerializer(post, context={'request': request})
+
+            return Response({
+                'data': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'error': 'Invalid data',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def api_like_post(request, post_id):
+    """
+    Like or unlike a post.
+    Similar to X's like endpoint.
+    
+    Path Parameters:
+    - post_id: UUID of the post
+    """
+    try:
+        # Get the post
+        try:
+            post = Post.objects.get(id=post_id, is_deleted=False)
+        except Post.DoesNotExist:
+            return Response({
+                'error': 'Post not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=post.experiment).first()
+        if not user_profile:
+            return Response({
+                'error': 'User does not have access to this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if user_profile.is_banned:
+            return Response({
+                'error': 'User is banned from this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if user already voted
+        existing_vote = Vote.objects.filter(
+            user_profile=user_profile,
+            post=post
+        ).first()
+
+        if existing_vote:
+            # Unlike: delete the vote and decrement count
+            existing_vote.delete()
+            post.num_upvotes -= 1
+            post.save()
+            liked = False
+        else:
+            # Like: create new vote and increment count
+            Vote.objects.create(
+                user_profile=user_profile,
+                post=post,
+                is_upvote=True
+            )
+            post.num_upvotes += 1
+            post.save()
+            liked = True
+
+        return Response({
+            'data': {
+                'liked': liked,
+                'like_count': post.num_upvotes
+            }
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def api_create_comment(request, post_id):
+    """
+    Create a comment/reply to a post.
+    Similar to X's reply endpoint.
+    
+    Path Parameters:
+    - post_id: UUID of the post to reply to
+    
+    Request Body:
+    - text: Comment content (required, max 500 characters)
+    """
+    try:
+        # Get the parent post
+        try:
+            parent_post = Post.objects.get(id=post_id, is_deleted=False)
+        except Post.DoesNotExist:
+            return Response({
+                'error': 'Post not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=parent_post.experiment).first()
+        if not user_profile:
+            return Response({
+                'error': 'User does not have access to this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if user_profile.is_banned:
+            return Response({
+                'error': 'User is banned from this experiment'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Add the parent post ID to the request data
+        comment_data = request.data.copy()
+        comment_data['in_reply_to_id'] = str(parent_post.id)
+
+        # Create comment using serializer
+        serializer = PostReplySerializer(
+            data=comment_data,
+            context={'request': request, 'experiment': parent_post.experiment}
+        )
+
+        if serializer.is_valid():
+            comment = serializer.save()
+
+            # Serialize the created comment for response
+            response_serializer = PostSerializer(comment, context={'request': request})
+
+            return Response({
+                'data': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'error': 'Invalid data',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def api_user_experiments(request):
+    """
+    Get experiments that the authenticated user has access to.
+    """
+    try:
+        # Get user's experiments
+        user_profiles = request.user.userprofile_set.filter(is_banned=False)
+        experiments = [profile.experiment for profile in user_profiles]
+
+        # Serialize experiments
+        serializer = ExperimentSerializer(experiments, many=True)
+
+        return Response({
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

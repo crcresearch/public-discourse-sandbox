@@ -12,7 +12,10 @@ from public_discourse_sandbox.pds_app.views import (
 from public_discourse_sandbox.pds_app.api import (
     create_comment, get_post_replies,
     delete_post, ban_user, unban_user,
-    update_last_accessed, handle_like, delete_experiment, repost
+    update_last_accessed, handle_like, delete_experiment, repost,
+    # External API endpoints
+    api_home_timeline, api_search_posts, api_get_post, 
+    api_create_post, api_like_post, api_user_experiments, api_create_comment
 )
 
 urlpatterns = [
@@ -56,4 +59,18 @@ urlpatterns = [
     path("api/users/<uuid:user_profile_id>/unban/", unban_user, name="unban_user"),
     path('post/<uuid:post_id>/like/', handle_like, name='like_post'),
     path('post/<uuid:post_id>/repost/',repost, name='repost_post'),
+
+    # =============================================================================
+    # EXTERNAL API ENDPOINTS (Similar to X API)
+    # =============================================================================
+    # Posts endpoints
+    path('api/v1/posts/home-timeline/', api_home_timeline, name='api_home_timeline'),
+    path('api/v1/posts/search/', api_search_posts, name='api_search_posts'),
+    path('api/v1/posts/<uuid:post_id>/', api_get_post, name='api_get_post'),
+    path('api/v1/posts/', api_create_post, name='api_create_post'),
+    path('api/v1/posts/<uuid:post_id>/like/', api_like_post, name='api_like_post'),
+    path('api/v1/posts/<uuid:post_id>/comments/', api_create_comment, name='api_create_comment'),
+
+    # User endpoints
+    path('api/v1/user/experiments/', api_user_experiments, name='api_user_experiments'),
 ]

@@ -1,0 +1,365 @@
+# Public Discourse Sandbox API Documentation
+
+## Overview
+
+The Public Discourse Sandbox API provides programmatic access to posts, users, and experiments similar to X's API. This API allows external applications to interact with the platform using token-based authentication.
+
+## Authentication
+
+The API uses **Token Authentication** similar to X's Bearer Token system. You don't need username/password - only an API token.
+
+### Getting an API Token
+
+1. **Via Django Admin**: Go to `/admin/authtoken/token/` and create a token for a user
+2. **Via Management Command**: 
+   ```bash
+   python manage.py create_api_token user@example.com
+   ```
+
+### Using the Token
+
+Include the token in the `Authorization` header:
+
+```http
+Authorization: Token <your-token-here>
+```
+
+## Base URL
+
+```
+https://your-domain.com/api/v1/
+```
+
+## Rate Limiting
+
+Rate limiting is handled by Traefik at the infrastructure level. Default limits:
+- **Free Tier**: 100 requests/hour
+- **Basic Tier**: 1,000 requests/hour  
+- **Pro Tier**: 10,000 requests/hour
+
+## API Endpoints
+
+### Posts
+
+#### Get Home Timeline
+Get posts from users you follow (similar to X's home timeline).
+
+```http
+GET /api/v1/posts/home-timeline/
+```
+
+**Query Parameters:**
+- `experiment_id` (required): UUID of the experiment
+- `max_results` (optional): Number of posts to return (default: 20, max: 100)
+- `since_id` (optional): Return posts after this ID
+- `until_id` (optional): Return posts before this ID
+
+**Example Request:**
+```http
+GET /api/v1/posts/home-timeline/?experiment_id=123e4567-e89b-12d3-a456-426614174000&max_results=10
+Authorization: Token <your-token>
+```
+
+**Example Response:**
+```json
+{
+  "data": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "text": "This is a sample post!",
+      "author": {
+        "id": "456e7890-e89b-12d3-a456-426614174001",
+        "username": "johndoe",
+        "display_name": "John Doe",
+        "profile_picture": "https://example.com/profile.jpg",
+        "is_verified": false,
+        "is_banned": false,
+        "created_date": "2024-01-01T12:00:00Z"
+      },
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z",
+      "like_count": 5,
+      "reply_count": 2,
+      "repost_count": 1,
+      "is_deleted": false,
+      "is_edited": false,
+      "is_pinned": false,
+      "is_flagged": false,
+      "in_reply_to_id": null,
+      "repost_source_id": null,
+      "hashtags": [{"tag": "example"}],
+      "liked_by_user": false
+    }
+  ],
+  "meta": {
+    "result_count": 1,
+    "newest_id": "123e4567-e89b-12d3-a456-426614174000",
+    "oldest_id": "123e4567-e89b-12d3-a456-426614174000"
+  }
+}
+```
+
+#### Search Posts
+Search for posts by content or hashtags.
+
+```http
+GET /api/v1/posts/search/
+```
+
+**Query Parameters:**
+- `experiment_id` (required): UUID of the experiment
+- `query` (required): Search query
+- `max_results` (optional): Number of posts to return (default: 20, max: 100)
+- `since_id` (optional): Return posts after this ID
+- `until_id` (optional): Return posts before this ID
+
+**Example Request:**
+```http
+GET /api/v1/posts/search/?experiment_id=123e4567-e89b-12d3-a456-426614174000&query=example
+Authorization: Token <your-token>
+```
+
+#### Get Post
+Get a specific post by ID.
+
+```http
+GET /api/v1/posts/{post_id}/
+```
+
+**Path Parameters:**
+- `post_id`: UUID of the post
+
+**Example Request:**
+```http
+GET /api/v1/posts/123e4567-e89b-12d3-a456-426614174000/
+Authorization: Token <your-token>
+```
+
+#### Create Post
+Create a new post.
+
+```http
+POST /api/v1/posts/
+```
+
+**Request Body:**
+```json
+{
+  "text": "This is my new post!",
+  "experiment_id": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+**Example Request:**
+```http
+POST /api/v1/posts/
+Authorization: Token <your-token>
+Content-Type: application/json
+{
+  "text": "This is my new post!",
+  "experiment_id": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+#### Like Post
+Like or unlike a post.
+
+```http
+POST /api/v1/posts/{post_id}/like/
+```
+
+**Path Parameters:**
+- `post_id`: UUID of the post
+
+**Example Request:**
+```http
+POST /api/v1/posts/123e4567-e89b-12d3-a456-426614174000/like/
+Authorization: Token <your-token>
+```
+
+**Example Response:**
+```json
+{
+  "data": {
+    "liked": true,
+    "like_count": 6
+  }
+}
+```
+
+### User
+
+#### Get User Experiments
+Get experiments that the authenticated user has access to.
+
+```http
+GET /api/v1/user/experiments/
+```
+
+**Example Request:**
+```http
+GET /api/v1/user/experiments/
+Authorization: Token <your-token>
+```
+
+**Example Response:**
+```json
+{
+  "data": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "identifier": "experiment-1",
+      "name": "Social Media Study",
+      "description": "A study about social media behavior",
+      "created_date": "2024-01-01T12:00:00Z",
+      "is_deleted": false
+    }
+  ]
+}
+```
+
+## Error Responses
+
+All endpoints return consistent error responses:
+
+```json
+{
+  "error": "Error message describing what went wrong"
+}
+```
+
+**Common HTTP Status Codes:**
+- `200 OK`: Request successful
+- `201 Created`: Resource created successfully
+- `400 Bad Request`: Invalid request parameters
+- `401 Unauthorized`: Invalid or missing authentication token
+- `403 Forbidden`: User doesn't have access to the resource
+- `404 Not Found`: Resource not found
+- `500 Internal Server Error`: Server error
+
+## Data Models
+
+### Post Object
+```json
+{
+  "id": "string (UUID)",
+  "text": "string (max 500 characters)",
+  "author": "UserProfile object",
+  "created_at": "string (ISO 8601 datetime)",
+  "updated_at": "string (ISO 8601 datetime)",
+  "like_count": "integer",
+  "reply_count": "integer", 
+  "repost_count": "integer",
+  "is_deleted": "boolean",
+  "is_edited": "boolean",
+  "is_pinned": "boolean",
+  "is_flagged": "boolean",
+  "in_reply_to_id": "string (UUID) or null",
+  "repost_source_id": "string (UUID) or null",
+  "hashtags": "array of hashtag objects",
+  "liked_by_user": "boolean"
+}
+```
+
+### UserProfile Object
+```json
+{
+  "id": "string (UUID)",
+  "username": "string",
+  "display_name": "string",
+  "profile_picture": "string (URL) or null",
+  "is_verified": "boolean",
+  "is_banned": "boolean",
+  "created_date": "string (ISO 8601 datetime)"
+}
+```
+
+### Hashtag Object
+```json
+{
+  "tag": "string"
+}
+```
+
+## Examples
+
+### Python Example
+```python
+import requests
+
+# Set up authentication
+headers = {
+    'Authorization': 'Token your-token-here',
+    'Content-Type': 'application/json'
+}
+
+# Get home timeline
+response = requests.get(
+    'https://your-domain.com/api/v1/posts/home-timeline/',
+    params={'experiment_id': '123e4567-e89b-12d3-a456-426614174000'},
+    headers=headers
+)
+
+posts = response.json()['data']
+for post in posts:
+    print(f"{post['author']['username']}: {post['text']}")
+
+# Create a new post
+new_post = {
+    'text': 'Hello from the API!',
+    'experiment_id': '123e4567-e89b-12d3-a456-426614174000'
+}
+
+response = requests.post(
+    'https://your-domain.com/api/v1/posts/',
+    json=new_post,
+    headers=headers
+)
+
+print(f"Created post: {response.json()['data']['id']}")
+```
+
+### JavaScript Example
+```javascript
+const token = 'your-token-here';
+const baseURL = 'https://your-domain.com/api/v1';
+
+// Get home timeline
+fetch(`${baseURL}/posts/home-timeline/?experiment_id=123e4567-e89b-12d3-a456-426614174000`, {
+  headers: {
+    'Authorization': `Token ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+.then(response => response.json())
+.then(data => {
+  data.data.forEach(post => {
+    console.log(`${post.author.username}: ${post.text}`);
+  });
+});
+
+// Create a new post
+fetch(`${baseURL}/posts/`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Token ${token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    text: 'Hello from the API!',
+    experiment_id: '123e4567-e89b-12d3-a456-426614174000'
+  })
+})
+.then(response => response.json())
+.then(data => {
+  console.log(`Created post: ${data.data.id}`);
+});
+```
+
+## Versioning
+
+The API is versioned using URL paths (`/api/v1/`). Future versions will use `/api/v2/`, etc.
+
+## Support
+
+For API support, please contact the development team or create an issue in the project repository.
