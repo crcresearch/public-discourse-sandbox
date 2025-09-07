@@ -29,6 +29,8 @@ from public_discourse_sandbox.pds_app.views import ResearcherToolsView
 from public_discourse_sandbox.pds_app.views import SettingsView
 from public_discourse_sandbox.pds_app.views import UserProfileDetailView
 
+# from public_discourse_sandbox.pds_app.api_views import mmmmdmdm
+
 urlpatterns = [
     path("", LandingView.as_view(), name="landing"),
     path("about/", AboutView.as_view(), name="about"),
