@@ -27,23 +27,23 @@ class AccountAdapter(DefaultAccountAdapter):
         """
         # First save the user using the default adapter
         user = super().save_user(request, user, form, commit=False)
-        
+
         # Get any custom fields from the form
-        if hasattr(form, 'cleaned_data'):
+        if hasattr(form, "cleaned_data"):
             # Get profile-specific fields if they exist
-            display_name = form.cleaned_data.get('display_name')
-            user_name = form.cleaned_data.get('user_name') or display_name
-            bio = form.cleaned_data.get('bio', '')
-            profile_picture = form.cleaned_data.get('profile_picture')
-            banner_picture = form.cleaned_data.get('banner_picture')
-            experiment_id = form.cleaned_data.get('experiment') or "00000"
-            
+            display_name = form.cleaned_data.get("display_name")
+            user_name = form.cleaned_data.get("user_name") or display_name
+            bio = form.cleaned_data.get("bio", "")
+            profile_picture = form.cleaned_data.get("profile_picture")
+            banner_picture = form.cleaned_data.get("banner_picture")
+            experiment_id = form.cleaned_data.get("experiment") or "00000"
+
             # Save the user first
             if commit:
                 user.save()
-            
+
             # Get experiment from form or form data
-            experiment = getattr(form, 'experiment', None)
+            experiment = getattr(form, "experiment", None)
             if not experiment and experiment_id:
                 try:
                     experiment = Experiment.objects.get(identifier=experiment_id)
@@ -51,10 +51,13 @@ class AccountAdapter(DefaultAccountAdapter):
                     if experiment_id == "00000":
                         # Log error but continue - default experiment should exist
                         import logging
+
                         logger = logging.getLogger(__name__)
-                        logger.error(f"Default experiment '00000' not found when creating user {user.email}")
+                        logger.error(
+                            f"Default experiment '00000' not found when creating user {user.email}"
+                        )
                     pass
-            
+
             if experiment:
                 try:
                     # Create the UserProfile
@@ -65,9 +68,9 @@ class AccountAdapter(DefaultAccountAdapter):
                         username=user_name,
                         bio=bio,
                         profile_picture=profile_picture,
-                        banner_picture=banner_picture
+                        banner_picture=banner_picture,
                     )
-                    
+
                     # Set last_accessed experiment
                     user.last_accessed = experiment
                     user.save()
@@ -75,7 +78,7 @@ class AccountAdapter(DefaultAccountAdapter):
                     raise
         elif commit:
             user.save()
-            
+
         return user
 
 

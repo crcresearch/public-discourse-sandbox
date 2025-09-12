@@ -33,10 +33,12 @@ class Command(BaseCommand):
         token, created = Token.objects.get_or_create(user=user)
 
         if not created and not regenerate:
-            self.stdout.write(self.style.WARNING(
-                f"Token already exists for user {user.email}. "
-                f"Use --regenerate to create a new token.",
-            ))
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Token already exists for user {user.email}. "
+                    f"Use --regenerate to create a new token.",
+                )
+            )
             self.stdout.write(f"existing token: {token.key}")
             return
 
@@ -44,17 +46,17 @@ class Command(BaseCommand):
             token.delete()
             token = Token.objects.create(user=user)
             self.stdout.write(
-                    self.style.SUCCESS(f"regenerated token for user {user.email}"),
+                self.style.SUCCESS(f"regenerated token for user {user.email}"),
             )
         else:
             self.stdout.write(
-                    self.style.SUCCESS(f"created new token for user {user.email}"),
+                self.style.SUCCESS(f"created new token for user {user.email}"),
             )
 
         self.stdout.write(f"token: {token.key}")
         self.stdout.write(
-                self.style.SUCCESS(
-                    "Use this token in the Authorization header: "
-                    "Authorization: Token <token>",
-                ),
+            self.style.SUCCESS(
+                "Use this token in the Authorization header: "
+                "Authorization: Token <token>",
+            ),
         )

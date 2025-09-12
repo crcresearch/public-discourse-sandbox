@@ -1,5 +1,4 @@
 from django.urls import path
-from django.views.generic import TemplateView
 
 from public_discourse_sandbox.pds_app.api import ban_user
 from public_discourse_sandbox.pds_app.api import create_comment
@@ -10,6 +9,8 @@ from public_discourse_sandbox.pds_app.api import handle_like
 from public_discourse_sandbox.pds_app.api import repost
 from public_discourse_sandbox.pds_app.api import unban_user
 from public_discourse_sandbox.pds_app.api import update_last_accessed
+from public_discourse_sandbox.pds_app.external_api import api_home_timeline
+from public_discourse_sandbox.pds_app.external_api import api_user_experiments
 from public_discourse_sandbox.pds_app.views import AboutView
 from public_discourse_sandbox.pds_app.views import AcceptInvitationView
 from public_discourse_sandbox.pds_app.views import CreateExperimentView
@@ -29,14 +30,12 @@ from public_discourse_sandbox.pds_app.views import ResearcherToolsView
 from public_discourse_sandbox.pds_app.views import SettingsView
 from public_discourse_sandbox.pds_app.views import UserProfileDetailView
 
-# from public_discourse_sandbox.pds_app.api_views import mmmmdmdm
-
 urlpatterns = [
     path("", LandingView.as_view(), name="landing"),
     path("about/", AboutView.as_view(), name="about"),
     path("researcher-tools/", ResearcherToolsView.as_view(), name="researcher_tools"),
     path(
-        "create-experiment/", CreateExperimentView.as_view(), name="create_experiment"
+        "create-experiment/", CreateExperimentView.as_view(), name="create_experiment",
     ),
     path(
         "experiment/<str:experiment_identifier>/",
@@ -132,7 +131,7 @@ urlpatterns = [
         name="unban_user_with_experiment",
     ),
     path(
-        "api/update-last-accessed/", update_last_accessed, name="update_last_accessed"
+        "api/update-last-accessed/", update_last_accessed, name="update_last_accessed",
     ),
     path(
         "api/users/<uuid:user_profile_id>/follow/",
@@ -155,4 +154,8 @@ urlpatterns = [
     path("api/users/<uuid:user_profile_id>/unban/", unban_user, name="unban_user"),
     path("post/<uuid:post_id>/like/", handle_like, name="like_post"),
     path("post/<uuid:post_id>/repost/", repost, name="repost_post"),
+
+    # external API Endposts
+    path("api/v1/posts/home-timeline/", api_home_timeline, name="api_home_timeline"),
+    path("api/v1/user/experiments/", api_user_experiments, name="api_user_experiments"),
 ]
