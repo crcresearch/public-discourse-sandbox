@@ -9,6 +9,7 @@ from public_discourse_sandbox.pds_app.api import handle_like
 from public_discourse_sandbox.pds_app.api import repost
 from public_discourse_sandbox.pds_app.api import unban_user
 from public_discourse_sandbox.pds_app.api import update_last_accessed
+from public_discourse_sandbox.pds_app.external_api import api_get_post_by_id
 from public_discourse_sandbox.pds_app.external_api import api_home_timeline
 from public_discourse_sandbox.pds_app.external_api import api_user_experiments
 from public_discourse_sandbox.pds_app.views import AboutView
@@ -157,5 +158,6 @@ urlpatterns = [
 
     # external API Endposts
     path("api/v1/posts/home-timeline/", api_home_timeline, name="api_home_timeline"),
+    path("api/v1/posts/<uuid:pk>", api_get_post_by_id),
     path("api/v1/user/experiments/", api_user_experiments, name="api_user_experiments"),
 ]

@@ -1,38 +1,33 @@
-# External API Endpoints
 from rest_framework import status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view
 from rest_framework.decorators import authentication_classes
 from rest_framework.decorators import permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .authentication import BearerAuthentication
 from .models import Post
 from .serializers import ExperimentSerializer
 from .serializers import PostSerializer
 
 
+class CustomPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
 @api_view(["GET"])
-@authentication_classes([TokenAuthentication])
+@authentication_classes([BearerAuthentication])
 @permission_classes([IsAuthenticated])
 def api_home_timeline(request):
-    """
-    Get home timeline posts for the authenticated user.
-
-    Query Parameters:
-    - experiment_identifier: UUID of the experiment (required)
-    - max_results: Number of posts to return (default: 20, max: 100)
-    - since_id: Return posts after this ID
-    - until_id: Return posts before this ID
-    - pagination_token: Token for pagination
-    """
     try:
         user_profile = request.user.userprofile_set.filter(is_banned=False).first()
         posts = Post.objects.filter(user_profile=user_profile)
-        data = PostSerializer(posts, many=True)
-        return Response({
-            "data": data,
-            }, status=status.HTTP_200_OK)
+        paginator = CustomPagination()
+        page = paginator.paginate_queryset(posts, request)
+        serializer = PostSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
     except Exception as e:
         return Response({
             "error": str(e),
@@ -40,7 +35,21 @@ def api_home_timeline(request):
 
 
 @api_view(["GET"])
-@authentication_classes([TokenAuthentication])
+@authentication_classes([BearerAuthentication])
+@permission_classes([IsAuthenticated])
+def api_get_post_by_id(request, pk):
+    try:
+        post = Post.objects.get(pk=pk)
+        serializer = PostSerializer(post)
+        return Response(serializer.data)
+    except Post.DoesNotExist:
+        return Response(
+            {"error": "post does not exist"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+@api_view(["GET"])
+@authentication_classes([BearerAuthentication])
 @permission_classes([IsAuthenticated])
 def api_user_experiments(request):
     try:
