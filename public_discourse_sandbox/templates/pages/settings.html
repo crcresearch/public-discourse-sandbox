@@ -11,7 +11,7 @@
             <h1>Settings</h1>
         </div>
 
-        <div class="post-card">           
+        <div class="post-card">
             <!-- Update Name Section -->
             <div class="form-group" style="border-bottom: 1px solid var(--border-color); padding: 16px;">
                 <h5>Update Name</h5>
@@ -24,7 +24,7 @@
                     </div>
                 </form>
             </div>
-            
+
             <!-- Researcher Status Section -->
             <div class="form-group" style="border-bottom: 1px solid var(--border-color); padding: 16px;">
                 <h5>Researcher Status</h5>
@@ -44,7 +44,7 @@
                 <p class="text-secondary">Contact an administrator to request researcher status.</p>
                 {% endif %}
             </div> -->
-            
+
             <!-- Email Settings Section -->
             <!-- <div class="form-group" style="border-bottom: 1px solid var(--border-color); padding: 16px;">
                 <div class="d-flex justify-content-between align-items-center">
@@ -58,7 +58,7 @@
                     </a>
                 </div>
             </div>     -->
-            
+
             <!-- MFA Section -->
             <div class="form-group" style="border-bottom: 1px solid var(--border-color); padding: 16px;">
                 <div class="d-flex justify-content-between align-items-center">
@@ -72,7 +72,7 @@
                     </a>
                 </div>
             </div>
-            
+
             <!-- Password Management Section -->
             <div class="form-group" style="padding: 16px;">
                 <div class="d-flex justify-content-between align-items-center">
@@ -93,6 +93,23 @@
                 </div>
             </div>
         </div>
+        <div class="form-group" style="padding: 16px;">
+          <h5>Manage your api keys</h5>
+          <form method="post" action="{% url 'create_new_api_token' %}" class="mt-2">
+            <button type="submit">generate api key</button>
+          </form>
+          {% if user_api_keys %}
+          <ul>
+            {% for api_key in user_api_keys %}
+            <li>
+              {{ api_key.key|slice:":4" }}...{{ api_key.key|slice:"-4:" }} - {{ api_key.created }}
+              <button>delete api key</button></li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p>no api key found in your account
+          {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -103,4 +120,4 @@
     // Add JavaScript for settings functionality here
   });
 </script>
-{% endblock inline_javascript %} 
+{% endblock inline_javascript %}

@@ -30,6 +30,7 @@ from public_discourse_sandbox.pds_app.views import NotificationsView
 from public_discourse_sandbox.pds_app.views import ResearcherToolsView
 from public_discourse_sandbox.pds_app.views import SettingsView
 from public_discourse_sandbox.pds_app.views import UserProfileDetailView
+from public_discourse_sandbox.pds_app.views import create_new_token_view
 
 urlpatterns = [
     path("", LandingView.as_view(), name="landing"),
@@ -144,6 +145,7 @@ urlpatterns = [
         FollowView.as_view(),
         name="follow_user_with_experiment",
     ),
+    path("create_new_api_token/", create_new_token_view, name="create_new_api_token"),
     # URLs without experiment identifier (will use last_accessed)
     path("home/", HomeView.as_view(), name="home"),
     path("explore/", ExploreView.as_view(), name="explore"),
@@ -156,8 +158,8 @@ urlpatterns = [
     path("post/<uuid:post_id>/like/", handle_like, name="like_post"),
     path("post/<uuid:post_id>/repost/", repost, name="repost_post"),
 
-    # external API Endposts
-    path("api/v1/posts/home-timeline/", api_home_timeline, name="api_home_timeline"),
-    path("api/v1/posts/<uuid:pk>", api_get_post_by_id),
-    path("api/v1/user/experiments/", api_user_experiments, name="api_user_experiments"),
+    # External API Endposts
+    path("api/v1/<str:experiment_id>/posts/home-timeline/", api_home_timeline, name="api_home_timeline"),
+    path("api/v1/<str:experiment_id>/posts/<uuid:pk>", api_get_post_by_id),
+    path("api/v1/user/discourses/", api_user_experiments, name="api_user_experiments"),
 ]

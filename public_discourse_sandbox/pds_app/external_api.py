@@ -20,7 +20,7 @@ class CustomPagination(PageNumberPagination):
 @api_view(["GET"])
 @authentication_classes([BearerAuthentication])
 @permission_classes([IsAuthenticated])
-def api_home_timeline(request):
+def api_home_timeline(request, experiment_id):
     try:
         user_profile = request.user.userprofile_set.filter(is_banned=False).first()
         posts = Post.objects.filter(user_profile=user_profile)
@@ -37,7 +37,7 @@ def api_home_timeline(request):
 @api_view(["GET"])
 @authentication_classes([BearerAuthentication])
 @permission_classes([IsAuthenticated])
-def api_get_post_by_id(request, pk):
+def api_get_post_by_id(request, pk, experiment_id):
     try:
         post = Post.objects.get(pk=pk)
         serializer = PostSerializer(post)
@@ -55,12 +55,10 @@ def api_user_experiments(request):
     try:
         user_profiles = request.user.userprofile_set.filter(is_banned=False)
         experiments = [profile.experiment for profile in user_profiles]
-
-        serializer = ExperimentSerializer(experiments, many=True)
-
-        return Response({
-            "data": serializer.data,
-            }, status=status.HTTP_200_OK)
+        paginator = CustomPagination()
+        page = paginator.paginate_queryset(experiments, request)
+        serializer = ExperimentSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
     except Exception as e:
         return Response({
             "error": str(e),

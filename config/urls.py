@@ -24,8 +24,6 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     # Your stuff: custom urls includes go here
     path("", include("public_discourse_sandbox.pds_app.urls")),
-    path("dev/", include("public_discourse_sandbox.developer_platform.urls")),
-    path("public/api/", include("public_discourse_sandbox.external_api.urls")),
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
