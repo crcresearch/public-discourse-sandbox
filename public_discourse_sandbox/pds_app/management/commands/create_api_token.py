@@ -19,7 +19,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         email = options["email"]
-        regenerate = options["regenerate"]
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
