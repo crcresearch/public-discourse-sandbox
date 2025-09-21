@@ -96,7 +96,8 @@
       <h5>Manage your api keys</h5>
       <form method="post" action="{% url 'generate_external_api_token' %}" class="mb-4">
         {% csrf_token %}
-        <button type="submit" class="btn btn-info">generate api key</button>
+        <button type="submit" class="post-button" style="border-radius: 10px; padding: 8px 16px; min-height:
+          38px;">generate an api key</button>
       </form>
       {% if user_api_keys %}
       <ul class="d-flex flex-column gap-3 list-group list-group-flush">
@@ -106,7 +107,7 @@
           <form method="post" action="{% url 'delete_external_api_token' %}">
             {% csrf_token %}
             <input type="hidden" name="key" value="{{api_key.key}}">
-            <button type="submit" class="btn btn-danger">delete</button>
+            <button type="submit" class="btn btn-danger" style="border-radius: 20px">delete</button>
           </form>
         </li>
         {% endfor %}
