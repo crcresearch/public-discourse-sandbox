@@ -1,6 +1,8 @@
 import hashlib
+import secrets
 import uuid
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -353,3 +355,21 @@ class ExperimentInvitation(BaseModel):
 
     def __str__(self):
         return f"{self.email} - {self.experiment.name}"
+
+
+class MultiToken(models.Model):
+    key = models.CharField(max_length=40, primary_key=True, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="auth_tokens",
+        on_delete=models.CASCADE,
+    )
+    created = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_hex(20)  # 40 chars
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.key

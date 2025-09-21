@@ -30,7 +30,8 @@ from public_discourse_sandbox.pds_app.views import NotificationsView
 from public_discourse_sandbox.pds_app.views import ResearcherToolsView
 from public_discourse_sandbox.pds_app.views import SettingsView
 from public_discourse_sandbox.pds_app.views import UserProfileDetailView
-from public_discourse_sandbox.pds_app.views import create_new_token_view
+from public_discourse_sandbox.pds_app.views import delete_external_api_token_view
+from public_discourse_sandbox.pds_app.views import generate_external_api_token_view
 
 urlpatterns = [
     path("", LandingView.as_view(), name="landing"),
@@ -55,6 +56,11 @@ urlpatterns = [
         name="accept_invitation",
     ),
     path("settings/", SettingsView.as_view(), name="settings"),
+    path("generate-external-api-token/", view=generate_external_api_token_view,
+         name="generate_external_api_token"),
+    path("delete-external-api-token/", view=delete_external_api_token_view,
+         name="delete_external_api_token"),
+
     # URLs with experiment identifier
     path(
         "<str:experiment_identifier>/about/",
@@ -145,7 +151,6 @@ urlpatterns = [
         FollowView.as_view(),
         name="follow_user_with_experiment",
     ),
-    path("create_new_api_token/", create_new_token_view, name="create_new_api_token"),
     # URLs without experiment identifier (will use last_accessed)
     path("home/", HomeView.as_view(), name="home"),
     path("explore/", ExploreView.as_view(), name="explore"),

@@ -1,5 +1,8 @@
-from rest_framework import authentication
+from rest_framework.authentication import TokenAuthentication
+
+from .models import MultiToken
 
 
-class BearerAuthentication(authentication.TokenAuthentication):
+class BearerAuthentication(TokenAuthentication):
+    model = MultiToken
     keyword = "Bearer"

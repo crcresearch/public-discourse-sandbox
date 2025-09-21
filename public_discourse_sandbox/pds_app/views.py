@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
@@ -16,12 +16,12 @@ from django.shortcuts import resolve_url
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView
 from django.views.generic import ListView
 from django.views.generic import TemplateView
 from django.views.generic import View
-from rest_framework.authtoken.models import Token
 
 from .decorators import check_banned
 from .forms import EnrollDigitalTwinForm
@@ -33,6 +33,9 @@ from .mixins import ProfileRequiredMixin
 from .models import DigitalTwin
 from .models import Experiment
 from .models import ExperimentInvitation
+
+# from rest_framework.authtoken.models import Token
+from .models import MultiToken
 from .models import Notification
 from .models import Post
 from .models import SocialNetwork
@@ -1156,14 +1159,32 @@ class SettingsView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["user_api_keys"] = Token.objects.filter(user=self.request.user).values()
+        context["user_api_keys"] = MultiToken.objects.filter(user=self.request.user).values()
         return context
 
-@login_required
-def create_new_token_view(request):
-    if request.method == "POST":
-        user = request.user
-        print(user)
 
-    # Redirect back to settings page
-    return HttpResponseRedirect(reverse("settings"))
+@login_required
+def generate_external_api_token_view(request):
+        if request.method == "POST":
+            token = MultiToken.objects.create(user=request.user)
+            token_msg = mark_safe(f"Token: {token} has been generated.<br/>"
+            "Keep it in safe environment as you won't be able to see it again.")
+            messages.success(request, token_msg)
+
+        # Redirect back to settings page
+        return HttpResponseRedirect(reverse("settings"))
+
+
+@login_required
+def delete_external_api_token_view(request):
+        if request.method == "POST":
+            user = request.user
+            api_key = request.POST.get("key").strip()
+            deleted, _ = MultiToken.objects.filter(user=user, key=api_key).delete()
+            if deleted:
+                messages.success(request, "token deleted successfully")
+            else:
+                messages.error(request, "failed to delete token")
+
+        # Redirect back to settings page
+        return HttpResponseRedirect(reverse("settings"))
