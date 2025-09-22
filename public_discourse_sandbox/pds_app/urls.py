@@ -9,8 +9,12 @@ from public_discourse_sandbox.pds_app.api import handle_like
 from public_discourse_sandbox.pds_app.api import repost
 from public_discourse_sandbox.pds_app.api import unban_user
 from public_discourse_sandbox.pds_app.api import update_last_accessed
+from public_discourse_sandbox.pds_app.external_api import api_create_comment
+from public_discourse_sandbox.pds_app.external_api import api_create_post
 from public_discourse_sandbox.pds_app.external_api import api_get_post_by_id
 from public_discourse_sandbox.pds_app.external_api import api_home_timeline
+from public_discourse_sandbox.pds_app.external_api import api_like_post
+from public_discourse_sandbox.pds_app.external_api import api_search_posts
 from public_discourse_sandbox.pds_app.external_api import api_user_experiments
 from public_discourse_sandbox.pds_app.views import AboutView
 from public_discourse_sandbox.pds_app.views import AcceptInvitationView
@@ -165,6 +169,10 @@ urlpatterns = [
 
     # External API Endposts
     path("api/v1/<str:experiment_id>/posts/home-timeline/", api_home_timeline, name="api_home_timeline"),
-    path("api/v1/<str:experiment_id>/posts/<uuid:pk>", api_get_post_by_id),
+    path("api/v1/<str:experiment_id>/posts/search/", api_search_posts, name="api_search_posts"),
+    path("api/v1/<str:experiment_id>/posts/create/", api_create_post, name="api_post_create"),
+    path("api/v1/posts/<uuid:post_id>", api_get_post_by_id, name="api_post_by_id"),
+    path("api/v1/posts/<uuid:post_id>/like", api_like_post, name="api_post_like"),
+    path("api/v1/posts/<uuid:post_id>/comment", api_create_comment, name="api_create_comment"),
     path("api/v1/user/discourses/", api_user_experiments, name="api_user_experiments"),
 ]

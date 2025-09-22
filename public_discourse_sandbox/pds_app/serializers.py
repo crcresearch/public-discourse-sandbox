@@ -86,3 +86,77 @@ class ExperimentSerializer(serializers.ModelSerializer):
             "description",
             "created_date",
         ]
+
+class PostCreateSerializer(serializers.ModelSerializer):
+    text = serializers.CharField(source="content", max_length=500)
+
+    class Meta:
+        model = Post
+        fields = ["text"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        experiment = self.context.get("experiment")
+
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError("Authentication required")
+
+        if not experiment:
+            raise serializers.ValidationError("Experiment context required")
+
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+
+        if not user_profile:
+            raise serializers.ValidationError("User profile not found for this experiment")
+
+        if user_profile.is_banned:
+            raise serializers.ValidationError("User is banned from this experiment")
+
+        post = Post.objects.create(
+                user_profile=user_profile,
+                experiment=experiment,
+                content=validated_data["content"],
+                depth=0,
+                parent_post=None,
+                )
+        return post
+
+class PostReplySerializer(serializers.ModelSerializer):
+    text = serializers.CharField(source="content", max_length=500)
+    in_reply_to_id = serializers.UUIDField(write_only=True)
+
+    class Meta:
+        model = Post
+        fields = ["text", "in_reply_to_id"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        experiment = self.context.get("experiment")
+        parent_post_id = validated_data.pop("in_reply_to_id")
+
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError("Authentication required")
+
+        if not experiment:
+            raise serializers.ValidationError("Experiment context required")
+
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            raise serializers.ValidationError("user profile not found for this experiment")
+
+        if user_profile.is_banned:
+            raise serializers.ValidationError("user is banned from this experiment")
+
+        try:
+            parent_post = Post.objects.get(id=parent_post_id, experiment=experiment)
+        except Post.DoesNotExist:
+            raise serializers.ValidationError("parent post not found")
+
+        reply = Post.objects.create(
+                user_profile=user_profile,
+                experiment=experiment,
+                content=validated_data["content"],
+                parent_post=parent_post,
+                depth=parent_post.depth+1,
+        )
+        return reply
