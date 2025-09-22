@@ -7,6 +7,7 @@ from public_discourse_sandbox.pds_app.models import Vote
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    is_verified = serializers.BooleanField(read_only=True)
     class Meta:
         model = UserProfile
         fields = [
@@ -14,18 +15,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "username",
             "display_name",
             "profile_picture",
-            # "is_verified",
+            "is_verified",
             "is_banned",
             "created_date",
         ]
 
 class PostSerializer(serializers.ModelSerializer):
-
     author = UserProfileSerializer(source="user_profile", read_only=True)
     like_count = serializers.IntegerField(source="num_upvotes", read_only=True)
     repost_count = serializers.IntegerField(source="num_shares", read_only=True)
     hashtags = serializers.SerializerMethodField()
     liked_by_user = serializers.SerializerMethodField()
+    is_deleted = serializers.BooleanField(read_only=True)
+    is_edited = serializers.BooleanField(read_only=True)
+    is_pinned = serializers.BooleanField(read_only=True)
+    is_flagged = serializers.BooleanField(read_only=True)
+    like_count = serializers.IntegerField(source="num_upvotes", read_only=True)
+    reply_count = serializers.SerializerMethodField()
+    repost_count = serializers.IntegerField(source="num_shares", read_only=True)
     class Meta:
         model = Post
         fields = [
@@ -39,7 +46,14 @@ class PostSerializer(serializers.ModelSerializer):
             "repost_count",
             "hashtags",
             "author",
+            "like_count",
+            "reply_count",
+            "repost_count",
             "liked_by_user",
+            "is_deleted",
+            "is_edited",
+            "is_pinned",
+            "is_flagged",
         ]
     def get_hashtags(self, obj):
         hashtags = obj.hashtag_set.all()
@@ -58,6 +72,8 @@ class PostSerializer(serializers.ModelSerializer):
                     is_upvote=True,
                 ).exists()
         return False
+    def get_reply_count(self, obj):
+        return obj.get_comment_count()
 
 
 class ExperimentSerializer(serializers.ModelSerializer):

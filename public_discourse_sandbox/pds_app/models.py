@@ -365,6 +365,9 @@ class MultiToken(models.Model):
         on_delete=models.CASCADE,
     )
     created = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        verbose_name = "Auth Token"
+        verbose_name_plural = "Auth Tokens"
 
     def save(self, *args, **kwargs):
         if not self.key:

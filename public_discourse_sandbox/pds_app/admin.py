@@ -1,16 +1,20 @@
 from django.contrib import admin
-from .models import (
-    Experiment,
-    UserProfile,
-    Post,
-    Vote,
-    SocialNetwork,
-    DigitalTwin,
-    Hashtag,
-    Notification,
-    ExperimentInvitation,
-)
 
+from .models import DigitalTwin
+from .models import Experiment
+from .models import ExperimentInvitation
+from .models import Hashtag
+from .models import MultiToken
+from .models import Notification
+from .models import Post
+from .models import SocialNetwork
+from .models import UserProfile
+from .models import Vote
+
+
+@admin.register(MultiToken)
+class ExternalAPITokenAdmin(admin.ModelAdmin):
+    list_display = ("key", "created", "user")
 
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):

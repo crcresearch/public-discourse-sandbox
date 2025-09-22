@@ -7,9 +7,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .authentication import BearerAuthentication
+from .models import Experiment
 from .models import Post
+from .models import UserProfile
 from .serializers import ExperimentSerializer
 from .serializers import PostSerializer
+from .views import get_home_feed_posts
 
 
 class CustomPagination(PageNumberPagination):
@@ -22,8 +25,28 @@ class CustomPagination(PageNumberPagination):
 @permission_classes([IsAuthenticated])
 def api_home_timeline(request, experiment_id):
     try:
-        user_profile = request.user.userprofile_set.filter(is_banned=False).first()
-        posts = Post.objects.filter(user_profile=user_profile)
+        try:
+            experiment = Experiment.objects.get(identifier=experiment_id)
+        except Experiment.DoesNotExist:
+            return Response({
+                "error": "experiment does not exist",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # check if user has access to this experiment
+        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        if not user_profile:
+            return Response({
+                "error": "user does not have access to this experiment",
+                }, status=status.HTTP_403_FORBIDDEN)
+        if user_profile.is_banned:
+            return Response({
+                "error": "user is banned from this experiment",
+                }, status=status.HTTP_403_FORBIDDEN)
+        page_size = min(int(request.query_params.get("page_size", 20)), 100)
+        posts = list(get_home_feed_posts(
+            request=request,
+            experiment=experiment,
+            page_size=page_size))
         paginator = CustomPagination()
         page = paginator.paginate_queryset(posts, request)
         serializer = PostSerializer(page, many=True)
@@ -59,7 +82,7 @@ def api_user_experiments(request):
         page = paginator.paginate_queryset(experiments, request)
         serializer = ExperimentSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
-    except Exception as e:
+    except UserProfile.DoesNotExist:
         return Response({
-            "error": str(e),
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            "error": "user profile does not exist",
+            }, status=status.HTTP_404_NOT_FOUND)
