@@ -19,6 +19,9 @@
     <!-- Right Sidebar -->
     {% include 'pages/right_content.html' %}
 
+    <!-- Comment Modal - placed outside main content for proper z-index -->
+    {% include 'components/comment_modal.html' %}
+
     <!-- Compose Popup -->
     <div id="compose-popup" class="compose-popup-overlay" style="display: none;">
         <div class="compose-popup">
