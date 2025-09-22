@@ -47,7 +47,9 @@ class Experiment(BaseModel):
     irb_additions = models.TextField(null=True, blank=True)
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
     )  # This defines what user "owns" this experiment
     is_deleted = models.BooleanField(default=False)
 
@@ -124,10 +126,14 @@ class UserProfile(BaseModel):
     username = models.CharField(max_length=255)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     banner_picture = models.ImageField(
-        upload_to="banner_pictures/", null=True, blank=True,
+        upload_to="banner_pictures/",
+        null=True,
+        blank=True,
     )
     profile_picture = models.ImageField(
-        upload_to="profile_pictures/", null=True, blank=True,
+        upload_to="profile_pictures/",
+        null=True,
+        blank=True,
     )
     bio = models.TextField(null=True, blank=True)
     num_followers = models.IntegerField(default=0)
@@ -203,7 +209,10 @@ class Post(BaseModel):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     content = models.TextField()
     parent_post = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL,
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
     )
     depth = models.IntegerField(default=0)
     num_upvotes = models.IntegerField(default=0)
@@ -215,7 +224,11 @@ class Post(BaseModel):
     is_pinned = models.BooleanField(default=False)
     is_flagged = models.BooleanField(default=False)
     repost_source = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="reposts",
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reposts",
     )
 
     def __str__(self):
@@ -252,7 +265,8 @@ class Post(BaseModel):
                 print("Hashtag: ", hashtag)
                 try:
                     hashtag, created = Hashtag.objects.get_or_create(
-                        tag=hashtag.lower(), post=self,
+                        tag=hashtag.lower(),
+                        post=self,
                     )
                 except Exception as e:
                     print(f"Error processing hashtag {hashtag}: {e}")
@@ -286,10 +300,14 @@ class SocialNetwork(BaseModel):
     """
 
     source_node = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="following",
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="following",
     )  # Follower
     target_node = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="followers",
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="followers",
     )  # Who is being followed
 
     def __str__(self):
@@ -365,6 +383,7 @@ class MultiToken(models.Model):
         on_delete=models.CASCADE,
     )
     created = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         verbose_name = "Auth Token"
         verbose_name_plural = "Auth Tokens"

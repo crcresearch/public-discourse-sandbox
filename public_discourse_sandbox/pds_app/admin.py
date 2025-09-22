@@ -16,6 +16,7 @@ from .models import Vote
 class ExternalAPITokenAdmin(admin.ModelAdmin):
     list_display = ("key", "created", "user")
 
+
 @admin.register(Experiment)
 class ExperimentAdmin(admin.ModelAdmin):
     list_display = ("name", "creator", "created_date", "last_modified", "is_deleted")

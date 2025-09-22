@@ -42,7 +42,9 @@ urlpatterns = [
     path("about/", AboutView.as_view(), name="about"),
     path("researcher-tools/", ResearcherToolsView.as_view(), name="researcher_tools"),
     path(
-        "create-experiment/", CreateExperimentView.as_view(), name="create_experiment",
+        "create-experiment/",
+        CreateExperimentView.as_view(),
+        name="create_experiment",
     ),
     path(
         "experiment/<str:experiment_identifier>/",
@@ -60,11 +62,16 @@ urlpatterns = [
         name="accept_invitation",
     ),
     path("settings/", SettingsView.as_view(), name="settings"),
-    path("generate-external-api-token/", view=generate_external_api_token_view,
-         name="generate_external_api_token"),
-    path("delete-external-api-token/", view=delete_external_api_token_view,
-         name="delete_external_api_token"),
-
+    path(
+        "generate-external-api-token/",
+        view=generate_external_api_token_view,
+        name="generate_external_api_token",
+    ),
+    path(
+        "delete-external-api-token/",
+        view=delete_external_api_token_view,
+        name="delete_external_api_token",
+    ),
     # URLs with experiment identifier
     path(
         "<str:experiment_identifier>/about/",
@@ -143,7 +150,9 @@ urlpatterns = [
         name="unban_user_with_experiment",
     ),
     path(
-        "api/update-last-accessed/", update_last_accessed, name="update_last_accessed",
+        "api/update-last-accessed/",
+        update_last_accessed,
+        name="update_last_accessed",
     ),
     path(
         "api/users/<uuid:user_profile_id>/follow/",
@@ -166,13 +175,28 @@ urlpatterns = [
     path("api/users/<uuid:user_profile_id>/unban/", unban_user, name="unban_user"),
     path("post/<uuid:post_id>/like/", handle_like, name="like_post"),
     path("post/<uuid:post_id>/repost/", repost, name="repost_post"),
-
     # External API Endposts
-    path("api/v1/<str:experiment_id>/posts/home-timeline/", api_home_timeline, name="api_home_timeline"),
-    path("api/v1/<str:experiment_id>/posts/search/", api_search_posts, name="api_search_posts"),
-    path("api/v1/<str:experiment_id>/posts/create/", api_create_post, name="api_post_create"),
+    path(
+        "api/v1/<str:experiment_id>/posts/home-timeline/",
+        api_home_timeline,
+        name="api_home_timeline",
+    ),
+    path(
+        "api/v1/<str:experiment_id>/posts/search/",
+        api_search_posts,
+        name="api_search_posts",
+    ),
+    path(
+        "api/v1/<str:experiment_id>/posts/create/",
+        api_create_post,
+        name="api_post_create",
+    ),
     path("api/v1/posts/<uuid:post_id>", api_get_post_by_id, name="api_post_by_id"),
     path("api/v1/posts/<uuid:post_id>/like", api_like_post, name="api_post_like"),
-    path("api/v1/posts/<uuid:post_id>/comment", api_create_comment, name="api_create_comment"),
+    path(
+        "api/v1/posts/<uuid:post_id>/comment",
+        api_create_comment,
+        name="api_create_comment",
+    ),
     path("api/v1/user/discourses/", api_user_experiments, name="api_user_experiments"),
 ]

@@ -8,6 +8,7 @@ from public_discourse_sandbox.pds_app.models import Vote
 
 class UserProfileSerializer(serializers.ModelSerializer):
     is_verified = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = UserProfile
         fields = [
@@ -19,6 +20,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_banned",
             "created_date",
         ]
+
 
 class PostSerializer(serializers.ModelSerializer):
     author = UserProfileSerializer(source="user_profile", read_only=True)
@@ -33,6 +35,7 @@ class PostSerializer(serializers.ModelSerializer):
     like_count = serializers.IntegerField(source="num_upvotes", read_only=True)
     reply_count = serializers.SerializerMethodField()
     repost_count = serializers.IntegerField(source="num_shares", read_only=True)
+
     class Meta:
         model = Post
         fields = [
@@ -55,6 +58,7 @@ class PostSerializer(serializers.ModelSerializer):
             "is_pinned",
             "is_flagged",
         ]
+
     def get_hashtags(self, obj):
         hashtags = obj.hashtag_set.all()
         return [{"tag": hashtag.tag} for hashtag in hashtags]
@@ -72,6 +76,7 @@ class PostSerializer(serializers.ModelSerializer):
                     is_upvote=True,
                 ).exists()
         return False
+
     def get_reply_count(self, obj):
         return obj.get_comment_count()
 
@@ -86,6 +91,7 @@ class ExperimentSerializer(serializers.ModelSerializer):
             "description",
             "created_date",
         ]
+
 
 class PostCreateSerializer(serializers.ModelSerializer):
     text = serializers.CharField(source="content", max_length=500)
@@ -104,22 +110,27 @@ class PostCreateSerializer(serializers.ModelSerializer):
         if not experiment:
             raise serializers.ValidationError("Experiment context required")
 
-        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        user_profile = request.user.userprofile_set.filter(
+            experiment=experiment
+        ).first()
 
         if not user_profile:
-            raise serializers.ValidationError("User profile not found for this experiment")
+            raise serializers.ValidationError(
+                "User profile not found for this experiment"
+            )
 
         if user_profile.is_banned:
             raise serializers.ValidationError("User is banned from this experiment")
 
         post = Post.objects.create(
-                user_profile=user_profile,
-                experiment=experiment,
-                content=validated_data["content"],
-                depth=0,
-                parent_post=None,
-                )
+            user_profile=user_profile,
+            experiment=experiment,
+            content=validated_data["content"],
+            depth=0,
+            parent_post=None,
+        )
         return post
+
 
 class PostReplySerializer(serializers.ModelSerializer):
     text = serializers.CharField(source="content", max_length=500)
@@ -140,9 +151,13 @@ class PostReplySerializer(serializers.ModelSerializer):
         if not experiment:
             raise serializers.ValidationError("Experiment context required")
 
-        user_profile = request.user.userprofile_set.filter(experiment=experiment).first()
+        user_profile = request.user.userprofile_set.filter(
+            experiment=experiment
+        ).first()
         if not user_profile:
-            raise serializers.ValidationError("user profile not found for this experiment")
+            raise serializers.ValidationError(
+                "user profile not found for this experiment"
+            )
 
         if user_profile.is_banned:
             raise serializers.ValidationError("user is banned from this experiment")
@@ -153,10 +168,10 @@ class PostReplySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("parent post not found")
 
         reply = Post.objects.create(
-                user_profile=user_profile,
-                experiment=experiment,
-                content=validated_data["content"],
-                parent_post=parent_post,
-                depth=parent_post.depth+1,
+            user_profile=user_profile,
+            experiment=experiment,
+            content=validated_data["content"],
+            parent_post=parent_post,
+            depth=parent_post.depth + 1,
         )
         return reply
