@@ -90,6 +90,7 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
+    "django_notification_system",
 ]
 
 LOCAL_APPS = [
@@ -371,3 +372,16 @@ SPECTACULAR_SETTINGS = {
 }
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+NOTIFICATION_SYSTEM_TARGETS = {
+    # Twilio Required settings, if you're not planning on using Twilio these can be set
+    # to empty strings
+    "twilio_sms": {
+        'account_sid': '',
+        'auth_token': '',
+        'sender': '' # This is the phone number associated with the Twilio account
+    },
+    "email": {
+        'from_email': 'pds@crc.nd.edu' # Sending email address
+    }
+}
