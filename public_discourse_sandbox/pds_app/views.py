@@ -1227,9 +1227,99 @@ class SettingsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["user_api_keys"] = MultiToken.objects.filter(
-            user=self.request.user
+            user=self.request.user,
         ).values()
         return context
+
+class CommentDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView):
+    """
+    View for displaying comment detail modal content via HTMX.
+    Returns the modal content for a specific post and its replies.
+    """
+    model = Post
+    template_name = "partials/_comment_modal_content.html"
+    context_object_name = "post"
+    slug_field = "id"
+    slug_url_kwarg = "post_id"
+
+    def get_queryset(self):
+        """Filter posts by experiment and ensure they're not deleted."""
+        return Post.objects.filter(
+            experiment=self.experiment,
+            is_deleted=False,
+        ).select_related(
+            "user_profile",
+            "user_profile__user",
+        ).prefetch_related("vote_set")
+
+    def get_context_data(self, **kwargs):
+        """Add replies and other context data for the modal."""
+        context = super().get_context_data(**kwargs)
+        post = self.object
+
+        # Get current user's profile for follow state checks
+        current_user_profile = context.get("current_user_profile")
+
+        # Add comment count and vote status for the main post
+        post.comment_count = post.get_comment_count()
+        post.has_user_voted = post.vote_set.filter(
+            user_profile__user=self.request.user,
+        ).exists()
+
+        # Add follow state for the main post
+        if current_user_profile and post.user_profile.user != self.request.user:
+            post.is_following = SocialNetwork.objects.filter(
+                source_node=current_user_profile,
+                target_node=post.user_profile,
+            ).exists()
+        else:
+            post.is_following = False
+
+        # Get replies for this post
+        replies = Post.objects.filter(
+            parent_post=post,
+            is_deleted=False,
+        ).select_related(
+            "user_profile",
+            "user_profile__user",
+        ).prefetch_related("vote_set").order_by("created_date")
+
+        # Add comment count, vote status, and follow state for each reply
+        for reply in replies:
+            reply.comment_count = reply.get_comment_count()
+            reply.has_user_voted = reply.vote_set.filter(
+                user_profile__user=self.request.user,
+            ).exists()
+            # Add permission flags for template
+            reply.is_author = reply.user_profile.user == self.request.user
+            reply.is_moderator = self.is_moderator(self.request.user, self.experiment)
+
+            # Add follow state for each reply
+            if current_user_profile and reply.user_profile.user != self.request.user:
+                reply.is_following = SocialNetwork.objects.filter(
+                    source_node=current_user_profile,
+                    target_node=reply.user_profile,
+                ).exists()
+            else:
+                reply.is_following = False
+
+        context["replies"] = replies
+
+        # Add user profile URL template for JavaScript
+        context["user_profile_url_template"] = reverse(
+            "user_profile_detail",
+            kwargs={
+                "experiment_identifier": self.experiment.identifier,
+                "pk": "00000000-0000-0000-0000-000000000000",
+            },
+        )
+
+        return context
+
+    @method_decorator(check_banned)
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests for comment modal content."""
+        return super().get(request, *args, **kwargs)
 
 
 @login_required
@@ -1238,7 +1328,7 @@ def generate_external_api_token_view(request):
         token = MultiToken.objects.create(user=request.user)
         token_msg = mark_safe(
             f"Token: {token} has been generated.<br/>"
-            "Keep it in safe environment as you won't be able to see it again."
+            "Keep it in safe environment as you won't be able to see it again.",
         )
         messages.success(request, token_msg)
 
