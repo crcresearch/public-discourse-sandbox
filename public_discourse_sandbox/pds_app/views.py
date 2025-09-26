@@ -1231,11 +1231,15 @@ class SettingsView(LoginRequiredMixin, TemplateView):
         ).values()
         return context
 
-class CommentDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView):
+
+class CommentDetailView(
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView
+):
     """
     View for displaying comment detail modal content via HTMX.
     Returns the modal content for a specific post and its replies.
     """
+
     model = Post
     template_name = "partials/_comment_modal_content.html"
     context_object_name = "post"
@@ -1244,13 +1248,17 @@ class CommentDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequi
 
     def get_queryset(self):
         """Filter posts by experiment and ensure they're not deleted."""
-        return Post.objects.filter(
-            experiment=self.experiment,
-            is_deleted=False,
-        ).select_related(
-            "user_profile",
-            "user_profile__user",
-        ).prefetch_related("vote_set")
+        return (
+            Post.objects.filter(
+                experiment=self.experiment,
+                is_deleted=False,
+            )
+            .select_related(
+                "user_profile",
+                "user_profile__user",
+            )
+            .prefetch_related("vote_set")
+        )
 
     def get_context_data(self, **kwargs):
         """Add replies and other context data for the modal."""
@@ -1276,13 +1284,18 @@ class CommentDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequi
             post.is_following = False
 
         # Get replies for this post
-        replies = Post.objects.filter(
-            parent_post=post,
-            is_deleted=False,
-        ).select_related(
-            "user_profile",
-            "user_profile__user",
-        ).prefetch_related("vote_set").order_by("created_date")
+        replies = (
+            Post.objects.filter(
+                parent_post=post,
+                is_deleted=False,
+            )
+            .select_related(
+                "user_profile",
+                "user_profile__user",
+            )
+            .prefetch_related("vote_set")
+            .order_by("created_date")
+        )
 
         # Add comment count, vote status, and follow state for each reply
         for reply in replies:

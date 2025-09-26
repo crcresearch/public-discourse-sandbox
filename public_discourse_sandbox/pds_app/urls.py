@@ -18,6 +18,7 @@ from public_discourse_sandbox.pds_app.external_api import api_search_posts
 from public_discourse_sandbox.pds_app.external_api import api_user_experiments
 from public_discourse_sandbox.pds_app.views import AboutView
 from public_discourse_sandbox.pds_app.views import AcceptInvitationView
+from public_discourse_sandbox.pds_app.views import CommentDetailView
 from public_discourse_sandbox.pds_app.views import CreateExperimentView
 from public_discourse_sandbox.pds_app.views import CreateProfileView
 from public_discourse_sandbox.pds_app.views import EnrollDigitalTwinView
@@ -102,6 +103,11 @@ urlpatterns = [
         "<str:experiment_identifier>/create-comment/",
         create_comment,
         name="create_comment_with_experiment",
+    ),
+    path(
+        "<str:experiment_identifier>/comment-detail/<uuid:post_id>/",
+        CommentDetailView.as_view(),
+        name="comment_detail_with_experiment",
     ),
     path(
         "<str:experiment_identifier>/get-replies/<uuid:post_id>/",
