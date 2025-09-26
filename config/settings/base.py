@@ -3,7 +3,6 @@
 
 import ssl
 from pathlib import Path
-import os
 
 import environ
 
@@ -19,9 +18,9 @@ if READ_DOT_ENV_FILE:
 
 # OpenAI API settings
 # No default value so that Django will raise an error if the variable is not set
-OPENAI_API_KEY = env.str('OPENAI_API_KEY')
-OPENAI_BASE_URL = env.str('OPENAI_BASE_URL')
-LLM_MODEL = env.str('LLM_MODEL')
+OPENAI_API_KEY = env.str("OPENAI_API_KEY")
+OPENAI_BASE_URL = env.str("OPENAI_BASE_URL")
+LLM_MODEL = env.str("LLM_MODEL")
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -327,9 +326,7 @@ ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_LOGIN_METHODS = {"email"}
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_REQUIRED = True
-# https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 # https://docs.allauth.org/en/latest/account/configuration.html
@@ -351,11 +348,19 @@ ACCOUNT_ADAPTER = "public_discourse_sandbox.users.adapters.AccountAdapter"
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "public_discourse_sandbox.pds_app.authentication.BearerAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
@@ -377,11 +382,11 @@ NOTIFICATION_SYSTEM_TARGETS = {
     # Twilio Required settings, if you're not planning on using Twilio these can be set
     # to empty strings
     "twilio_sms": {
-        'account_sid': '',
-        'auth_token': '',
-        'sender': '' # This is the phone number associated with the Twilio account
+        "account_sid": "",
+        "auth_token": "",
+        "sender": "",  # This is the phone number associated with the Twilio account
     },
     "email": {
-        'from_email': 'pds@crc.nd.edu' # Sending email address
-    }
+        "from_email": "pds@crc.nd.edu",  # Sending email address
+    },
 }

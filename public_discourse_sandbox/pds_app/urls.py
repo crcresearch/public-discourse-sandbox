@@ -1,19 +1,42 @@
 from django.urls import path
-from django.views.generic import TemplateView
+
+from public_discourse_sandbox.pds_app.api import ban_user
+from public_discourse_sandbox.pds_app.api import create_comment
+from public_discourse_sandbox.pds_app.api import delete_experiment
+from public_discourse_sandbox.pds_app.api import delete_post
+from public_discourse_sandbox.pds_app.api import get_post_replies
+from public_discourse_sandbox.pds_app.api import handle_like
+from public_discourse_sandbox.pds_app.api import repost
+from public_discourse_sandbox.pds_app.api import unban_user
+from public_discourse_sandbox.pds_app.api import update_last_accessed
+from public_discourse_sandbox.pds_app.external_api import api_create_comment
+from public_discourse_sandbox.pds_app.external_api import api_create_post
+from public_discourse_sandbox.pds_app.external_api import api_get_post_by_id
+from public_discourse_sandbox.pds_app.external_api import api_home_timeline
+from public_discourse_sandbox.pds_app.external_api import api_like_post
+from public_discourse_sandbox.pds_app.external_api import api_search_posts
+from public_discourse_sandbox.pds_app.external_api import api_user_experiments
+from public_discourse_sandbox.pds_app.views import AboutView
+from public_discourse_sandbox.pds_app.views import AcceptInvitationView
+from public_discourse_sandbox.pds_app.views import CommentDetailView
+from public_discourse_sandbox.pds_app.views import CreateExperimentView
+from public_discourse_sandbox.pds_app.views import CreateProfileView
+from public_discourse_sandbox.pds_app.views import EnrollDigitalTwinView
+from public_discourse_sandbox.pds_app.views import ExperimentDetailView
+from public_discourse_sandbox.pds_app.views import ExploreView
+from public_discourse_sandbox.pds_app.views import FollowView
 
 # Import views using absolute import path for Celery compatibility
-from public_discourse_sandbox.pds_app.views import (
-    HomeView, ExploreView, NotificationsView, AboutView, LandingView, 
-    ModeratorDashboardView, FollowView, ResearcherToolsView,
-    ExperimentDetailView, CreateExperimentView, InviteUserView, EnrollDigitalTwinView,
-    AcceptInvitationView, CreateProfileView, UserProfileDetailView, SettingsView,
-    CommentDetailView
-)
-from public_discourse_sandbox.pds_app.api import (
-    create_comment, get_post_replies,
-    delete_post, ban_user, unban_user,
-    update_last_accessed, handle_like, delete_experiment, repost
-)
+from public_discourse_sandbox.pds_app.views import HomeView
+from public_discourse_sandbox.pds_app.views import InviteUserView
+from public_discourse_sandbox.pds_app.views import LandingView
+from public_discourse_sandbox.pds_app.views import ModeratorDashboardView
+from public_discourse_sandbox.pds_app.views import NotificationsView
+from public_discourse_sandbox.pds_app.views import ResearcherToolsView
+from public_discourse_sandbox.pds_app.views import SettingsView
+from public_discourse_sandbox.pds_app.views import UserProfileDetailView
+from public_discourse_sandbox.pds_app.views import delete_external_api_token_view
+from public_discourse_sandbox.pds_app.views import generate_external_api_token_view
 
 urlpatterns = [
     path("", LandingView.as_view(), name="landing"),
@@ -36,9 +59,19 @@ urlpatterns = [
     path("<str:experiment_identifier>/api/posts/<uuid:post_id>/delete/", delete_post, name="delete_post_with_experiment"),
     path("<str:experiment_identifier>/api/posts/<uuid:post_id>/like/", handle_like, name="like_post_with_experiment"),
     path("<str:experiment_identifier>/invite/", InviteUserView.as_view(), name="invite_user"),
-    path('<str:experiment_identifier>/enroll-digital-twin/', EnrollDigitalTwinView.as_view(), name='enroll_digital_twin'),
-    path('<str:experiment_identifier>/create-profile/', CreateProfileView.as_view(), name='create_profile'),
+    path("<str:experiment_identifier>/enroll-digital-twin/", EnrollDigitalTwinView.as_view(), name="enroll_digital_twin"),
+    path("<str:experiment_identifier>/create-profile/", CreateProfileView.as_view(), name="create_profile"),
     path("<str:experiment_identifier>/profile/<uuid:pk>/", UserProfileDetailView.as_view(), name="user_profile_detail"),
+     path(
+        "generate-external-api-token/",
+        view=generate_external_api_token_view,
+        name="generate_external_api_token",
+    ),
+    path(
+        "delete-external-api-token/",
+        view=delete_external_api_token_view,
+        name="delete_external_api_token",
+    ),
     # API endpoints
     path("api/users/<uuid:user_profile_id>/ban/", ban_user, name="ban_user_with_experiment"),
     path("api/users/<uuid:user_profile_id>/unban/", unban_user, name="unban_user_with_experiment"),
@@ -54,6 +87,30 @@ urlpatterns = [
     path("api/posts/<uuid:post_id>/like/", handle_like, name="like_post"),
     path("api/users/<uuid:user_profile_id>/ban/", ban_user, name="ban_user"),
     path("api/users/<uuid:user_profile_id>/unban/", unban_user, name="unban_user"),
-    path('post/<uuid:post_id>/like/', handle_like, name='like_post'),
-    path('post/<uuid:post_id>/repost/',repost, name='repost_post'),
+    path("post/<uuid:post_id>/like/", handle_like, name="like_post"),
+    path("post/<uuid:post_id>/repost/",repost, name="repost_post"),
+    # External API Endposts
+    path(
+        "api/v1/<str:experiment_id>/posts/home-timeline/",
+        api_home_timeline,
+        name="api_home_timeline",
+    ),
+    path(
+        "api/v1/<str:experiment_id>/posts/search/",
+        api_search_posts,
+        name="api_search_posts",
+    ),
+    path(
+        "api/v1/<str:experiment_id>/posts/create/",
+        api_create_post,
+        name="api_post_create",
+    ),
+    path("api/v1/posts/<uuid:post_id>", api_get_post_by_id, name="api_post_by_id"),
+    path("api/v1/posts/<uuid:post_id>/like", api_like_post, name="api_post_like"),
+    path(
+        "api/v1/posts/<uuid:post_id>/comment",
+        api_create_comment,
+        name="api_create_comment",
+    ),
+    path("api/v1/user/discourses/", api_user_experiments, name="api_user_experiments"),
 ]
