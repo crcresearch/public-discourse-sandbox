@@ -1115,20 +1115,15 @@ class AcceptInvitationView(View):
             )
 
 
-class UserProfileDetailView(
-    LoginRequiredMixin,
-    ExperimentContextMixin,
-    ProfileRequiredMixin,
-    DetailView,
-):
+class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView):
     """
     View for displaying a user's profile.
     """
-
     model = UserProfile
     template_name = "users/user_profile_detail.html"
     context_object_name = "viewed_profile"
     slug_url_kwarg = "user_profile_id"
+
 
     def get_context_data(self, **kwargs):
         """
@@ -1145,66 +1140,85 @@ class UserProfileDetailView(
         context["is_creator"] = self.object.user == self.experiment.creator
 
         # Add follower and following counts
-        context["follower_count"] = SocialNetwork.objects.filter(
-            target_node=self.object,
-        ).count()
-        context["following_count"] = SocialNetwork.objects.filter(
-            source_node=self.object,
-        ).count()
+        context["follower_count"] = SocialNetwork.objects.filter(target_node=self.object).count()
+        context["following_count"] = SocialNetwork.objects.filter(source_node=self.object).count()
 
         # Get pagination parameters
         previous_post_id = self.request.GET.get("previous_post_id", None)
-        page_size = self.request.GET.get(
-            "page_size",
-            10,
-        )  # Default to 10 posts per page
+        page_size = self.request.GET.get("page_size", 10)  # Default to 10 posts per page
+        replies_only = self.request.GET.get("replies_only", False)  # New param to optionally show replies only
 
-        # Get posts by this user (not deleted, ordered by newest first)
-        posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+        # Get all posts by this user (not deleted, ordered by newest first)
+        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False).select_related(
+            "user_profile",
+            "user_profile__user",
+            "parent_post",
+            "parent_post__user_profile",
+            "parent_post__user_profile__user",
+        ).prefetch_related("vote_set")
+
+        # Separate original posts and replies
+        original_posts = all_posts.filter(parent_post__isnull=True)
+        replies = all_posts.filter(parent_post__isnull=False, parent_post__is_deleted=False)
 
         # If previous_post_id provided, paginate from that post
         if previous_post_id:
             try:
                 previous_post = Post.objects.get(id=previous_post_id)
-                posts = posts.filter(created_date__lt=previous_post.created_date)
+                original_posts = original_posts.filter(created_date__lt=previous_post.created_date)
+                replies = replies.filter(created_date__lt=previous_post.created_date)
             except Post.DoesNotExist:
                 pass
 
         # Order by newest first and limit to page size
-        context["user_posts"] = posts.order_by("-created_date")[: int(page_size)]
+        context["user_original_posts"] = original_posts.order_by("-created_date")[:int(page_size)]
+        context["user_replies"] = replies.order_by("-created_date")[:int(page_size)]
+
+        # Add counts for the tabs
+        context["original_posts_count"] = original_posts.count()
+        context["replies_count"] = replies.count()
+
+        # Keep the original user_posts for backward compatibility (all posts)
+        # If replies_only is True, show only replies, otherwise show only original posts
+        if replies_only:
+            context["user_posts"] = replies.order_by("-created_date")[:int(page_size)]
+        else:
+            context["user_posts"] = original_posts.order_by("-created_date")[:int(page_size)]
+
         # Annotate each post with comment_count and has_user_voted for template compatibility
         current_user = self.request.user
-        for post in context["user_posts"]:
-            post.comment_count = post.get_comment_count()
-            post.has_user_voted = post.vote_set.filter(
-                user_profile__user=current_user,
-            ).exists()
+        current_user_profile = context.get("current_user_profile")
+        for post_list in [context["user_original_posts"], context["user_replies"], context["user_posts"]]:
+            for post in post_list:
+                post.comment_count = post.get_comment_count()
+                post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+
+                # Add follow state for each post
+                if current_user_profile and post.user_profile.user != current_user:
+                    post.is_following = SocialNetwork.objects.filter(
+                        source_node=current_user_profile,
+                        target_node=post.user_profile,
+                    ).exists()
+                else:
+                    post.is_following = False
 
         # If HTMX request, map user_posts to posts for template compatibility
         if self.request.headers.get("HX-Request"):
             context["posts"] = context["user_posts"]
 
         # Add whether the current user is following the viewed profile
-        current_user_profile = context.get("current_user_profile")
         if current_user_profile:
-            context["is_following_viewed_profile"] = SocialNetwork.objects.filter(
-                source_node=current_user_profile,
-                target_node=self.object,
-            ).exists()
+            context["is_following_viewed_profile"] = SocialNetwork.objects.filter(source_node=current_user_profile, target_node=self.object).exists()
         else:
             context["is_following_viewed_profile"] = False
 
         # Followers: UserProfiles that follow this profile
         follower_links = SocialNetwork.objects.filter(target_node=self.object)
-        context["followers"] = UserProfile.objects.filter(
-            id__in=follower_links.values_list("source_node", flat=True),
-        )
+        context["followers"] = UserProfile.objects.filter(id__in=follower_links.values_list("source_node", flat=True))
 
         # Following: UserProfiles that this profile follows
         following_links = SocialNetwork.objects.filter(source_node=self.object)
-        context["following"] = UserProfile.objects.filter(
-            id__in=following_links.values_list("target_node", flat=True),
-        )
+        context["following"] = UserProfile.objects.filter(id__in=following_links.values_list("target_node", flat=True))
 
         return context
 
@@ -1233,7 +1247,7 @@ class SettingsView(LoginRequiredMixin, TemplateView):
 
 
 class CommentDetailView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView,
 ):
     """
     View for displaying comment detail modal content via HTMX.
