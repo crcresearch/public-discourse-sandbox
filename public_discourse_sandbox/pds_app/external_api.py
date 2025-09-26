@@ -57,7 +57,7 @@ def api_home_timeline(request, experiment_id):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        page_size = min(int(request.query_params.get("page_size", 10)), 100)
+        page_size = min(int(request.query_params.get("page_size", 20)), 100)
         posts = list(
             get_home_feed_posts(
                 request=request, experiment=experiment, page_size=page_size,
@@ -138,7 +138,7 @@ def api_search_posts(request, experiment_id):
 
     from django.db import models
 
-    max_results = min(int(request.query_params.get("page_size", 10)), 100)
+    max_results = min(int(request.query_params.get("page_size", 20)), 100)
     posts = (
         Post.objects.filter(
             experiment=experiment, is_deleted=False, parent_post__isnull=True,
