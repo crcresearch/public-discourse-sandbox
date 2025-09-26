@@ -57,7 +57,7 @@ def api_home_timeline(request, experiment_id):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-        page_size = min(int(request.query_params.get("page_size", 20)), 100)
+        page_size = min(int(request.query_params.get("page_size", 10)), 100)
         posts = list(
             get_home_feed_posts(
                 request=request, experiment=experiment, page_size=page_size,
