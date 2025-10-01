@@ -1,14 +1,19 @@
 import logging
-import time
-import openai
-from typing import Any, Dict, List
-from django.conf import settings
-import uuid
-from django.core.exceptions import ObjectDoesNotExist
 import random
-from django.utils import timezone
+import time
+import uuid
+from typing import Any
 
-from public_discourse_sandbox.pds_app.models import DigitalTwin, Post, Notification
+import openai
+from django.conf import settings
+from django.utils import timezone
+from django_notification_system.models import Notification as DjNotification
+from django_notification_system.models import TargetUserRecord
+
+from public_discourse_sandbox.pds_app.models import DigitalTwin
+from public_discourse_sandbox.pds_app.models import Notification
+from public_discourse_sandbox.pds_app.models import Post
+from public_discourse_sandbox.pds_app.models import UserProfile
 
 """
 DTService Execution Flow:
@@ -67,7 +72,7 @@ class DTService:
         """
         self.working_memory += f" {input_data}"
         self.token_counter += len(input_data.split())
-        
+
         self._truncate_memory()
         self._ensure_objective()
 
@@ -80,7 +85,7 @@ class DTService:
         """
         if self.token_counter > self.max_token_length:
             tokens = self.working_memory.split()[-self.max_token_length:]
-            self.working_memory, self.token_counter = ' '.join(tokens), self.max_token_length
+            self.working_memory, self.token_counter = " ".join(tokens), self.max_token_length
 
     def _ensure_objective(self):
         """
@@ -90,17 +95,17 @@ class DTService:
         Updates token counter when objective is added.
 
         Flow: Called by _add_to_working_memory() as part of memory management system
-        
+
         Memory Structure:
             - If objective not present: "{objective} {existing_memory}"
             - If objective present: leaves memory unchanged
-            
+
         Note: Requires self.current_twin to be set. Silently returns if no twin is set,
         as this can happen during initialization or between responses.
         """
         if not self.current_twin:
             return  # Skip if no twin is set
-            
+
         objective = self.get_twin_config(self.current_twin)["AgentCode"]["objective"]
         if objective not in self.working_memory:
             self.working_memory = f"{objective} {self.working_memory}"
@@ -116,7 +121,7 @@ class DTService:
         """
         start_time = time.time()
         self._add_to_working_memory(template)
-        
+
         # Use OpenAI directly instead of self.llm.prompt
         try:
             if twin.api_token:
@@ -136,22 +141,22 @@ class DTService:
 
             client = openai.OpenAI(
                 base_url=base_url,
-                api_key=api_key
+                api_key=api_key,
             )
             response = client.chat.completions.create(
                 model=llm_model,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": self.working_memory}
-                ]
+                    {"role": "user", "content": self.working_memory},
+                ],
             )
             output = response.choices[0].message.content
         except Exception as e:
-            logger.error(f"Error in OpenAI API call: {str(e)}")
+            logger.error(f"Error in OpenAI API call: {e!s}")
             output = "Error generating response"
-            
+
         elapsed_time = time.time() - start_time
-        
+
         return output
 
     def _analyze_sentiment(self, text: str) -> str:
@@ -168,15 +173,15 @@ class DTService:
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "Analyze the sentiment of this text. Respond with just one word: positive, negative, or neutral."},
-                    {"role": "user", "content": text}
-                ]
+                    {"role": "user", "content": text},
+                ],
             )
             return response.choices[0].message.content.strip().lower()
         except Exception as e:
-            print(f"Error analyzing sentiment: {str(e)}")
+            print(f"Error analyzing sentiment: {e!s}")
             return "neutral"
 
-    def _extract_keywords(self, text: str) -> List[str]:
+    def _extract_keywords(self, text: str) -> list[str]:
         """
         Uses OpenAI to identify 3-5 main topics/themes from the text.
         Returns a list of key terms that represent the content.
@@ -190,16 +195,16 @@ class DTService:
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "Extract 3-5 main keywords from this text. Respond with just the keywords separated by commas."},
-                    {"role": "user", "content": text}
-                ]
+                    {"role": "user", "content": text},
+                ],
             )
-            keywords = response.choices[0].message.content.strip().split(',')
+            keywords = response.choices[0].message.content.strip().split(",")
             return [k.strip() for k in keywords if k.strip()]
         except Exception as e:
-            print(f"Error extracting keywords: {str(e)}")
+            print(f"Error extracting keywords: {e!s}")
             return []
 
-    def analyze_context(self, post: Post) -> Dict:
+    def analyze_context(self, post: Post) -> dict:
         """
         Creates a comprehensive context dictionary for a post.
         Combines basic post metadata with AI-derived insights (sentiment and keywords).
@@ -214,32 +219,32 @@ class DTService:
         try:
             # Create a simpler context without API calls first
             context = {
-                'post_content': post_content,
-                'post_id': post.id,
-                'user': post.user_profile.username if post.user_profile.username else 'unknown',
-                'timestamp': post.created_date.isoformat() if post.created_date else None
+                "post_content": post_content,
+                "post_id": post.id,
+                "user": post.user_profile.username if post.user_profile.username else "unknown",
+                "timestamp": post.created_date.isoformat() if post.created_date else None,
             }
             print(f"Basic context created: {context}")
-            
+
             # Try to add sentiment and keywords if API is working
             try:
-                context['sentiment'] = self._analyze_sentiment(post_content)
-                context['keywords'] = self._extract_keywords(post_content)
+                context["sentiment"] = self._analyze_sentiment(post_content)
+                context["keywords"] = self._extract_keywords(post_content)
             except Exception as api_error:
-                print(f"API-related error in context analysis: {str(api_error)}")
-                context['sentiment'] = 'neutral'
-                context['keywords'] = []
-                
+                print(f"API-related error in context analysis: {api_error!s}")
+                context["sentiment"] = "neutral"
+                context["keywords"] = []
+
             print(f"Context analysis complete: {context}")
             return context
         except Exception as e:
-            print(f"Error analyzing context: {str(e)}")
+            print(f"Error analyzing context: {e!s}")
             return {
-                'post_content': post_content,
-                'error': str(e)
+                "post_content": post_content,
+                "error": str(e),
             }
 
-    def get_twin_config(self, twin: DigitalTwin) -> Dict:
+    def get_twin_config(self, twin: DigitalTwin) -> dict:
         """
         Builds configuration dictionary for a digital twin's behavior.
         Defines the twin's identity, objectives, and control flow for responses.
@@ -253,10 +258,10 @@ class DTService:
                 "control_flow": {
                     "BEGIN": "ANALYZE",
                     "ANALYZE": "RESPOND",
-                    "RESPOND": "END"
+                    "RESPOND": "END",
                 },
                 "ANALYZE": "Analyze this post: {0}",
-                "RESPOND": "{0}"
+                "RESPOND": "{0}",
             },
             "LLM": {
                 "prompt_model": "openai/gpt-3.5-turbo",
@@ -264,10 +269,10 @@ class DTService:
                 "api_key": settings.OPENAI_API_KEY,
                 "functions": [],
                 "system_message": twin.persona,
-                "max_retries": 3
-            }
+                "max_retries": 3,
+            },
         }
-    
+
     def template(self, phase: str, input_data: Any, twin: DigitalTwin) -> Any:
         """
         Formats prompts according to the twin's configuration and current phase.
@@ -280,7 +285,7 @@ class DTService:
             raise ValueError(f"Undefined phase: {phase}")
         return self.get_twin_config(twin)["AgentCode"][phase].format(input_data)
 
-    def generate_llm_response(self, post: Post, context: Dict = None, twin: DigitalTwin = None) -> str:
+    def generate_llm_response(self, post: Post, context: dict = None, twin: DigitalTwin = None) -> str:
         """
         Creates contextually appropriate responses using the LLM.
         Handles retry logic for API failures and ensures responses stay within length limits.
@@ -293,21 +298,21 @@ class DTService:
             self.current_twin = twin  # Set the current twin
             if not context:
                 context = self.analyze_context(post)
-            
+
             prompt = f"""As {twin.user_profile.username} with the following persona: {twin.persona}
-            
+
             You are responding to this post:
             "{post.content}"
-            
+
             Context:
             - Post author: {context.get('user', 'unknown')}
             - Sentiment: {context.get('sentiment', 'neutral')}
             - Keywords: {', '.join(context.get('keywords', [])) if context.get('keywords') else 'none'}
-            
+
             Generate a natural, contextually appropriate response that stays true to your persona.
             Keep the response concise (1-2 sentences) and engaging.
             """
-            
+
             print(f"Sending prompt to LLM for {twin.user_profile.username}")
             for attempt in range(3):  # Try up to 3 times
                 try:
@@ -321,13 +326,13 @@ class DTService:
                             response = response[:277] + "..."
                         return response
                 except Exception as api_error:
-                    print(f"API error on attempt {attempt + 1}: {str(api_error)}")
+                    print(f"API error on attempt {attempt + 1}: {api_error!s}")
                     if attempt == 2:  # Last attempt
                         raise
             return None
-            
+
         except Exception as e:
-            print(f"Error generating response: {str(e)}")
+            print(f"Error generating response: {e!s}")
             return None
         finally:
             self.current_twin = None  # Clear the current twin when done
@@ -344,7 +349,7 @@ class DTService:
         print("Generating response...")
         response = self.generate_llm_response(post, context, twin)
         print(f"Generated response: {response}")
-        
+
         return response
 
     def respond_to_post(self, twin, post):
@@ -379,11 +384,11 @@ class DTService:
             # Generate digital twin response
             logger.info(f"Generating comment using digital twin {twin.user_profile.username}")
             comment_content = self.generate_comment(
-                twin=twin, 
+                twin=twin,
                 content=post.content,
-                post=post
+                post=post,
             )
-            
+
             if not comment_content:
                 logger.error(f"Failed to generate comment content for digital twin {twin.user_profile.username}")
 
@@ -393,7 +398,7 @@ class DTService:
                 parent_post=post,
                 content=comment_content,
                 experiment=post.experiment,
-                depth=post.depth + 1
+                depth=post.depth + 1,
             )
 
             # Save the comment again to perform hashtag parsing after the post ID exists
@@ -402,27 +407,38 @@ class DTService:
             # Create a notification for the parent post author
             Notification.objects.create(
                 user_profile=post.user_profile,
-                event='post_replied',
-                content=f'@{twin.user_profile.username} replied to your post'
+                event="post_replied",
+                content=f"@{twin.user_profile.username} replied to your post",
             )
 
-            
+            user_profile = UserProfile.objects.get(username=post.user_profile.username)
+            emailUserRecord = TargetUserRecord.objects.get(
+                user=user_profile.user)
+
+            DjNotification.objects.create(
+                    target_user_record=emailUserRecord,
+                    title=f"Hey! @{post.user_profile}",
+                    body=f"@{twin.user_profile.username} replied to your post",
+                    status="SCHEDULED",
+                    scheduled_delivery=timezone.now(),
+            )
+
             logger.info(f"Created digital twin comment: {comment.content[:50]}...")
             responses.append(comment)
 
             return responses
 
         except Exception as e:
-            logger.error(f"Error in twin {twin.user_profile.username} response: {str(e)}", exc_info=True)
+            logger.error(f"Error in twin {twin.user_profile.username} response: {e!s}", exc_info=True)
 
     def should_twin_post(self, twin: DigitalTwin) -> bool:
         """
         Determines if a digital twin should post based on activity patterns.
         Uses probabilistic approach based on recent post history and time since last post.
-        
+
         Args:
             twin (DigitalTwin): The digital twin to check
-            
+
         Returns:
             bool: True if the twin should post, False otherwise
         """
@@ -442,8 +458,8 @@ class DTService:
         recent_posts = Post.objects.filter(
             experiment=twin.user_profile.experiment,
             parent_post=None,  # Only top-level posts
-            created_date__gte=timezone.now() - timezone.timedelta(hours=24)
-        ).order_by('-created_date')[:20]
+            created_date__gte=timezone.now() - timezone.timedelta(hours=24),
+        ).order_by("-created_date")[:20]
 
         if recent_posts:
             twin_post_count = sum(1 for post in recent_posts if post.user_profile_id == twin.user_profile_id)
@@ -454,44 +470,44 @@ class DTService:
         if random.random() < skip_probability:
             logger.info(f"Digital twin {twin.user_profile.username} chose not to post (p={skip_probability:.2f})")
             return False
-            
+
         return True
 
-    def get_recent_post_context(self, twin: DigitalTwin, max_posts: int = 10) -> List[Dict]:
+    def get_recent_post_context(self, twin: DigitalTwin, max_posts: int = 10) -> list[dict]:
         """
         Gets context from recent posts to inform the twin's new post.
         Excludes the twin's own posts to avoid self-reference.
-        
+
         Args:
             twin (DigitalTwin): The digital twin creating the post
             max_posts (int): Maximum number of posts to include in context
-            
+
         Returns:
             List[Dict]: List of post context dictionaries
         """
         recent_posts = Post.objects.filter(
             experiment=twin.user_profile.experiment,
             parent_post=None,  # Only top-level posts
-            created_date__gte=timezone.now() - timezone.timedelta(hours=24)
-        ).order_by('-created_date')[:20]
-        
+            created_date__gte=timezone.now() - timezone.timedelta(hours=24),
+        ).order_by("-created_date")[:20]
+
         post_contexts = []
         for post in recent_posts[:max_posts]:
             # Skip posts by this twin to avoid self-reference
             if post.user_profile_id != twin.user_profile_id:
                 post_contexts.append({
-                    'author': post.user_profile.username,
-                    'content': post.content,
-                    'timestamp': post.created_date.isoformat()
+                    "author": post.user_profile.username,
+                    "content": post.content,
+                    "timestamp": post.created_date.isoformat(),
                 })
-                
+
         return post_contexts
 
-    def determine_post_length(self) -> Dict:
+    def determine_post_length(self) -> dict:
         """
         Randomly determines post length based on a probability distribution.
         Uses weighted random selection to vary post lengths naturally.
-        
+
         Returns:
             Dict: Selected length category with range and name
         """
@@ -500,56 +516,56 @@ class DTService:
             {"name": "very short", "range": (20, 80), "probability": 0.35},
             {"name": "short", "range": (80, 140), "probability": 0.35},
             {"name": "medium", "range": (140, 200), "probability": 0.20},
-            {"name": "long", "range": (200, 280), "probability": 0.10}
+            {"name": "long", "range": (200, 280), "probability": 0.10},
         ]
-        
+
         # Randomly select length category based on probability distribution
         rand_val = random.random()
         cumulative_prob = 0
-        
+
         for length_cat in length_distribution:
             cumulative_prob += length_cat["probability"]
             if rand_val <= cumulative_prob:
                 min_chars, max_chars = length_cat["range"]
                 target_length = random.randint(min_chars, max_chars)
-                
+
                 # Add target_length to the returned dictionary
                 result = length_cat.copy()
                 result["target_length"] = target_length
-                
+
                 logger.info(f"Selected {length_cat['name']} post length ({min_chars}-{max_chars} chars)")
                 return result
-                
+
         # Fallback to short length if something goes wrong
         return {"name": "short", "range": (80, 140), "target_length": 100}
 
-    def generate_original_post_content(self, twin: DigitalTwin, post_contexts: List[Dict]) -> str:
+    def generate_original_post_content(self, twin: DigitalTwin, post_contexts: list[dict]) -> str:
         """
         Generates original post content using the LLM based on the twin's persona.
         Handles the full prompt creation and LLM interaction for new posts.
-        
+
         Args:
             twin (DigitalTwin): The digital twin creating the post
             post_contexts (List[Dict]): Context from recent posts
-            
+
         Returns:
             str: The generated post content
         """
         try:
             self.current_twin = twin  # Set the current twin
-            
+
             # Format context posts
             context_text = ""
             if post_contexts:
                 context_text = "Recent posts in the community:\n"
                 for i, post in enumerate(post_contexts, 1):
-                    context_text += f"{i}. @{post['author']}: \"{post['content']}\"\n"
-            
+                    context_text += f'{i}. @{post['author']}: "{post['content']}"\n'
+
             # Get length parameters
             length_params = self.determine_post_length()
             min_chars, max_chars = length_params["range"]
             target_length = length_params["target_length"]
-            
+
             # Construct the prompt with specific length guidance
             prompt = f"""You are {twin.user_profile.username}, with the following persona:
 {twin.persona}
@@ -586,35 +602,35 @@ Output only the text of the post, with no additional commentary or explanation.
                 llm_model = twin.llm_model
             else:
                 llm_model = settings.LLM_MODEL
-                
+
             client = openai.OpenAI(
                 base_url=base_url,
-                api_key=api_key
+                api_key=api_key,
             )
-            
+
             # Make the API call
             response = client.chat.completions.create(
                 model=llm_model,
                 messages=[
                     {"role": "system", "content": "You are a digital twin participating in social media discussions. Your goal is to create authentic, natural posts that reflect your assigned persona and engage meaningfully with the community."},
-                    {"role": "user", "content": prompt}
-                ]
+                    {"role": "user", "content": prompt},
+                ],
             )
-            
+
             # Extract and clean the content
             content = response.choices[0].message.content.strip().strip('"').strip()
-            
+
             # If content exceeds maximum allowed length, trim it
             if len(content) > 280:
                 content = content[:277] + "..."
-                
+
             # Log the actual content length for monitoring
             logger.info(f"Generated post with {len(content)} characters (target was {target_length})")
-                
+
             return content
-            
+
         except Exception as e:
-            logger.error(f"Error in generate_original_post_content: {str(e)}", exc_info=True)
+            logger.error(f"Error in generate_original_post_content: {e!s}", exc_info=True)
             return None
         finally:
             self.current_twin = None  # Clear the current twin when done
@@ -624,51 +640,51 @@ Output only the text of the post, with no additional commentary or explanation.
         Entry point for digital twin original post creation.
         Manages the full flow from context gathering to post creation.
         Updates the twin's last_post timestamp after creating the post.
-        
+
         Args:
             twin (DigitalTwin): The digital twin that will create the post
             force (bool, optional): If True, bypasses the should_post check. Default is False.
-            
+
         Returns:
             str: ID of the created post, or None on failure
         """
         try:
             logger.info(f"Starting original post generation for {twin.user_profile.username}")
-            
+
             # Check if the twin should post based on activity, unless force=True
             if not force and not self.should_twin_post(twin):
                 logger.info(f"Post generation skipped for {twin.user_profile.username} due to should_post check")
                 return None
-                
+
             # Get context from recent posts
             post_contexts = self.get_recent_post_context(twin)
-            
+
             # Generate the post content using LLM
             post_content = self.generate_original_post_content(twin, post_contexts)
-            
+
             if not post_content:
                 logger.error(f"Failed to generate post content for {twin.user_profile.username}")
                 return None
-                
+
             # Create a new post from the digital twin
             # Important: Use create() + save() to make sure the post ID is set before the hashtag parsing runs
             new_post = Post.objects.create(
                 user_profile=twin.user_profile,
                 experiment=twin.user_profile.experiment,
                 content=post_content,
-                depth=0  # Top-level post
+                depth=0,  # Top-level post
             )
 
             # Save the post again to perform hashtag parsing after the post ID exists
             new_post.save()
-            
+
             # Update the last_post timestamp for the twin
             twin.last_post = timezone.now()
-            twin.save(update_fields=['last_post', 'last_modified'])
-            
+            twin.save(update_fields=["last_post", "last_modified"])
+
             logger.info(f"Created new post by {twin.user_profile.username}: {new_post.id}")
             return str(new_post.id)
-            
+
         except Exception as e:
-            logger.error(f"Error creating original post: {str(e)}", exc_info=True)
+            logger.error(f"Error creating original post: {e!s}", exc_info=True)
             return None
