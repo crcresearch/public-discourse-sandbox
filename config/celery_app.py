@@ -14,13 +14,6 @@ app = Celery("public_discourse_sandbox")
 #   should have a `CELERY_` prefix.
 app.config_from_object("django.conf:settings", namespace="CELERY")
 
-CELERY_BEAT_SCHEDULE = {
-    "run-every-5-seconds": {
-        "task": "public_discourse_sandbox.pds_app.tasks.process_email_notifications",
-        "schedule": 60,
-    },
-}
-
 
 @setup_logging.connect
 def config_loggers(*args, **kwargs):

@@ -2,8 +2,8 @@ import logging
 import random
 
 from celery import shared_task
+from django.core import management
 from django.core.cache import cache
-from django.core.management import call_command
 
 from .dt_service import DTService
 from .models import DigitalTwin
@@ -103,11 +103,9 @@ def generate_digital_twin_post(experiment_id=None, force=False):
 
 @shared_task
 def process_email_notifications():
-    get_lock = cache.add("process_notifications", "1", 60)
-    if not get_lock:
-        return
-
     try:
-        call_command("process_notifications")
+        management.call_command("process_notifications")
+    except Exception:
+        logger.error("Error while processing email notifications: {e!s}", exc_info=True)
     finally:
         cache.delete("process_notifications")
