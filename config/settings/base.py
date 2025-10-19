@@ -322,7 +322,7 @@ CELERY_TASK_SEND_SENT_EVENT = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-hijack-root-logger
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 CELERY_BEAT_SCHEDULE = {
-    "run-every-second": {
+    "run-every-10-seconds": {
         "task": "public_discourse_sandbox.pds_app.tasks.process_email_notifications",
         "schedule": timedelta(seconds=10), # run every 10 seconds
     },

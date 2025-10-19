@@ -3,7 +3,6 @@ import random
 
 from celery import shared_task
 from django.core import management
-from django.core.cache import cache
 
 from .dt_service import DTService
 from .models import DigitalTwin
@@ -107,5 +106,3 @@ def process_email_notifications():
         management.call_command("process_notifications")
     except Exception:
         logger.error("Error while processing email notifications: {e!s}", exc_info=True)
-    finally:
-        cache.delete("process_notifications")
