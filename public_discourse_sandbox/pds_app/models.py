@@ -190,7 +190,7 @@ class UserProfile(BaseModel):
                     target_user_id=self.user.email,
                     defaults={
                         "active": True,
-                        "description": "Email target",
+                        "description": "Email notification target",
                     })
 
 
