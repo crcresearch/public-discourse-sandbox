@@ -1,0 +1,25 @@
+{
+  "name": "public-discourse-sandbox",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx @11ty/eleventy --serve",
+    "build-ghpages": "npx @11ty/eleventy --pathprefix=/crcresearch/public-discourse-sandbox/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crcresearch/public-discourse-sandbox.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crcresearch/public-discourse-sandbox/issues"
+  },
+  "homepage": "https://github.com/crcresearch/public-discourse-sandbox#readme",
+  "description": "",
+  "type": "module",
+  "dependencies": {
+    "@11ty/eleventy": "^3.1.2"
+  }
+}
