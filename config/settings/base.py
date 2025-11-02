@@ -322,9 +322,9 @@ CELERY_TASK_SEND_SENT_EVENT = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-hijack-root-logger
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 CELERY_BEAT_SCHEDULE = {
-    "run-every-10-seconds": {
+    "run-every-30-seconds": {
         "task": "public_discourse_sandbox.pds_app.tasks.process_email_notifications",
-        "schedule": timedelta(seconds=10), # run every 10 seconds
+        "schedule": timedelta(seconds=30), # run every 30 seconds
     },
 }
 # django-allauth
@@ -389,9 +389,9 @@ NOTIFICATION_SYSTEM_TARGETS = {
     # Twilio Required settings, if you're not planning on using Twilio these can be set
     # to empty strings
     "twilio_sms": {
-        "account_sid": "",
-        "auth_token": "",
-        "sender": "",  # This is the phone number associated with the Twilio account
+        "account_sid": env.str("ACCOUNT_SID"),
+        "auth_token": env.str("AUTH_TOKEN"),
+        "sender": env.str("TWILIO_PHONE_NUMBER"),  # This is the phone number associated with the Twilio account
     },
     "email": {
         "from_email": "pds@crc.nd.edu",  # Sending email address

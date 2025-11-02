@@ -131,6 +131,8 @@ class UserProfile(BaseModel):
     profile_picture = models.ImageField(
         upload_to="profile_pictures/", null=True, blank=True,
     )
+    dorm_name = models.CharField(max_length=100, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
     bio = models.TextField(null=True, blank=True)
     num_followers = models.IntegerField(default=0)
     num_following = models.IntegerField(default=0)
@@ -192,8 +194,17 @@ class UserProfile(BaseModel):
                         "active": True,
                         "description": "Email notification target",
                     })
-
-
+            if self.phone_number:
+                twiliotarget = NotificationTarget.objects.get(name="Twilio")
+                TargetUserRecord.objects.update_or_create(
+                        user=self.user,
+                        target=twiliotarget,
+                        target_user_id=self.phone_number,
+                        defaults={
+                            "description": f"{self.username}'s twilio",
+                            "active": True,
+                        }
+                    )
         super().save(*args, **kwargs)
 
 
