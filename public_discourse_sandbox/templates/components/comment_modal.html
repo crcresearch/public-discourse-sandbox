@@ -72,7 +72,7 @@
 
 		let interval = seconds / 31536000;
 		if (interval > 1) {
-			return Math.floor(interval) + " years ago";
+			return new Date(date).toLocaleDateString();
 		}
 		interval = seconds / 2592000;
 		if (interval > 1) {

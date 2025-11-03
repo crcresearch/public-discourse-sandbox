@@ -26,7 +26,9 @@
 						@{{ post.user_profile.username }}
 					</a>
 					<span class="dot">·</span>
-					<time class="time" datetime="{{ post.created_date|date:'c' }}"></time>
+          <time class="time" datetime="{{ post.created_date|date:'c' }}">
+                {{ post.created_date|date:"DATETIME_FORMAT"|default:post.created_date }}
+            </time>
 				</div>
 				<div class="post-menu">
 					<button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
@@ -209,7 +211,12 @@
 	function formatDate(date) {
 		const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
 		let interval = seconds / 31536000;
-		if (interval >= 1) return Math.floor(interval) + " years ago";
+    if (interval >= 1)
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric"
+      });
 		interval = seconds / 2592000;
 		if (interval >= 1) return Math.floor(interval) + " months ago";
 		interval = seconds / 86400;
@@ -221,13 +228,10 @@
 		return Math.max(0, Math.floor(seconds)) + " seconds ago";
 	}
 
-	document.addEventListener("DOMContentLoaded", () => {
-		document.querySelectorAll("time.time").forEach(el => {
-			const datetime = el.getAttribute("datetime");
-			el.textContent = formatDate(datetime);
-			el.title = new Date(datetime).toLocaleString();
-		});
-	});
+  document.querySelectorAll('.time').forEach(el => {
+    const dt = el.getAttribute('datetime');
+    el.textContent = formatDate(dt)
+  });
 </script>
 
 <style>
