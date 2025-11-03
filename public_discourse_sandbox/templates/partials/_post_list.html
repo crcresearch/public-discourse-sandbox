@@ -1,247 +1,238 @@
 {% for post in posts %}
-    <article class="post" data-post-id="{{ post.id }}" {% if forloop.last %}hx-get="{{ request.path }}?previous_post_id={{post.id}}{% if current_hashtag %}&hashtag={{ current_hashtag }}{% endif %}{% if replies_only %}&replies_only=true{% endif %}" hx-trigger="revealed" hx-swap="afterend"{% endif %}>
-        {% if post.parent_post %}
-        <!-- Reply layout: Simple inline parent reference -->
-        <div class="post-main">
-            <a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-avatar">
-                {% if post.user_profile.profile_picture %}
-                    <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
-                {% else %}
-                    <div class="avatar-placeholder">
-                        <i class="ri-user-line"></i>
-                    </div>
-                {% endif %}
-            </a>
-            
-            <div class="post-content">
-                <!-- Reply post header -->
-                <div class="post-header">
-                    <div class="user-info">
-                        <a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-name">
-                            {{ post.user_profile.display_name }}
-                        </a>
-                        <a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-handle">
-                            @{{ post.user_profile.username }}
-                        </a>
-                        <span class="dot">·</span>
-                        <span class="time">{{ post.created_date|timesince }}</span>
-                    </div>
-                    <div class="post-menu">
-                        <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
-                            <i class="ri-more-fill"></i>
-                        </button>
-                        <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
-                            {% if post.user_profile.user == request.user or is_moderator %}
-                                <button onclick="showDeleteModal('{{ post.id }}')" class="post-menu-item">
-                                    <i class="ri-delete-bin-line"></i> Delete
-                                </button>
-                            {% endif %}
-                            {% if post.user_profile.user != request.user %}
-                                <button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
-                                    {% if post.is_following %}
-                                        <i class="ri-user-unfollow-line"></i> Unfollow
-                                    {% else %}
-                                        <i class="ri-user-follow-line"></i> Follow
-                                    {% endif %}
-                                </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Simple inline parent reference -->
-                <div class="reply-context-simple">
-                    <i class="ri-reply-line"></i>
-                    <span>Replying to 
-                        <a href="{% url 'user_profile_detail' experiment.identifier post.parent_post.user_profile.id %}" class="parent-user-link" onclick="showCommentPopup('{{ post.parent_post.id }}'); event.preventDefault();">
-                            @{{ post.parent_post.user_profile.username }}
-                        </a>:
-                        <span class="parent-content-snippet" onclick="showCommentPopup('{{ post.parent_post.id }}')" style="cursor: pointer;">
-                            {% if post.parent_post.repost_source %}
-                                "{{ post.parent_post.repost_source.content|truncatewords:8 }}"
-                            {% else %}
-                                "{{ post.parent_post.content|truncatewords:8 }}"
-                            {% endif %}
-                        </span>
-                    </span>
-                </div>
-                
-                <!-- Reply content -->
-                <div class="post-text">{{ post.content }}</div>
-                
-                <!-- Post Actions -->
-                <div class="post-actions">
-                    <button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true" onclick="showCommentPopup('{{ post.id }}')">
-                        <i class="ri-chat-1-line"></i>
-                        <span>{{ post.comment_count }}</span>
-                    </button>
-    
-                    <button class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}" 
-                           data-post-id="{{ post.id }}" 
-                           data-authenticated="true" 
-                           data-is-own-post="{% if post.user_profile.user == request.user %}true{% else %}false{% endif %}"
-                           data-is-repost="{% if post.repost_source %}true{% else %}false{% endif %}"
-                           onclick="handleRepost(this, '{{ post.id }}')">
-                        <i class="ri-repeat-line"></i>
-                        <span>{{ post.num_shares }}</span>
-                    </button>
-    
-                    <button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}" data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
-                        <i class="{% if post.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
-                        <span>{{ post.num_upvotes }}</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        {% else %}
-        <!-- Regular post layout -->
-        <div class="post-main">
-            <a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-avatar">
-                {% if post.user_profile.profile_picture %}
-                    <img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
-                {% else %}
-                    <div class="avatar-placeholder">
-                        <i class="ri-user-line"></i>
-                    </div>
-                {% endif %}
-            </a>
-            <div class="post-content">
-                <!-- Regular post header -->
-                <div class="post-header">
-                    <div class="user-info">
-                        <a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-name">
-                            {{ post.user_profile.display_name }}
-                        </a>
-                        <a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-handle">
-                            @{{ post.user_profile.username }}
-                        </a>
-                        <span class="dot">·</span>
-                        <span class="time">{{ post.created_date|timesince }}</span>
-                    </div>
-                    <div class="post-menu">
-                        <button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
-                            <i class="ri-more-fill"></i>
-                        </button>
-                        <div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
-                            {% if post.user_profile.user == request.user or is_moderator %}
-                                <button onclick="showDeleteModal('{{ post.id }}')" class="post-menu-item">
-                                    <i class="ri-delete-bin-line"></i> Delete
-                                </button>
-                                <!-- {% if is_moderator %}
-                                <button onclick="showBanModal('{{ post.user_profile.id }}', 'ban')" class="post-menu-item">
-                                    <i class="ri-user-unfollow-line"></i> Ban User
-                                </button>
-                                {% endif %} -->
-                            {% endif %}
-                            {% if post.user_profile.user != request.user %}
-                                <button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
-                                    {% if post.is_following %}
-                                        <i class="ri-user-unfollow-line"></i> Unfollow
-                                    {% else %}
-                                        <i class="ri-user-follow-line"></i> Follow
-                                    {% endif %}
-                                </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-    
-                {% if post.repost_source %}
-                <!-- Repost indicator -->
-                <!-- <div class="repost-indicator">
-                    <i class="ri-repeat-line"></i> Reposted
-                </div> -->
-                
-                <!-- Original post content -->
-                <div class="reposted-content" onclick="showCommentPopup('{{ post.repost_source.id }}')" style="cursor: pointer;">
-                    <article class="repost-original" data-original-post-id="{{ post.repost_source.id }}">
-                        <div class="post-main">
-                            <a href="{% url 'user_profile_detail' experiment.identifier post.repost_source.user_profile.id %}" class="user-avatar" onclick="event.stopPropagation()">
-                                {% if post.repost_source.user_profile.profile_picture %}
-                                    <img src="{{ post.repost_source.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
-                                {% else %}
-                                    <div class="avatar-placeholder">
-                                        <i class="ri-user-line"></i>
-                                    </div>
-                                {% endif %}
-                            </a>
-                            <div class="post-content">
-                                <div class="post-header">
-                                    <div class="user-info">
-                                        <a href="{% url 'user_profile_detail' experiment.identifier post.repost_source.user_profile.id %}" class="user-name" onclick="event.stopPropagation()">
-                                            {{ post.repost_source.user_profile.display_name }}
-                                        </a>
-                                        <a href="{% url 'user_profile_detail' experiment.identifier post.repost_source.user_profile.id %}" class="user-handle" onclick="event.stopPropagation()">
-                                            @{{ post.repost_source.user_profile.username }}
-                                        </a>
-                                        <span class="dot">·</span>
-                                        <span class="time">{{ post.repost_source.created_date|timesince }}</span>
-                                    </div>
-                                </div>
-                                <div class="post-text">{{ post.repost_source.content }}</div>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-                {% else %}
-                <!-- Regular post content -->
-                <div class="post-text">{{ post.content }}</div>
-                {% endif %}
-    
-                <!-- Post Actions -->
-                <div class="post-actions">
-                    <button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true" onclick="showCommentPopup('{{ post.id }}')">
-                        <i class="ri-chat-1-line"></i>
-                        <span>{{ post.comment_count }}</span>
-                    </button>
-    
-                    <button class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}" 
-                           data-post-id="{{ post.id }}" 
-                           data-authenticated="true" 
-                           data-is-own-post="{% if post.user_profile.user == request.user %}true{% else %}false{% endif %}"
-                           data-is-repost="{% if post.repost_source %}true{% else %}false{% endif %}"
-                           onclick="handleRepost(this, '{{ post.id }}')">
-                        <i class="ri-repeat-line"></i>
-                        <span>{{ post.num_shares }}</span>
-                    </button>
-    
-                    <button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}" data-post-id="{{ post.id }}" data-authenticated="true" onclick="handleLike(this, '{{ post.id }}')">
-                        <i class="{% if post.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
-                        <span>{{ post.num_upvotes }}</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </article>
+<article class="post" data-post-id="{{ post.id }}" {% if forloop.last %}
+	hx-get="{{ request.path }}?previous_post_id={{post.id}}{% if current_hashtag %}&hashtag={{ current_hashtag }}{% endif %}{% if replies_only %}&replies_only=true{% endif %}"
+	hx-trigger="revealed" hx-swap="afterend" {% endif %}>
+
+	{% if post.parent_post %}
+	<!-- Reply layout -->
+	<div class="post-main">
+		<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-avatar">
+			{% if post.user_profile.profile_picture %}
+			<img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+			{% else %}
+			<div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+			{% endif %}
+		</a>
+
+		<div class="post-content">
+			<div class="post-header">
+				<div class="user-info">
+					<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}"
+						class="user-name">
+						{{ post.user_profile.display_name }}
+					</a>
+					<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}"
+						class="user-handle">
+						@{{ post.user_profile.username }}
+					</a>
+					<span class="dot">·</span>
+					<time class="time" datetime="{{ post.created_date|date:'c' }}"></time>
+				</div>
+				<div class="post-menu">
+					<button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
+						<i class="ri-more-fill"></i>
+					</button>
+					<div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+						{% if post.user_profile.user == request.user or is_moderator %}
+						<button onclick="showDeleteModal('{{ post.id }}')" class="post-menu-item">
+							<i class="ri-delete-bin-line"></i> Delete
+						</button>
+						{% endif %}
+						{% if post.user_profile.user != request.user %}
+						<button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
+							{% if post.is_following %}
+							<i class="ri-user-unfollow-line"></i> Unfollow
+							{% else %}
+							<i class="ri-user-follow-line"></i> Follow
+							{% endif %}
+						</button>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+			<div class="reply-context-simple">
+				<i class="ri-reply-line"></i>
+				<span>Replying to
+					<a href="{% url 'user_profile_detail' experiment.identifier post.parent_post.user_profile.id %}"
+						class="parent-user-link"
+						onclick="showCommentPopup('{{ post.parent_post.id }}'); event.preventDefault();">
+						@{{ post.parent_post.user_profile.username }}
+					</a>:
+					<span class="parent-content-snippet" onclick="showCommentPopup('{{ post.parent_post.id }}')"
+						style="cursor: pointer;">
+						{% if post.parent_post.repost_source %}
+						"{{ post.parent_post.repost_source.content|truncatewords:8 }}"
+						{% else %}
+						"{{ post.parent_post.content|truncatewords:8 }}"
+						{% endif %}
+					</span>
+				</span>
+			</div>
+
+			<div class="post-text">{{ post.content }}</div>
+
+			<div class="post-actions">
+				<button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true"
+					onclick="showCommentPopup('{{ post.id }}')">
+					<i class="ri-chat-1-line"></i><span>{{ post.comment_count }}</span>
+				</button>
+
+				<button onclick="handleRepost(this, '{{ post.id }}')" data-post-id="{{ post.id }}"
+					class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}"
+					{% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}>
+					<i class="ri-repeat-line"></i><span>{{ post.num_shares }}</span>
+				</button>
+
+				<button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}"
+					data-post-id="{{ post.id }}" onclick="handleLike(this, '{{ post.id }}')">
+					<i class="{% if post.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+					<span>{{ post.num_upvotes }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	{% else %}
+	<!-- Regular post layout -->
+	<div class="post-main">
+		<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}" class="user-avatar">
+			{% if post.user_profile.profile_picture %}
+			<img src="{{ post.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+			{% else %}
+			<div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+			{% endif %}
+		</a>
+
+		<div class="post-content">
+			<div class="post-header">
+				<div class="user-info">
+					<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}"
+						class="user-name">
+						{{ post.user_profile.display_name }}
+					</a>
+					<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}"
+						class="user-handle">
+						@{{ post.user_profile.username }}
+					</a>
+					<span class="dot">·</span>
+					<time class="time" datetime="{{ post.created_date|date:'c' }}"></time>
+				</div>
+				<div class="post-menu">
+					<button class="menu-button" onclick="togglePostMenu('{{ post.id }}')" title="More">
+						<i class="ri-more-fill"></i>
+					</button>
+					<div id="post-menu-{{ post.id }}" class="post-menu-dropdown" style="display: none;">
+						{% if post.user_profile.user == request.user or is_moderator %}
+						<button onclick="showDeleteModal('{{ post.id }}')" class="post-menu-item">
+							<i class="ri-delete-bin-line"></i> Delete
+						</button>
+						{% endif %}
+						{% if post.user_profile.user != request.user %}
+						<button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
+							{% if post.is_following %}
+							<i class="ri-user-unfollow-line"></i> Unfollow
+							{% else %}
+							<i class="ri-user-follow-line"></i> Follow
+							{% endif %}
+						</button>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+			{% if post.repost_source %}
+			<div class="reposted-content" onclick="showCommentPopup('{{ post.repost_source.id }}')"
+				style="cursor:pointer;">
+				<article class="repost-original" data-original-post-id="{{ post.repost_source.id }}">
+					<div class="post-main">
+						<a href="{% url 'user_profile_detail' experiment.identifier post.repost_source.user_profile.id %}"
+							class="user-avatar" onclick="event.stopPropagation()">
+							{% if post.repost_source.user_profile.profile_picture %}
+							<img src="{{ post.repost_source.user_profile.profile_picture.url }}" alt="Profile Picture"
+								class="avatar-img">
+							{% else %}
+							<div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+							{% endif %}
+						</a>
+						<div class="post-content">
+							<div class="post-header">
+								<div class="user-info">
+									<a href="{% url 'user_profile_detail' experiment.identifier post.repost_source.user_profile.id %}"
+										class="user-name" onclick="event.stopPropagation()">
+										{{ post.repost_source.user_profile.display_name }}
+									</a>
+									<a href="{% url 'user_profile_detail' experiment.identifier post.repost_source.user_profile.id %}"
+										class="user-handle" onclick="event.stopPropagation()">
+										@{{ post.repost_source.user_profile.username }}
+									</a>
+									<span class="dot">·</span>
+									<time class="time" datetime="{{ post.repost_source.created_date|date:'c' }}"></time>
+								</div>
+							</div>
+							<div class="post-text">{{ post.repost_source.content }}</div>
+						</div>
+					</div>
+				</article>
+			</div>
+			{% else %}
+			<div class="post-text">{{ post.content }}</div>
+			{% endif %}
+
+			<div class="post-actions">
+				<button class="action-button comment-button" data-post-id="{{ post.id }}"
+					onclick="showCommentPopup('{{ post.id }}')">
+					<i class="ri-chat-1-line"></i><span>{{ post.comment_count }}</span>
+				</button>
+				<button
+					class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}"
+					data-post-id="{{ post.id }}" onclick="handleRepost(this, '{{ post.id }}')">
+					<i class="ri-repeat-line"></i><span>{{ post.num_shares }}</span>
+				</button>
+				<button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}"
+					data-post-id="{{ post.id }}" onclick="handleLike(this, '{{ post.id }}')">
+					<i class="{% if post.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+					<span>{{ post.num_upvotes }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+	{% endif %}
+</article>
 {% empty %}
-    <div class="no-posts">
-        {% if empty_home_feed %}
-            <div class="empty-feed-message">
-                <h3>Your <b>Home</b> feed is empty</h3>
-                
-                {% if not has_posted and not follows_anyone %}
-                    <p>This page shows posts from you and people you follow.</p>
-                    <p>Get started by:</p>
-                    <ul>
-                        <li>Creating your first post</li>
-                        <li>Visiting the <a href="{% url 'explore' %}">Explore</a> page to find people to follow</li>
-                    </ul>
-                {% elif not has_posted %}
-                    <p>You're following some people, but they haven't posted anything yet.</p>
-                    <p>Why not start the conversation?</p>
-                    <ul>
-                        <li>Create your first post using the composer above</li>
-                        <li>Find more people to follow on the <a href="{% url 'explore' %}">Explore</a> page</li>
-                    </ul>
-                {% elif not follows_anyone %}
-                    <p>You've made some posts, but your feed could use more activity.</p>
-                    <p>Find people to follow on the <a href="{% url 'explore' %}">Explore</a> page to see their posts here.</p>
-                {% endif %}
-            </div>
-        {% else %}
-            <p>You've reached the beginning of time. No more posts to show.</p>
-        {% endif %}
-    </div>
+<div class="no-posts">
+	<p>No posts yet.</p>
+</div>
 {% endfor %}
+
+<script>
+	function formatDate(date) {
+		const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
+		let interval = seconds / 31536000;
+		if (interval >= 1) return Math.floor(interval) + " years ago";
+		interval = seconds / 2592000;
+		if (interval >= 1) return Math.floor(interval) + " months ago";
+		interval = seconds / 86400;
+		if (interval >= 1) return Math.floor(interval) + " days ago";
+		interval = seconds / 3600;
+		if (interval >= 1) return Math.floor(interval) + " hours ago";
+		interval = seconds / 60;
+		if (interval >= 1) return Math.floor(interval) + " minutes ago";
+		return Math.max(0, Math.floor(seconds)) + " seconds ago";
+	}
+
+	document.addEventListener("DOMContentLoaded", () => {
+		document.querySelectorAll("time.time").forEach(el => {
+			const datetime = el.getAttribute("datetime");
+			el.textContent = formatDate(datetime);
+			el.title = new Date(datetime).toLocaleString();
+		});
+	});
+</script>
+
+<style>
+.repost-button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+</style>

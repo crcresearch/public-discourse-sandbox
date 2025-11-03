@@ -35,7 +35,7 @@
         </div>
         {% endif %}
     </div>
-    
+
     {% if post.repost_source %}
     <!-- Repost content -->
     <div class="reposted-content">
@@ -210,34 +210,34 @@ function initializeCommentModal() {
 function createReplyForm(parentId, isNested = false) {
     const template = document.getElementById('replyFormTemplate');
     if (!template) return null;
-    
+
     const form = template.content.cloneNode(true);
     const isBanned = form.querySelector('.banned-message') !== null;
     const formElement = form.querySelector(isBanned ? '.compose-area.banned-message' : '.reply-form');
-    
+
     if (!isBanned) {
         // Set up form
         formElement.querySelector('[name="parent_post_id"]').value = parentId;
         if (isNested) {
             formElement.classList.add('nested-reply-form');
         }
-        
+
         // Add input handler for enabling/disabling submit button
         const textarea = formElement.querySelector('textarea');
         const submitButton = formElement.querySelector('button[type="submit"]');
         submitButton.disabled = true;
-        
+
         textarea.addEventListener('input', function() {
             submitButton.disabled = !this.value.trim();
         });
-        
+
         // Handle form submission success
         formElement.addEventListener('htmx:afterRequest', function(evt) {
             if (evt.detail.successful) {
                 // Clear the form
                 formElement.reset();
                 submitButton.disabled = true;
-                
+
                 // Refresh the modal content to show new reply
                 const postId = '{{ post.id }}';
                 const modalBody = document.getElementById('commentModalBody');
@@ -247,7 +247,7 @@ function createReplyForm(parentId, isNested = false) {
                         swap: 'innerHTML'
                     });
                 }
-                
+
                 // If this was a nested reply, remove the reply form
                 if (formElement.classList.contains('nested-reply-form')) {
                     const container = formElement.closest('.nested-reply-container');
@@ -260,14 +260,14 @@ function createReplyForm(parentId, isNested = false) {
     } else if (isNested) {
         formElement.classList.add('nested-reply-form');
     }
-    
+
     return formElement;
 }
 
 function showReplyForm(replyId) {
     const container = document.getElementById(`replyForm-${replyId}`);
     if (!container) return;
-    
+
     // Remove existing form if present
     container.innerHTML = '';
     // Create and add new form
@@ -283,7 +283,7 @@ function showReplyForm(replyId) {
 function togglePostMenu(postId) {
     const menu = document.getElementById(`post-menu-${postId}`);
     if (!menu) return;
-    
+
     if (menu.style.display === 'none') {
         menu.style.display = 'block';
         // Close other open menus
@@ -305,4 +305,4 @@ document.addEventListener('click', function(event) {
         });
     }
 });
-</script> 
+</script>

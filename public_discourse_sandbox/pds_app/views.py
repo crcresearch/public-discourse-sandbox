@@ -72,7 +72,7 @@ def get_active_posts(
     if hashtag:
         posts = Post.objects.filter(
             models.Q(
-                hashtag__tag=hashtag.lower(), parent_post__isnull=True
+                hashtag__tag=hashtag.lower(), parent_post__isnull=True,
             )  # Top-level posts with hashtag
             | models.Q(  # Replies with hashtag where parent exists and isn't deleted
                 hashtag__tag=hashtag.lower(),
@@ -122,7 +122,7 @@ def get_active_posts(
     current_user_profile = None
     if request.user.is_authenticated and experiment:
         current_user_profile = request.user.userprofile_set.filter(
-            experiment=experiment
+            experiment=experiment,
         ).first()
 
     # Add comment count, vote status, and follow state using the get_comment_count method
@@ -199,10 +199,10 @@ class LandingView(View):
         # Fetch the default experiment to display IRB additions
         try:
             default_experiment = Experiment.objects.get(
-                identifier="00000"
+                identifier="00000",
             )  # TODO: Find a better way to handle this
             return render(
-                request, "pages/landing.html", {"experiment": default_experiment}
+                request, "pages/landing.html", {"experiment": default_experiment},
             )
         except Experiment.DoesNotExist:
             # If default experiment doesn't exist, just render without it
@@ -210,7 +210,7 @@ class LandingView(View):
 
 
 class HomeView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView,
 ):
     """Home page view that displays and handles creation of posts."""
 
@@ -242,16 +242,16 @@ class HomeView(
         # Add flag for empty home feed to show guidance message
         if not context["posts"] and not self.request.headers.get("HX-Request"):
             user_profile = self.request.user.userprofile_set.filter(
-                experiment=self.experiment
+                experiment=self.experiment,
             ).first()
             if user_profile:
                 # Check if user follows anyone
                 follows_anyone = SocialNetwork.objects.filter(
-                    source_node=user_profile
+                    source_node=user_profile,
                 ).exists()
                 # Check if user has posted anything
                 has_posted = Post.objects.filter(
-                    user_profile=user_profile, is_deleted=False
+                    user_profile=user_profile, is_deleted=False,
                 ).exists()
 
                 context["empty_home_feed"] = True
@@ -272,7 +272,7 @@ class HomeView(
         """Handle post creation."""
         # Get the user's profile for this experiment
         user_profile = request.user.userprofile_set.filter(
-            experiment=self.experiment
+            experiment=self.experiment,
         ).first()
         if not user_profile:
             raise PermissionDenied("You do not have a profile in this experiment")
@@ -300,7 +300,7 @@ class HomeView(
 
 
 class ExploreView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView,
 ):
     """
     Explore page view that displays all posts.
@@ -345,7 +345,7 @@ class ExploreView(
 
 
 class NotificationsView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, ListView,
 ):
     template_name = "pages/notifications.html"
     context_object_name = "notifications"
@@ -356,7 +356,7 @@ class NotificationsView(
         filter_type = self.request.GET.get("filter")
         previous_notification_id = self.request.GET.get("previous_notification_id")
         page_size = self.request.GET.get(
-            "page_size", 20
+            "page_size", 20,
         )  # Default to 20 notifications per page
 
         # Start with all notifications for this user profile
@@ -372,10 +372,10 @@ class NotificationsView(
         if previous_notification_id:
             try:
                 previous_notification = Notification.objects.get(
-                    id=previous_notification_id
+                    id=previous_notification_id,
                 )
                 notifications = notifications.filter(
-                    created_date__lt=previous_notification.created_date
+                    created_date__lt=previous_notification.created_date,
                 )
             except Notification.DoesNotExist:
                 pass
@@ -439,7 +439,7 @@ class AboutView(LoginRequiredMixin, ExperimentContextMixin, TemplateView):
 
 
 class ModeratorDashboardView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, TemplateView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, TemplateView,
 ):
     """
     Example view that demonstrates all three moderator permission approaches working together.
@@ -452,7 +452,7 @@ class ModeratorDashboardView(
         if not self.is_moderator(request.user, self.experiment):
             # Redirect to home page if not a moderator
             return redirect(
-                "home_with_experiment", experiment_identifier=self.experiment.identifier
+                "home_with_experiment", experiment_identifier=self.experiment.identifier,
             )
 
         return super().get(request, *args, **kwargs)
@@ -501,7 +501,7 @@ class FollowView(LoginRequiredMixin, View):
 
             # Get the current user's profile for this experiment
             user_profile = request.user.userprofile_set.filter(
-                experiment=target_profile.experiment
+                experiment=target_profile.experiment,
             ).first()
             if not user_profile:
                 raise PermissionDenied("You do not have a profile in this experiment")
@@ -540,7 +540,7 @@ class FollowView(LoginRequiredMixin, View):
                     "status": "success",
                     "is_following": is_following,
                     "follower_count": target_profile.num_followers,
-                }
+                },
             )
 
         except UserProfile.DoesNotExist:
@@ -696,7 +696,7 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
         if not (
             self.object.creator == request.user
             or self.object.userprofile_set.filter(
-                user=request.user, is_collaborator=True
+                user=request.user, is_collaborator=True,
             ).exists()
         ):
             raise PermissionDenied("You do not have access to this experiment")
@@ -740,7 +740,7 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
         # Hide main nav on experiment detail page
         context["hide_main_nav"] = True
         context["invitations"] = ExperimentInvitation.objects.filter(
-            experiment=experiment, is_deleted=False
+            experiment=experiment, is_deleted=False,
         )
         return context
 
@@ -751,7 +751,7 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
         # Only creator can edit
         if experiment.creator != request.user:
             raise PermissionDenied(
-                "Only the experiment creator can edit this experiment"
+                "Only the experiment creator can edit this experiment",
             )
 
         form = ExperimentForm(request.POST, instance=experiment)
@@ -759,7 +759,7 @@ class ExperimentDetailView(LoginRequiredMixin, DetailView):
             form.save()
             messages.success(request, "Experiment updated successfully!")
             return redirect(
-                "experiment_detail", experiment_identifier=experiment.identifier
+                "experiment_detail", experiment_identifier=experiment.identifier,
             )
 
         # If form is invalid, show form with errors
@@ -782,7 +782,7 @@ class InviteUserView(LoginRequiredMixin, View):
             if experiment.creator != request.user:
                 return JsonResponse(
                     {
-                        "error": "You do not have permission to invite users to this experiment"
+                        "error": "You do not have permission to invite users to this experiment",
                     },
                     status=403,
                 )
@@ -798,7 +798,7 @@ class InviteUserView(LoginRequiredMixin, View):
             user = User.objects.filter(email=email).first()
             if user:
                 if UserProfile.objects.filter(
-                    user=user, experiment=experiment, is_deleted=False
+                    user=user, experiment=experiment, is_deleted=False,
                 ).exists():
                     return JsonResponse(
                         {"message": "User is already a member of this experiment."},
@@ -830,8 +830,8 @@ class InviteUserView(LoginRequiredMixin, View):
                     "experiment": experiment,
                     "accept_url": request.build_absolute_uri(
                         reverse(
-                            "accept_invitation", args=[experiment.identifier, email]
-                        )
+                            "accept_invitation", args=[experiment.identifier, email],
+                        ),
                     ),
                     "landing_url": request.build_absolute_uri(reverse("landing")),
                 }
@@ -843,7 +843,7 @@ class InviteUserView(LoginRequiredMixin, View):
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[email],
                     html_message=render_to_string(
-                        "email/research_invitation.html", context
+                        "email/research_invitation.html", context,
                     ),
                 )
 
@@ -864,7 +864,7 @@ class EnrollDigitalTwinView(LoginRequiredMixin, View):
 
             # Pass experiment to the form
             form = EnrollDigitalTwinForm(
-                request.POST, request.FILES, experiment=experiment
+                request.POST, request.FILES, experiment=experiment,
             )
             if not form.is_valid():
                 return JsonResponse({"error": form.errors.as_json()}, status=400)
@@ -965,7 +965,7 @@ class CreateProfileView(LoginRequiredMixin, View):
 
         # Check if user already has a profile
         if UserProfile.objects.filter(
-            user=request.user, experiment=experiment, is_deleted=False
+            user=request.user, experiment=experiment, is_deleted=False,
         ).exists():
             return render(
                 request,
@@ -986,7 +986,7 @@ class CreateProfileView(LoginRequiredMixin, View):
 
             # Redirect to the experiment's home page
             return redirect(
-                "home_with_experiment", experiment_identifier=experiment.identifier
+                "home_with_experiment", experiment_identifier=experiment.identifier,
             )
 
         # If form is invalid, show form with errors
@@ -1047,7 +1047,7 @@ class AcceptInvitationView(View):
                     # Check if user already has a profile for this experiment
                     try:
                         user_profile = UserProfile.objects.get(
-                            user=request.user, experiment=experiment
+                            user=request.user, experiment=experiment,
                         )
                         return render(
                             request,
@@ -1058,7 +1058,7 @@ class AcceptInvitationView(View):
                                 "home_url": reverse(
                                     "home_with_experiment",
                                     kwargs={
-                                        "experiment_identifier": experiment_identifier
+                                        "experiment_identifier": experiment_identifier,
                                     },
                                 ),
                                 "current_user_profile": user_profile,
@@ -1074,7 +1074,7 @@ class AcceptInvitationView(View):
                                 "create_profile_url": reverse(
                                     "create_profile",
                                     kwargs={
-                                        "experiment_identifier": experiment_identifier
+                                        "experiment_identifier": experiment_identifier,
                                     },
                                 ),
                                 "current_user_profile": None,
@@ -1084,7 +1084,7 @@ class AcceptInvitationView(View):
                     # User Profile is needed for left nav context
                     try:
                         user_profile = UserProfile.objects.get(
-                            user=request.user, experiment=experiment
+                            user=request.user, experiment=experiment,
                         )
                     except UserProfile.DoesNotExist:
                         user_profile = None
@@ -1100,7 +1100,7 @@ class AcceptInvitationView(View):
                                 + str(email)
                                 + ". To check invitation status, please either log in as "
                                 + str(email)
-                                + " or log out and try again."
+                                + " or log out and try again.",
                             ),
                             "current_user_profile": user_profile,
                         },
@@ -1140,7 +1140,7 @@ class AcceptInvitationView(View):
 
 
 class UserProfileDetailView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView,
 ):
     """
     View for displaying a user's profile.
@@ -1167,19 +1167,19 @@ class UserProfileDetailView(
 
         # Add follower and following counts
         context["follower_count"] = SocialNetwork.objects.filter(
-            target_node=self.object
+            target_node=self.object,
         ).count()
         context["following_count"] = SocialNetwork.objects.filter(
-            source_node=self.object
+            source_node=self.object,
         ).count()
 
         # Get pagination parameters
         previous_post_id = self.request.GET.get("previous_post_id", None)
         page_size = self.request.GET.get(
-            "page_size", 10
+            "page_size", 10,
         )  # Default to 10 posts per page
         replies_only = self.request.GET.get(
-            "replies_only", False
+            "replies_only", False,
         )  # New param to optionally show replies only
 
         # Get all posts by this user (not deleted, ordered by newest first)
@@ -1198,7 +1198,7 @@ class UserProfileDetailView(
         # Separate original posts and replies
         original_posts = all_posts.filter(parent_post__isnull=True)
         replies = all_posts.filter(
-            parent_post__isnull=False, parent_post__is_deleted=False
+            parent_post__isnull=False, parent_post__is_deleted=False,
         )
 
         # If previous_post_id provided, paginate from that post
@@ -1206,7 +1206,7 @@ class UserProfileDetailView(
             try:
                 previous_post = Post.objects.get(id=previous_post_id)
                 original_posts = original_posts.filter(
-                    created_date__lt=previous_post.created_date
+                    created_date__lt=previous_post.created_date,
                 )
                 replies = replies.filter(created_date__lt=previous_post.created_date)
             except Post.DoesNotExist:
@@ -1242,7 +1242,7 @@ class UserProfileDetailView(
             for post in post_list:
                 post.comment_count = post.get_comment_count()
                 post.has_user_voted = post.vote_set.filter(
-                    user_profile__user=current_user
+                    user_profile__user=current_user,
                 ).exists()
 
                 # Add follow state for each post
@@ -1261,7 +1261,7 @@ class UserProfileDetailView(
         # Add whether the current user is following the viewed profile
         if current_user_profile:
             context["is_following_viewed_profile"] = SocialNetwork.objects.filter(
-                source_node=current_user_profile, target_node=self.object
+                source_node=current_user_profile, target_node=self.object,
             ).exists()
         else:
             context["is_following_viewed_profile"] = False
@@ -1269,13 +1269,13 @@ class UserProfileDetailView(
         # Followers: UserProfiles that follow this profile
         follower_links = SocialNetwork.objects.filter(target_node=self.object)
         context["followers"] = UserProfile.objects.filter(
-            id__in=follower_links.values_list("source_node", flat=True)
+            id__in=follower_links.values_list("source_node", flat=True),
         )
 
         # Following: UserProfiles that this profile follows
         following_links = SocialNetwork.objects.filter(source_node=self.object)
         context["following"] = UserProfile.objects.filter(
-            id__in=following_links.values_list("target_node", flat=True)
+            id__in=following_links.values_list("target_node", flat=True),
         )
 
         return context
@@ -1305,7 +1305,7 @@ class SettingsView(LoginRequiredMixin, TemplateView):
 
 
 class CommentDetailView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView,
 ):
     """
     View for displaying comment detail modal content via HTMX.

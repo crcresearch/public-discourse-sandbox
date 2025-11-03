@@ -1,12 +1,17 @@
-from django.shortcuts import get_object_or_404
+import json
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.utils.decorators import method_decorator
-from .models import Post, UserProfile, Experiment, Vote, Notification
-from .utils import send_notification_to_user
+
 from .decorators import check_banned
-import json
+from .models import Experiment
+from .models import Notification
+from .models import Post
+from .models import UserProfile
+from .models import Vote
+from .utils import send_notification_to_user
 
 
 @login_required
@@ -21,14 +26,15 @@ def create_comment(request, experiment_identifier):
 
         if not content:
             return JsonResponse(
-                {"status": "error", "message": "Content is required"}, status=400
+                {"status": "error", "message": "Content is required"},
+                status=400,
             )
 
         try:
             experiment = get_object_or_404(Experiment, identifier=experiment_identifier)
             parent_post = Post.objects.get(id=parent_id)
             user_profile = request.user.userprofile_set.filter(
-                experiment=experiment
+                experiment=experiment,
             ).first()
 
             comment = Post.objects.create(
@@ -64,62 +70,113 @@ def create_comment(request, experiment_identifier):
             return JsonResponse(response_data)
         except Post.DoesNotExist:
             return JsonResponse(
-                {"status": "error", "message": "Parent post not found"}, status=404
+                {"status": "error", "message": "Parent post not found"},
+                status=404,
             )
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
     return JsonResponse(
-        {"status": "error", "message": "Method not allowed"}, status=405
+        {"status": "error", "message": "Method not allowed"},
+        status=405,
     )
 
 
 @login_required
-# @ensure_csrf_cookie
 def get_post_replies(request, post_id):
-    """Get replies for a specific post."""
+    """
+    Return a fully nested reply tree for a post, using each reply's `depth`
+    to build the hierarchy. Excludes deleted posts and posts from "Banned" users.
+    If a parent is excluded, its whole subtree is excluded as well.
+    """
     try:
-        # Filter replies that are not deleted and not from banned users
-        # Also ensure the parent post is not deleted
-        replies = (
-            Post.objects.filter(
-                parent_post__id=post_id,
-                parent_post__is_deleted=False,
-                is_deleted=False,  # Only show non-deleted replies
-            )
-            .select_related(
-                "user_profile",
-                "user_profile__user",  # Also select related user for checking banned status
-            )
-            .exclude(
-                user_profile__user__groups__name="Banned"  # Exclude replies from banned users
-            )
-            .order_by("created_date")
+        from django.db.models import Q
+
+        # Ensure root exists and isn't deleted
+        root = Post.objects.only("id", "is_deleted", "depth").get(id=post_id)
+        if root.is_deleted:
+            return JsonResponse({"status": "success", "replies": []})
+
+        # Base filters enforced at *every* level
+        base_filters = Q(is_deleted=False) & Q(parent_post__is_deleted=False)
+
+        # Collect descendants iteratively (BFS) starting from direct children.
+        # We do this to avoid requiring a "thread_root" or tree extension.
+        level = list(
+            Post.objects.filter(base_filters, parent_post_id=root.id)
+            .select_related("user_profile", "user_profile__user")
+            .exclude(user_profile__user__groups__name="Banned"),
         )
 
-        replies_data = [
-            {
-                "id": str(reply.id),  # Convert UUID to string
-                "user_profile_id": str(
-                    reply.user_profile.id
-                ),  # Add user profile ID (not user ID)
+        all_replies = level[:]
+
+        while level:
+            parent_ids = [r.id for r in level]
+            level = list(
+                Post.objects.filter(base_filters, parent_post_id__in=parent_ids)
+                .select_related("user_profile", "user_profile__user")
+                .exclude(user_profile__user__groups__name="Banned"),
+            )
+            all_replies.extend(level)
+
+        if not all_replies:
+            return JsonResponse({"status": "success", "replies": []})
+
+        all_replies.sort(key=lambda r: (getattr(r, "depth", 0), r.created_date))
+
+        is_moderator = request.user.groups.filter(name="Moderators").exists()
+
+        def serialize(reply):
+            return {
+                "id": str(reply.id),
+                "user_profile_id": str(reply.user_profile.id),
                 "username": reply.user_profile.username,
                 "display_name": reply.user_profile.display_name,
                 "content": reply.content,
+                "num_upvotes": reply.num_upvotes,
+                "num_shares": reply.num_shares,
                 "created_date": reply.created_date.isoformat(),
                 "profile_picture": reply.user_profile.profile_picture.url
-                if reply.user_profile.profile_picture
+                if getattr(reply.user_profile, "profile_picture", None)
                 else None,
                 "is_author": reply.user_profile.user == request.user,
-                "is_moderator": request.user.groups.filter(name="Moderators").exists(),
+                "is_moderator": is_moderator,
+                "depth": int(getattr(reply, "depth", 0)),
+                "replies": [],
             }
-            for reply in replies
-        ]
 
-        return JsonResponse({"status": "success", "replies": replies_data})
+        # Build nodes in depth order so parents exist before children
+        node_by_id = {}
+        top_level = []
+
+        for r in all_replies:
+            node = serialize(r)
+            node_by_id[r.id] = node
+
+            # Attach to parent; if parent is the root post, put in top_level
+            if r.parent_post_id == root.id:
+                top_level.append(node)
+            else:
+                parent_node = node_by_id.get(r.parent_post_id)
+                # If the parent was filtered out (deleted/banned), drop this subtree
+                if parent_node is not None:
+                    parent_node["replies"].append(node)
+
+        # Ensure children under each parent are ordered by created_date (already stable,
+        # but enforce explicitly if needed)
+        def sort_children(n):
+            n["replies"].sort(key=lambda ch: ch["created_date"])
+            for ch in n["replies"]:
+                sort_children(ch)
+
+        for n in top_level:
+            sort_children(n)
+
+        return JsonResponse({"status": "success", "replies": top_level})
+
     except Post.DoesNotExist:
         return JsonResponse(
-            {"status": "error", "message": "Post not found"}, status=404
+            {"status": "error", "message": "Post not found"}, status=404,
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -132,14 +189,15 @@ def delete_post(request, post_id):
     """Delete a post."""
     if request.method != "DELETE":
         return JsonResponse(
-            {"status": "error", "message": "Method not allowed"}, status=405
+            {"status": "error", "message": "Method not allowed"},
+            status=405,
         )
 
     try:
         post = get_object_or_404(Post, id=post_id)
         # Get the user's profile for this experiment
         user_profile = request.user.userprofile_set.filter(
-            experiment=post.experiment
+            experiment=post.experiment,
         ).first()
 
         # Check if user has permission to delete (either the author or has moderator permissions)
@@ -149,16 +207,15 @@ def delete_post(request, post_id):
             post.is_deleted = True
             post.save()
             return JsonResponse(
-                {"status": "success", "message": "Post deleted successfully"}
+                {"status": "success", "message": "Post deleted successfully"},
             )
-        else:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": "You do not have permission to delete this post",
-                },
-                status=403,
-            )
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": "You do not have permission to delete this post",
+            },
+            status=403,
+        )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
@@ -169,7 +226,8 @@ def ban_user(request, user_profile_id):
     """Handle banning of users."""
     if request.method != "POST":
         return JsonResponse(
-            {"status": "error", "message": "Method not allowed"}, status=405
+            {"status": "error", "message": "Method not allowed"},
+            status=405,
         )
 
     try:
@@ -178,21 +236,24 @@ def ban_user(request, user_profile_id):
             target_profile = UserProfile.objects.get(id=user_profile_id)
         except (UserProfile.DoesNotExist, ValueError):
             return JsonResponse(
-                {"status": "error", "message": "User profile not found"}, status=404
+                {"status": "error", "message": "User profile not found"},
+                status=404,
             )
 
         # Check if the requesting user is a moderator in the same experiment
         try:
             mod_profile = request.user.userprofile_set.get(
-                experiment=target_profile.experiment
+                experiment=target_profile.experiment,
             )
             if not mod_profile.is_experiment_moderator():
                 return JsonResponse(
-                    {"status": "error", "message": "Unauthorized"}, status=403
+                    {"status": "error", "message": "Unauthorized"},
+                    status=403,
                 )
         except UserProfile.DoesNotExist:
             return JsonResponse(
-                {"status": "error", "message": "Unauthorized"}, status=403
+                {"status": "error", "message": "Unauthorized"},
+                status=403,
             )
 
         # Ban the user
@@ -200,7 +261,7 @@ def ban_user(request, user_profile_id):
         target_profile.save()
 
         return JsonResponse(
-            {"status": "success", "message": "User banned successfully"}
+            {"status": "success", "message": "User banned successfully"},
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -212,7 +273,8 @@ def unban_user(request, user_profile_id):
     """Handle unbanning of users."""
     if request.method != "POST":
         return JsonResponse(
-            {"status": "error", "message": "Method not allowed"}, status=405
+            {"status": "error", "message": "Method not allowed"},
+            status=405,
         )
 
     try:
@@ -222,15 +284,17 @@ def unban_user(request, user_profile_id):
         # Check if the requesting user is a moderator in the same experiment
         try:
             mod_profile = request.user.userprofile_set.get(
-                experiment=target_profile.experiment
+                experiment=target_profile.experiment,
             )
             if not mod_profile.is_experiment_moderator():
                 return JsonResponse(
-                    {"status": "error", "message": "Unauthorized"}, status=403
+                    {"status": "error", "message": "Unauthorized"},
+                    status=403,
                 )
         except UserProfile.DoesNotExist:
             return JsonResponse(
-                {"status": "error", "message": "Unauthorized"}, status=403
+                {"status": "error", "message": "Unauthorized"},
+                status=403,
             )
 
         # Unban the user
@@ -238,7 +302,7 @@ def unban_user(request, user_profile_id):
         target_profile.save()
 
         return JsonResponse(
-            {"status": "success", "message": "User unbanned successfully"}
+            {"status": "success", "message": "User unbanned successfully"},
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -250,7 +314,8 @@ def update_last_accessed(request):
     """Update the user's last_accessed experiment."""
     if request.method != "POST":
         return JsonResponse(
-            {"status": "error", "message": "Method not allowed"}, status=405
+            {"status": "error", "message": "Method not allowed"},
+            status=405,
         )
 
     try:
@@ -267,7 +332,7 @@ def update_last_accessed(request):
 
         # Verify user has access to this experiment
         user_profile = request.user.userprofile_set.filter(
-            experiment=experiment
+            experiment=experiment,
         ).first()
         if not user_profile:
             return JsonResponse(
@@ -283,7 +348,7 @@ def update_last_accessed(request):
         request.user.save()
 
         return JsonResponse(
-            {"status": "success", "message": "Last accessed experiment updated"}
+            {"status": "success", "message": "Last accessed experiment updated"},
         )
     except json.JSONDecodeError:
         return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
@@ -299,17 +364,19 @@ def handle_like(request, post_id):
     try:
         post = get_object_or_404(Post, id=post_id)
         user_profile = request.user.userprofile_set.filter(
-            experiment=post.experiment
+            experiment=post.experiment,
         ).first()
 
         if not user_profile:
             return JsonResponse(
-                {"status": "error", "message": "User profile not found"}, status=404
+                {"status": "error", "message": "User profile not found"},
+                status=404,
             )
 
         # Check if user already voted
         existing_vote = Vote.objects.filter(
-            user_profile=user_profile, post=post
+            user_profile=user_profile,
+            post=post,
         ).first()
 
         if existing_vote:
@@ -323,36 +390,36 @@ def handle_like(request, post_id):
                     "message": "Post unliked",
                     "is_liked": False,
                     "upvotes": post.num_upvotes,
-                }
+                },
             )
-        else:
-            # Like: create new vote and increment count
-            Vote.objects.create(user_profile=user_profile, post=post, is_upvote=True)
-            post.num_upvotes += 1
-            post.save()
-            # Create a notification for the post author
-            Notification.objects.create(
-                user_profile=post.user_profile,
-                event="post_liked",
-                content=f"@{user_profile.username} liked your post",
-            )
-            send_notification_to_user(
-                user_profile=post.user_profile,
-                title=f"PDS: Hey! @{post.user_profile.username}",
-                body=f"@{user_profile.username} liked to your post",
-            )
-            return JsonResponse(
-                {
-                    "status": "success",
-                    "message": "Post liked",
-                    "is_liked": True,
-                    "upvotes": post.num_upvotes,
-                }
-            )
+        # Like: create new vote and increment count
+        Vote.objects.create(user_profile=user_profile, post=post, is_upvote=True)
+        post.num_upvotes += 1
+        post.save()
+        # Create a notification for the post author
+        Notification.objects.create(
+            user_profile=post.user_profile,
+            event="post_liked",
+            content=f"@{user_profile.username} liked your post",
+        )
+        send_notification_to_user(
+            user_profile=post.user_profile,
+            title=f"PDS: Hey! @{post.user_profile.username}",
+            body=f"@{user_profile.username} liked to your post",
+        )
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Post liked",
+                "is_liked": True,
+                "upvotes": post.num_upvotes,
+            },
+        )
 
     except Post.DoesNotExist:
         return JsonResponse(
-            {"status": "error", "message": "Post not found"}, status=404
+            {"status": "error", "message": "Post not found"},
+            status=404,
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -369,7 +436,8 @@ def delete_experiment(request, experiment_identifier):
     """
     if request.method != "DELETE":
         return JsonResponse(
-            {"status": "error", "message": "Method not allowed"}, status=405
+            {"status": "error", "message": "Method not allowed"},
+            status=405,
         )
     try:
         experiment = Experiment.all_objects.get(identifier=experiment_identifier)
@@ -386,11 +454,12 @@ def delete_experiment(request, experiment_identifier):
         experiment.is_deleted = True
         experiment.save()
         return JsonResponse(
-            {"status": "success", "message": "Experiment deleted successfully"}
+            {"status": "success", "message": "Experiment deleted successfully"},
         )
     except Experiment.DoesNotExist:
         return JsonResponse(
-            {"status": "error", "message": "Experiment not found."}, status=404
+            {"status": "error", "message": "Experiment not found."},
+            status=404,
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -417,12 +486,14 @@ def repost(request, post_id):
         # Check if the post is already a repost
         if original_post.repost_source is not None:
             return JsonResponse(
-                {"error": "Reposting a repost is not allowed"}, status=403
+                {"error": "Reposting a repost is not allowed"},
+                status=403,
             )
 
         # Get the current user's profile for the current experiment
         user_profile = UserProfile.objects.get(
-            user=request.user, experiment=original_post.experiment
+            user=request.user,
+            experiment=original_post.experiment,
         )
 
         # Create new post with the same content
@@ -452,7 +523,7 @@ def repost(request, post_id):
                 "success": True,
                 "post_id": str(new_post.id),
                 "shares_count": original_post.num_shares,
-            }
+            },
         )
 
     except Post.DoesNotExist:
