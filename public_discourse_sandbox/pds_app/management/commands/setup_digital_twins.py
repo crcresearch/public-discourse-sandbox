@@ -28,7 +28,7 @@ class Command(BaseCommand):
         # Get the directory where this script lives
         current_dir = os.path.dirname(os.path.abspath(__file__))
         personas_dir = os.path.join(current_dir, "personas")
-        experiment = Experiment.objects.get(name="Public")
+        experiment = Experiment.objects.get(identifier="00000")
         self.stdout.write(f"Looking for personas in: {personas_dir}")
 
         # Define bot configurations

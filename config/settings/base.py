@@ -389,8 +389,8 @@ NOTIFICATION_SYSTEM_TARGETS = {
     # Twilio Required settings, if you're not planning on using Twilio these can be set
     # to empty strings
     "twilio_sms": {
-        "account_sid": env.str("ACCOUNT_SID"),
-        "auth_token": env.str("AUTH_TOKEN"),
+        "account_sid": env.str("TWILIO_ACCOUNT_SID"),
+        "auth_token": env.str("TWILIO_AUTH_TOKEN"),
         "sender": env.str("TWILIO_PHONE_NUMBER"),  # This is the phone number associated with the Twilio account
     },
     "email": {

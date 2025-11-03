@@ -10,6 +10,7 @@ from .models import Post
 
 logger = logging.getLogger(__name__)
 
+
 def get_random_digitial_twins(count=1, exclude_twin=None, experiment_id=None):
     """Get random active twins, optionally excluding a specific twin and/or filtering by experiment"""
     active_twins = DigitalTwin.objects.filter(is_active=True)
@@ -35,6 +36,7 @@ def get_random_digitial_twins(count=1, exclude_twin=None, experiment_id=None):
 
     return selected_twins
 
+
 @shared_task
 def process_digital_twin_response(post_id: str, twin_id: str):
     """
@@ -43,7 +45,9 @@ def process_digital_twin_response(post_id: str, twin_id: str):
         post_id (str): UUID of the post to respond to
         twin_id (str): UUID of the digital twin that will respond
     """
-    logger.info(f"Starting bot response processing for post {post_id} with twin {twin_id}")
+    logger.info(
+        f"Starting bot response processing for post {post_id} with twin {twin_id}"
+    )
     print(f"Starting bot response processing for post {post_id} with twin {twin_id}")
 
     try:
@@ -65,6 +69,7 @@ def process_digital_twin_response(post_id: str, twin_id: str):
     except Exception as e:
         logger.error(f"Error processing bot response: {e!s}", exc_info=True)
 
+
 @shared_task
 def generate_digital_twin_post(experiment_id=None, force=False):
     """
@@ -75,14 +80,18 @@ def generate_digital_twin_post(experiment_id=None, force=False):
             If None, will select from all active twins across experiments.
         force (bool, optional): If True, bypasses the should_post check. Default is False.
     """
-    logger.info(f"Starting digital twin post generation. Experiment filter: {experiment_id}, Force: {force}")
+    logger.info(
+        f"Starting digital twin post generation. Experiment filter: {experiment_id}, Force: {force}"
+    )
 
     try:
         # Get a random digital twin
         twins = get_random_digitial_twins(count=1, experiment_id=experiment_id)
 
         if not twins:
-            logger.warning(f"No active digital twins found for experiment_id: {experiment_id}")
+            logger.warning(
+                f"No active digital twins found for experiment_id: {experiment_id}"
+            )
             return None
 
         twin = twins[0]
@@ -99,6 +108,7 @@ def generate_digital_twin_post(experiment_id=None, force=False):
     except Exception as e:
         logger.error(f"Error generating digital twin post: {e!s}", exc_info=True)
         return None
+
 
 @shared_task
 def process_email_notifications():
