@@ -5,6 +5,8 @@ import uuid
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
+from django_notification_system.models import NotificationTarget
+from django_notification_system.models import TargetUserRecord
 
 from .utils import check_profanity
 
@@ -47,7 +49,7 @@ class Experiment(BaseModel):
     irb_additions = models.TextField(null=True, blank=True)
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True
+        User, on_delete=models.SET_NULL, null=True,
     )  # This defines what user "owns" this experiment
     is_deleted = models.BooleanField(default=False)
 
@@ -124,23 +126,25 @@ class UserProfile(BaseModel):
     username = models.CharField(max_length=255)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     banner_picture = models.ImageField(
-        upload_to="banner_pictures/", null=True, blank=True
+        upload_to="banner_pictures/", null=True, blank=True,
     )
     profile_picture = models.ImageField(
-        upload_to="profile_pictures/", null=True, blank=True
+        upload_to="profile_pictures/", null=True, blank=True,
     )
+    dorm_name = models.CharField(max_length=100, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
     bio = models.TextField(null=True, blank=True)
     num_followers = models.IntegerField(default=0)
     num_following = models.IntegerField(default=0)
     is_digital_twin = models.BooleanField(default=False)
     is_collaborator = models.BooleanField(
-        default=False
+        default=False,
     )  # Works with the experiment owner to administer the experiment
     is_moderator = models.BooleanField(
-        default=False
+        default=False,
     )  # Delete posts, ban / report users
     is_banned = models.BooleanField(
-        default=False
+        default=False,
     )  # Cannot post, reply, or view content
     is_private = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
@@ -180,6 +184,27 @@ class UserProfile(BaseModel):
                 is_deleted=False,
             ).update(is_accepted=True)
 
+            email_target = NotificationTarget.objects.get(name="Email",
+                                                          notification_module_name="email")
+            TargetUserRecord.objects.update_or_create(
+                    user=self.user,
+                    target=email_target,
+                    target_user_id=self.user.email,
+                    defaults={
+                        "active": True,
+                        "description": "Email notification target",
+                    })
+            if self.phone_number:
+                twiliotarget = NotificationTarget.objects.get(name="Twilio")
+                TargetUserRecord.objects.update_or_create(
+                        user=self.user,
+                        target=twiliotarget,
+                        target_user_id=self.phone_number,
+                        defaults={
+                            "description": f"{self.username}'s twilio",
+                            "active": True,
+                        }
+                    )
         super().save(*args, **kwargs)
 
 
@@ -203,7 +228,7 @@ class Post(BaseModel):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     content = models.TextField()
     parent_post = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL
+        "self", null=True, blank=True, on_delete=models.SET_NULL,
     )
     depth = models.IntegerField(default=0)
     num_upvotes = models.IntegerField(default=0)
@@ -215,7 +240,7 @@ class Post(BaseModel):
     is_pinned = models.BooleanField(default=False)
     is_flagged = models.BooleanField(default=False)
     repost_source = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="reposts"
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="reposts",
     )
 
     def __str__(self):
@@ -288,10 +313,10 @@ class SocialNetwork(BaseModel):
     """
 
     source_node = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="following"
+        UserProfile, on_delete=models.CASCADE, related_name="following",
     )  # Follower
     target_node = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="followers"
+        UserProfile, on_delete=models.CASCADE, related_name="followers",
     )  # Who is being followed
 
     def __str__(self):

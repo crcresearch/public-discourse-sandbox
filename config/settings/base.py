@@ -2,6 +2,7 @@
 """Base settings to build other settings files upon."""
 
 import ssl
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -311,7 +312,7 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TASK_TIME_LIMIT = 5 * 60
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#task-soft-time-limit
 # TODO: set to whatever value is adequate in your circumstances
-CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_TASK_SOFT_TIME_LIMIT = 120
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#beat-scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
@@ -320,6 +321,12 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 CELERY_TASK_SEND_SENT_EVENT = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-hijack-root-logger
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_BEAT_SCHEDULE = {
+    "run-every-10-seconds": {
+        "task": "public_discourse_sandbox.pds_app.tasks.process_email_notifications",
+        "schedule": timedelta(seconds=10),  # run every 10 seconds
+    },
+}
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
@@ -382,9 +389,11 @@ NOTIFICATION_SYSTEM_TARGETS = {
     # Twilio Required settings, if you're not planning on using Twilio these can be set
     # to empty strings
     "twilio_sms": {
-        "account_sid": "",
-        "auth_token": "",
-        "sender": "",  # This is the phone number associated with the Twilio account
+        "account_sid": env.str("TWILIO_ACCOUNT_SID"),
+        "auth_token": env.str("TWILIO_AUTH_TOKEN"),
+        "sender": env.str(
+            "TWILIO_PHONE_NUMBER"
+        ),  # This is the phone number associated with the Twilio account
     },
     "email": {
         "from_email": "pds@crc.nd.edu",  # Sending email address

@@ -1,126 +1,366 @@
 {% load static %}
 
 <div id="commentModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="popup-header">
-            <button type="button" class="close-popup" onclick="closeCommentModal()">
-                <i class="ri-arrow-left-line"></i>
-            </button>
-            <h2>Reply</h2>
-        </div>
-        
-        <div class="modal-body" id="commentModalBody">
-            <!-- Content will be loaded via HTMX -->
-            <div class="loading-spinner" style="text-align: center; padding: 20px;">
-                <i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i>
-                <p>Loading...</p>
-            </div>
-        </div>
-    </div>
+	<div class="modal-content">
+		<div class="popup-header">
+			<button type="button" class="close-popup" onclick="closeCommentModal()">
+				<i class="ri-arrow-left-line"></i>
+			</button>
+			<h2>Reply</h2>
+		</div>
+
+		<div class="modal-body">
+			<!-- Original post section -->
+			<div class="original-post">
+				<div class="post-header">
+					<div class="user-info">
+						<div class="user-avatar" id="originalPostAvatar">
+							<i class="ri-user-3-line"></i>
+						</div>
+						<div>
+							<span class="user-name" id="originalPostName"></span>
+							<span class="user-handle" id="originalPostHandle"></span>
+							<span class="dot">·</span>
+							<span class="time" id="originalPostTime"></span>
+						</div>
+					</div>
+				</div>
+				<div class="post-content" id="originalPostContent"></div>
+			</div>
+
+			<!-- Reply form template -->
+			<template id="replyFormTemplate">
+				{% if not current_user_profile.is_banned %}
+				<form class="reply-form" method="post">
+					{% csrf_token %}
+					<input type="hidden" name="parent_post_id" value="">
+					<div class="comment-input-container">
+						<textarea name="content" placeholder="Write your reply" required
+							class="borderless-input"></textarea>
+					</div>
+					<div class="form-actions">
+						<button type="submit" class="post-button" disabled>Reply</button>
+					</div>
+				</form>
+				{% else %}
+				<div class="compose-area banned-message">
+					<p>Your account has been suspended. You cannot reply to posts at this time.</p>
+				</div>
+				{% endif %}
+			</template>
+
+			<!-- Main reply form container -->
+			<div id="mainReplyForm"></div>
+
+			<!-- Replies section -->
+			<div class="replies-section">
+				<div id="repliesList"></div>
+			</div>
+		</div>
+	</div>
 </div>
 
-<style>
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-</style>
-
 <script>
-function closeCommentModal() {
-    const modal = document.getElementById('commentModal');
-    modal.style.display = 'none';
-    
-    // Clear the modal content and reset to loading state
-    const modalBody = document.getElementById('commentModalBody');
-    modalBody.innerHTML = `
-        <div class="loading-spinner" style="text-align: center; padding: 20px;">
-            <i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i>
-            <p>Loading...</p>
-        </div>
-    `;
-}
+	let CURRENT_ROOT_POST_ID = null;
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now - date;
-    
-    // Less than 24 hours
-    if (diff < 24 * 60 * 60 * 1000) {
-        const hours = Math.floor(diff / (60 * 60 * 1000));
-        if (hours < 1) {
-            const minutes = Math.floor(diff / (60 * 1000));
-            return `${minutes}m`;
-        }
-        return `${hours}h`;
-    }
-    
-    // Less than 7 days
-    if (diff < 7 * 24 * 60 * 60 * 1000) {
-        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-        return `${days}d`;
-    }
-    
-    // Otherwise return the date
-    return date.toLocaleDateString();
-}
+	function closeCommentModal() {
+		document.getElementById('commentModal').style.display = 'none';
+	}
 
-async function showCommentPopup(postId) {
-    // Show modal immediately
-    const modal = document.getElementById('commentModal');
-    modal.style.display = 'block';
-    
-    // Close when clicking outside
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            closeCommentModal();
-        }
-    }
-    
-    // Load content via HTMX
-    const modalBody = document.getElementById('commentModalBody');
-    
-    // Determine the correct URL based on current page context
-    let commentDetailUrl;
-    const currentPath = window.location.pathname;
-    const experimentMatch = currentPath.match(/^\/([^\/]+)\//);
-    
-    if (experimentMatch && experimentMatch[1] !== 'api' && experimentMatch[1] !== 'get-replies' && experimentMatch[1] !== 'comment-detail') {
-        // We're in an experiment-specific context
-        const experimentId = experimentMatch[1];
-        commentDetailUrl = `/${experimentId}/comment-detail/${postId}/`;
-    } else {
-        // Use experiment-agnostic URL
-        commentDetailUrl = `/comment-detail/${postId}/`;
-    }
-    
-    // Use HTMX to load the content
-    htmx.ajax('GET', commentDetailUrl, {
-        target: '#commentModalBody',
-        swap: 'innerHTML'
-    });
-}
+	function formatDate(date) {
+		const seconds = Math.floor((new Date() - new Date(date)) / 1000);
 
-// Legacy functions for backward compatibility - these are now handled in the modal content template
-function createReplyForm(parentId, isNested = false) {
-    // This function is now handled in the modal content template
-    console.warn('createReplyForm is deprecated - functionality moved to modal content template');
-    return null;
-}
+		let interval = seconds / 31536000;
+		if (interval > 1) {
+			return new Date(date).toLocaleDateString();
+		}
+		interval = seconds / 2592000;
+		if (interval > 1) {
+			return Math.floor(interval) + " months ago";
+		}
+		interval = seconds / 86400;
+		if (interval > 1) {
+			return Math.floor(interval) + " days ago";
+		}
+		interval = seconds / 3600;
+		if (interval > 1) {
+			return Math.floor(interval) + " hours ago";
+		}
+		interval = seconds / 60;
+		if (interval > 1) {
+			return Math.floor(interval) + " minutes ago";
+		}
+		return Math.floor(seconds) + " seconds ago";
+	}
 
-function handleReplySubmit(e) {
-    // This function is now handled in the modal content template via HTMX
-    console.warn('handleReplySubmit is deprecated - functionality moved to HTMX form handling');
-}
+	function createReplyForm(parentId, isNested = false) {
+		const template = document.getElementById('replyFormTemplate');
+		const form = template.content.cloneNode(true);
+		const isBanned = form.querySelector('.banned-message') !== null;
+		const formElement = form.querySelector(isBanned ? '.compose-area.banned-message' : '.reply-form');
 
-function renderReplies(replies) {
-    // This function is now handled by the Django template
-    console.warn('renderReplies is deprecated - functionality moved to Django template rendering');
-}
+		if (!isBanned) {
+			formElement.querySelector('[name="parent_post_id"]').value = parentId;
+			if (isNested) formElement.classList.add('nested-reply-form');
+			formElement.addEventListener('submit', handleReplySubmit);
 
-function showReplyForm(replyId) {
-    // This function is now defined in the modal content template
-    console.warn('showReplyForm should be called after modal content is loaded');
-}
-</script> 
+			const textarea = formElement.querySelector('textarea');
+			const submitButton = formElement.querySelector('button[type="submit"]');
+			submitButton.disabled = true;
+			textarea.addEventListener('input', function () {
+				submitButton.disabled = !this.value.trim();
+			});
+		} else if (isNested) {
+			formElement.classList.add('nested-reply-form');
+		}
+
+		return formElement;
+	}
+
+	async function handleReplySubmit(e) {
+		e.preventDefault();
+		const form = e.target;
+		const formData = new FormData(form);
+
+		try {
+			const response = await fetch('{% url "create_comment_with_experiment" experiment_identifier=experiment.identifier %}', {
+				method: 'POST',
+				body: formData,
+				headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+			});
+
+			if (response.ok) {
+				form.reset();
+				form.querySelector('button[type="submit"]').disabled = true;
+
+				const repliesResponse = await fetch(`/get-replies/${CURRENT_ROOT_POST_ID}/`);
+				if (repliesResponse.ok) {
+					const data = await repliesResponse.json();
+					renderReplies(data.replies);
+
+					if (form.classList.contains('nested-reply-form')) {
+						const container = form.closest('.nested-reply-container');
+						if (container) container.innerHTML = '';
+					}
+				}
+			} else {
+				const errorData = await response.json();
+				alert(`Error: ${errorData.message || 'Failed to post comment'}`);
+			}
+		} catch (error) {
+			console.error('Error:', error);
+			alert('An error occurred while posting your comment. Please try again.');
+		}
+	}
+
+	function togglePostMenu(postId) {
+		const menu = document.getElementById(`post-menu-${postId}`);
+		menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+		document.querySelectorAll('.post-menu-dropdown').forEach(dropdown => {
+			if (dropdown.id !== `post-menu-${postId}`) dropdown.style.display = 'none';
+		});
+	}
+
+	document.addEventListener('click', e => {
+		if (!e.target.closest('.post-menu')) {
+			document.querySelectorAll('.post-menu-dropdown').forEach(menu => menu.style.display = 'none');
+		}
+	});
+
+
+	function countNestedReplies(node) {
+		if (!node?.replies?.length) return 0;
+		return node.replies.reduce((sum, child) => sum + 1 + countNestedReplies(child), 0);
+	}
+
+	function getLikeCount(node) {
+		return node.like_count ?? node.likes ?? node.num_likes ?? 0;
+	}
+
+	function getShareCount(node) {
+		return node.share_count ?? node.shares ?? node.num_shares ?? 0;
+	}
+
+	function renderReplies(replies) {
+		const repliesList = document.getElementById('repliesList');
+		if (!replies || replies.length === 0) {
+			repliesList.innerHTML = '<div class="no-replies">No replies yet</div>';
+			return;
+		}
+		repliesList.innerHTML = replies.map(r => renderReply(r, 0)).join('');
+	}
+
+	function renderReply(reply, level) {
+		const user_profile_url = "{% url 'user_profile_detail' experiment.identifier '00000000-0000-0000-0000-000000000000' %}";
+		const profileLink = user_profile_url.replace('00000000-0000-0000-0000-000000000000', reply.user_profile_id);
+
+		const menuHtml = (reply.is_author || reply.is_moderator) ? `
+			<div class="post-menu">
+				<button class="menu-button" onclick="togglePostMenu('${reply.id}')"><i class="ri-more-fill"></i></button>
+				<div id="post-menu-${reply.id}" class="post-menu-dropdown" style="display:none;">
+					<button onclick="document.querySelector('.reply-item[data-reply-id=\\'${reply.id}\\']').style.display='none'; showDeleteModal('${reply.id}')" class="post-menu-item">
+						<i class="ri-delete-bin-line"></i> Delete
+					</button>
+				</div>
+			</div>` : '';
+
+		const descendantsCount = countNestedReplies(reply);
+		const likeCount = getLikeCount(reply);
+		const shareCount = getShareCount(reply);
+
+		console.log(reply)
+
+		const thisNode = `
+			<div class="reply-item" data-reply-id="${reply.id}" style="--level:${level}">
+				<div class="post-header">
+					<div class="user-info">
+						<div class="user-avatar">
+							${reply.profile_picture
+				? `<img src="${reply.profile_picture}" alt="${reply.username}'s avatar">`
+				: '<i class="ri-user-3-line"></i>'}
+						</div>
+						<div>
+							<a href="${profileLink}" class="user-name">${reply.display_name}</a>
+							<a href="${profileLink}" class="user-handle">@${reply.username}</a>
+							<span class="dot">·</span>
+							<span class="time">${formatDate(reply.created_date)}</span>
+						</div>
+					</div>
+					${menuHtml}
+				</div>
+
+				<div class="post-content">${reply.content}</div>
+
+				<div class="nested-reply-container" id="replyForm-${reply.id}"></div>
+
+				<div class="post-actions counters">
+					<button class="action-button" onclick="showReplyForm('${reply.id}')" title="Reply">
+						<i class="ri-chat-1-line"></i>
+						<span>${descendantsCount}</span>
+					</button>
+					    <button class="action-button like-button {% if reply.has_user_voted %}liked{% endif %}" data-post-id="${reply.id}" data-authenticated="true" onclick="handleLike(this, '${reply.id}')">
+                        <i class="{% if reply.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+                        <span>${reply.num_upvotes}</span>
+                    </button>
+					<button class="action-button repost-button ${reply.is_author ? "disabled" : ""}" onclick="handleRepost(this, '${reply.id}')" disabled=${reply.is_author ? true : false}>
+                        <i class="ri-repeat-line"></i>
+                        <span>${reply.num_shares}</span>
+                    </button>
+				</div>
+			</div>
+		`;
+
+		const children = (reply.replies && reply.replies.length)
+			? reply.replies.map(child => renderReply(child, level + 1)).join('')
+			: '';
+
+		return thisNode + children;
+	}
+
+	function showReplyForm(replyId) {
+		const container = document.getElementById(`replyForm-${replyId}`);
+		if (!container) return;
+		const replyButton = document.querySelector(`.reply-item[data-reply-id="${replyId}"] .post-actions`);
+		container.innerHTML = '';
+		const form = createReplyForm(replyId, true);
+		container.appendChild(form);
+		if (replyButton) replyButton.style.display = 'none';
+		form.querySelector('textarea').focus();
+	}
+
+	async function showCommentPopup(postId) {
+		CURRENT_ROOT_POST_ID = postId;
+		const postElement = document.querySelector(`article[data-post-id="${postId}"]`);
+		const userName = postElement.querySelector('.user-name').textContent.trim();
+		const userHandle = postElement.querySelector('.user-handle').textContent.trim();
+		const timeElement = postElement.querySelector('.time');
+		const content = postElement.querySelector('.post-text').textContent.trim();
+		const avatarElement = postElement.querySelector('.user-avatar');
+
+		document.getElementById('originalPostName').textContent = userName;
+		document.getElementById('originalPostHandle').textContent = userHandle;
+		document.getElementById('originalPostTime').textContent = timeElement.textContent;
+		document.getElementById('originalPostContent').textContent = content;
+		document.getElementById('originalPostAvatar').innerHTML = avatarElement.innerHTML;
+
+		const modal = document.getElementById('commentModal');
+		modal.style.display = 'block';
+		window.onclick = e => { if (e.target == modal) closeCommentModal(); };
+
+		const mainReplyForm = document.getElementById('mainReplyForm');
+		mainReplyForm.innerHTML = '';
+		mainReplyForm.appendChild(createReplyForm(postId));
+
+		try {
+			const response = await fetch(`/get-replies/${postId}/`);
+			if (response.ok) {
+				const data = await response.json();
+				renderReplies(data.replies);
+			}
+		} catch (error) {
+			console.error('Error fetching replies:', error);
+		}
+	}
+</script>
+
+<style>
+	#repliesList {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.replies-section .reply-item {
+		margin-left: calc(var(--level, 0) * 16px);
+		margin-top: calc(6px + (var(--level, 0) * 4px));
+		margin-bottom: 6px;
+		padding-left: 12px;
+		border-left: 1px solid var(--border-color, #222);
+	}
+
+	.replies-section .reply-item .post-actions {
+		margin-top: 6px;
+	}
+
+	.replies-section .nested-reply-container {
+		margin-top: 8px;
+		margin-bottom: 4px;
+	}
+
+	.replies-section .reply-item+.reply-item {
+		margin-top: calc(10px + (var(--level, 0) * 2px));
+	}
+
+	.post-actions.counters {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.post-actions .action-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 6px 8px;
+		border-radius: 8px;
+		background: transparent;
+		border: 1px solid transparent;
+		cursor: pointer;
+	}
+
+	.post-actions .action-button:hover {
+		border-color: var(--border-color, #222);
+	}
+
+	.post-actions .counter {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.9rem;
+		opacity: 0.9;
+	}
+
+	.post-actions .counter i {
+		font-size: 1rem;
+	}
+</style>

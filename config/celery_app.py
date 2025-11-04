@@ -29,4 +29,5 @@ app.autodiscover_tasks()
 
 # This will ensure Django is set up before Celery uses it
 import django
+
 django.setup()
