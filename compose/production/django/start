@@ -12,5 +12,4 @@ WORKERS=$((2 * CORES + 1))
 
 python /app/manage.py collectstatic --noinput
 
-# exec /usr/local/bin/gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app
-exec /usr/local/bin/gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app --timeout 300 --limit-request-line 8190 --workers "${WORKERS}"
+exec /usr/local/bin/gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app --workers "${WORKERS}"
