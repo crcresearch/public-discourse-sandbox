@@ -49,7 +49,9 @@ class Experiment(BaseModel):
     irb_additions = models.TextField(null=True, blank=True)
     options = models.JSONField(default=dict)
     creator = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
     )  # This defines what user "owns" this experiment
     is_deleted = models.BooleanField(default=False)
 
@@ -126,10 +128,14 @@ class UserProfile(BaseModel):
     username = models.CharField(max_length=255)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     banner_picture = models.ImageField(
-        upload_to="banner_pictures/", null=True, blank=True,
+        upload_to="banner_pictures/",
+        null=True,
+        blank=True,
     )
     profile_picture = models.ImageField(
-        upload_to="profile_pictures/", null=True, blank=True,
+        upload_to="profile_pictures/",
+        null=True,
+        blank=True,
     )
     dorm_name = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
@@ -156,20 +162,6 @@ class UserProfile(BaseModel):
         bot_status = " (Digital Twin)" if self.is_digital_twin else ""
         return f"{self.username}{bot_status}"
 
-    def is_experiment_moderator(self):
-        """
-        Check if this user profile has moderator permissions for the experiment.
-        A user is considered a moderator if they:
-        1. Own the experiment (are the creator)
-        2. Are a collaborator
-        3. Have the is_moderator flag set
-        """
-        return (
-            self.experiment.creator == self.user  # User owns the experiment
-            or self.is_collaborator  # User is a collaborator
-            or self.is_moderator  # User has moderator flag
-        )
-
     def save(self, *args, **kwargs):
         # Update the user's last_accessed experiment
         if not self.is_digital_twin:
@@ -184,28 +176,45 @@ class UserProfile(BaseModel):
                 is_deleted=False,
             ).update(is_accepted=True)
 
-            email_target = NotificationTarget.objects.get(name="Email",
-                                                          notification_module_name="email")
+            email_target = NotificationTarget.objects.get(
+                name="Email",
+                notification_module_name="email",
+            )
             TargetUserRecord.objects.update_or_create(
-                    user=self.user,
-                    target=email_target,
-                    target_user_id=self.user.email,
-                    defaults={
-                        "active": True,
-                        "description": "Email notification target",
-                    })
+                user=self.user,
+                target=email_target,
+                target_user_id=self.user.email,
+                defaults={
+                    "active": True,
+                    "description": f"{self.username}'s email target",
+                },
+            )
             if self.phone_number:
                 twiliotarget = NotificationTarget.objects.get(name="Twilio")
                 TargetUserRecord.objects.update_or_create(
-                        user=self.user,
-                        target=twiliotarget,
-                        target_user_id=self.phone_number,
-                        defaults={
-                            "description": f"{self.username}'s twilio",
-                            "active": True,
-                        }
-                    )
+                    user=self.user,
+                    target=twiliotarget,
+                    target_user_id=self.phone_number,
+                    defaults={
+                        "description": f"{self.username}'s twilio target",
+                        "active": True,
+                    },
+                )
         super().save(*args, **kwargs)
+
+    def is_experiment_moderator(self):
+        """
+        Check if this user profile has moderator permissions for the experiment.
+        A user is considered a moderator if they:
+        1. Own the experiment (are the creator)
+        2. Are a collaborator
+        3. Have the is_moderator flag set
+        """
+        return (
+            self.experiment.creator == self.user  # User owns the experiment
+            or self.is_collaborator  # User is a collaborator
+            or self.is_moderator  # User has moderator flag
+        )
 
 
 class UndeletedPostManager(models.Manager):
@@ -228,7 +237,10 @@ class Post(BaseModel):
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE)
     content = models.TextField()
     parent_post = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL,
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
     )
     depth = models.IntegerField(default=0)
     num_upvotes = models.IntegerField(default=0)
@@ -240,7 +252,11 @@ class Post(BaseModel):
     is_pinned = models.BooleanField(default=False)
     is_flagged = models.BooleanField(default=False)
     repost_source = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="reposts",
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reposts",
     )
 
     def __str__(self):
@@ -313,10 +329,14 @@ class SocialNetwork(BaseModel):
     """
 
     source_node = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="following",
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="following",
     )  # Follower
     target_node = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="followers",
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="followers",
     )  # Who is being followed
 
     def __str__(self):
