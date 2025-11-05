@@ -51,11 +51,13 @@ def create_comment(request, experiment_identifier):
                 event="post_replied",
                 content=f"@{user_profile.username} replied to your post",
             )
-            send_notification_to_user(
-                user_profile=parent_post.user_profile,
-                title=f"PDS: Hey! @{parent_post.user_profile.username}",
-                body=f"@{user_profile.username} replied to your post",
-            )
+
+            if parent_post.user_profile.username != user_profile.username:
+                send_notification_to_user(
+                    user_profile=parent_post.user_profile,
+                    title="Public Discourse Notification",
+                    body=f"@{user_profile.username} replied to your post",
+                )
 
             response_data = {
                 "status": "success",
@@ -176,7 +178,8 @@ def get_post_replies(request, post_id):
 
     except Post.DoesNotExist:
         return JsonResponse(
-            {"status": "error", "message": "Post not found"}, status=404,
+            {"status": "error", "message": "Post not found"},
+            status=404,
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -404,7 +407,7 @@ def handle_like(request, post_id):
         )
         send_notification_to_user(
             user_profile=post.user_profile,
-            title=f"PDS: Hey! @{post.user_profile.username}",
+            title="Public Discourse Notification",
             body=f"@{user_profile.username} liked to your post",
         )
         return JsonResponse(
@@ -514,7 +517,7 @@ def repost(request, post_id):
         )
         send_notification_to_user(
             user_profile=original_post.user_profile,
-            title=f"PDS: Hey! @{original_post.user_profile.username}",
+            title="Public Discourse Notification",
             body=f"@{user_profile.username} liked to your post",
         )
 

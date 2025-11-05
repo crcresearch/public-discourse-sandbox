@@ -1,0 +1,14 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Public Discourse Sandbox{% endblock %}
+
+{% block content %}
+<h2>You have a new notification!</h2>
+
+<p>Hello @{{ username }}</p>
+
+<p>{{ body }}</p>
+
+<p style="margin-bottom: 0; color: var(--secondary-text); margin-right: 50px;">From<br><b><i>The Public Discourse
+			Sandbox Team</i></b></p>
+{% endblock %}

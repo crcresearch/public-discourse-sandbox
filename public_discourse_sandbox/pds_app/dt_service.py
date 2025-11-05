@@ -430,7 +430,7 @@ class DTService:
             # Send notifications to all notification targets for the post author
             send_notification_to_user(
                 user_profile=post.user_profile,
-                title=f"PDS: Hey! @{post.user_profile}",
+                title="Public Discourse Notification",
                 body=f"@{twin.user_profile.username} replied to your post",
             )
 

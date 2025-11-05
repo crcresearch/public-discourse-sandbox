@@ -4,6 +4,7 @@ from django.utils import timezone
 from django_notification_system.models import Notification as DjNotification
 from django_notification_system.models import TargetUserRecord
 from profanity_check import predict_prob
+from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +55,16 @@ def send_notification_to_user(
     if notification_targets.exists():
         for target in notification_targets:
             try:
+                html_content = render_to_string(
+                    "email/updates_email.html",
+                    {"username": user_profile.username, "body": body},
+                )
                 DjNotification.objects.create(
                     target_user_record=target,
                     title=title,
-                    body=body,
+                    body=html_content
+                    if "twilio" not in target.description
+                    else f"You've received a new notification on https://publicdiscourse.crc.nd.edu. {body}. Sign in to view more details.",
                     status=status,
                     scheduled_delivery=timezone.now(),
                 )
@@ -66,7 +73,4 @@ def send_notification_to_user(
                     f"target {target.target_user_id}",
                 )
             except Exception as e:
-                logger.error(
-                    f"Failed to create notification for user {user_profile.username} "
-                    f"target {target.target_user_id}: {e!s}"
-                )
+                logger.exception(e)
