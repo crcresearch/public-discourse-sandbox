@@ -1,10 +1,10 @@
 import logging
 
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django_notification_system.models import Notification as DjNotification
 from django_notification_system.models import TargetUserRecord
 from profanity_check import predict_prob
-from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
