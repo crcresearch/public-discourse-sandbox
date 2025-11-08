@@ -14,6 +14,19 @@
             </div>
 
             <div class="trending-section">
+              <h2>Dorm Activity Leaderboard</h2>
+
+              <ol>
+                {% for hall in leaderboard %}
+                <li>{{hall.dorm_name}} ({{hall.post_count}})</li>
+                {% empty %}
+                <p>No user activity has been added yet</p>
+                {% endfor %}
+              </ol>
+            </div>
+
+
+            <div class="trending-section">
                 <h2>Trending</h2>
                 {% if trending_hashtags %}
                     <div class="trending-topics">
@@ -61,7 +74,7 @@
             {% block right_sidebar_content %}
                 <!-- Default right sidebar content -->
             {% endblock %}
-            
+
             {% block right_sidebar_extra %}
                 <!-- Additional content for specific pages -->
             {% endblock %}
@@ -82,13 +95,13 @@
                     const selectedIdentifier = this.value;
                     const currentPath = window.location.pathname;
                     const pathParts = currentPath.split('/').filter(Boolean); // Remove empty strings
-                    
+
                     // Define our URL patterns
                     const namespacePatterns = ['users', 'api', 'accounts'];
                     const isNamespaced = namespacePatterns.includes(pathParts[0]);
-                    
+
                     let newPath;
-                    
+
                     if (isNamespaced) {
                         // For namespaced URLs, the experiment identifier should be at index 1
                         if (pathParts[1] && pathParts[1].length === 5) {
@@ -112,7 +125,6 @@
                     }
 
                     // Update the user's last_accessed experiment
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                     fetch('{% url "update_last_accessed" %}', {
                         method: 'POST',
                         headers: {
