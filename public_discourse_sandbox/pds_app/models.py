@@ -155,6 +155,7 @@ class UserProfile(BaseModel):
     )  # Cannot post, reply, or view content
     is_private = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    is_notifications_enabled = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ("username", "experiment")

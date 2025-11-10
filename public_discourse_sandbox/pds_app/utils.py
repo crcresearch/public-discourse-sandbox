@@ -47,6 +47,9 @@ def send_notification_to_user(
         body (str): The notification body/message
         status (str): The notification status (default: "SCHEDULED")
     """
+    if not user_profile.is_notifications_enabled:
+        return
+
     notification_targets = TargetUserRecord.objects.filter(
         user=user_profile.user,
         active=True,
