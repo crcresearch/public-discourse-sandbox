@@ -53,7 +53,9 @@ class User(AbstractUser, BaseModel):
         default=False,
         help_text=_("Designates whether this user is a researcher."),
     )
-    last_accessed = models.ForeignKey('pds_app.Experiment', on_delete=models.SET_NULL, null=True)
+    last_accessed = models.ForeignKey(
+        "pds_app.Experiment", on_delete=models.SET_NULL, null=True
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

@@ -12,6 +12,7 @@ from .models import Post
 from .models import UserProfile
 from .models import Vote
 from .serializers import ExperimentSerializer
+from .serializers import PostCommentsSerializer
 from .serializers import PostCreateSerializer
 from .serializers import PostReplySerializer
 from .serializers import PostSerializer
@@ -60,7 +61,9 @@ def api_home_timeline(request, experiment_id):
         page_size = min(int(request.query_params.get("page_size", 20)), 100)
         posts = list(
             get_home_feed_posts(
-                request=request, experiment=experiment, page_size=page_size,
+                request=request,
+                experiment=experiment,
+                page_size=page_size,
             ),
         )
         paginator = CustomPagination()
@@ -141,7 +144,9 @@ def api_search_posts(request, experiment_id):
     max_results = min(int(request.query_params.get("page_size", 20)), 100)
     posts = (
         Post.objects.filter(
-            experiment=experiment, is_deleted=False, parent_post__isnull=True,
+            experiment=experiment,
+            is_deleted=False,
+            parent_post__isnull=True,
         )
         .filter(
             models.Q(content__icontains=query)
@@ -211,6 +216,63 @@ def api_get_post_by_id(request, post_id):
         is_upvote=True,
     ).exists()
     serializer = PostSerializer(post)
+    return Response(
+        {
+            "data": serializer.data,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["GET"])
+@authentication_classes([BearerAuthentication])
+@permission_classes([IsAuthenticated])
+def api_get_post_comments_by_id(request, post_id):
+    try:
+        post = Post.objects.select_related("experiment", "user_profile").get(
+            id=post_id, is_deleted=False
+        )
+    except Post.DoesNotExist:
+        return Response(
+            {
+                "error": "Post not found",
+            },
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # check if user have access to the experiment
+    user_profile = request.user.userprofile_set.filter(
+        experiment=post.experiment,
+    ).first()
+    if not user_profile:
+        return Response(
+            {
+                "error": "user does not have access to this experiment",
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if user_profile.is_banned:
+        return Response(
+            {
+                "error": "User is banned from this experiment",
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    depth = int(request.query_params.get("depth", 10))
+    children_limit = request.query_params.get("children_limit")
+
+    try:
+        children_limit = int(children_limit) if children_limit else None
+    except ValueError:
+        children_limit = None
+
+    serializer = PostCommentsSerializer(
+        post,
+        context={"request": request, "depth": depth, "children_limit": children_limit},
+    )
+
     return Response(
         {
             "data": serializer.data,

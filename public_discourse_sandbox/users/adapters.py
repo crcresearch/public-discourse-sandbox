@@ -53,8 +53,11 @@ class AccountAdapter(DefaultAccountAdapter):
                     if experiment_id == "00000":
                         # Log error but continue - default experiment should exist
                         import logging
+
                         logger = logging.getLogger(__name__)
-                        logger.error(f"Default experiment '00000' not found when creating user {user.email}")
+                        logger.error(
+                            f"Default experiment '00000' not found when creating user {user.email}"
+                        )
 
             if experiment:
                 try:

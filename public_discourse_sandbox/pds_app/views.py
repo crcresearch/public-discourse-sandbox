@@ -246,13 +246,13 @@ class HomeView(
         context = super().get_context_data(**kwargs)
         context["form"] = PostForm()
 
-        context["leaderboard"] = (UserProfile
-                    .objects
-                    .filter(experiment=self.experiment)
-                    .exclude(dorm_name__isnull=True)
-                    .values("dorm_name")
-                    .annotate(post_count=Count("post"))
-                    .order_by("-post_count")[:3])
+        context["leaderboard"] = (
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(post_count=Count("post"))
+            .order_by("-post_count")[:3]
+        )
 
         # Add flag for empty home feed to show guidance message
         if not context["posts"] and not self.request.headers.get("HX-Request"):
@@ -352,13 +352,13 @@ class ExploreView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_hashtag"] = self.request.GET.get("hashtag")
-        context["leaderboard"] = (UserProfile
-                    .objects
-                    .filter(experiment=self.experiment)
-                    .exclude(dorm_name__isnull=True)
-                    .values("dorm_name")
-                    .annotate(post_count=Count("post"))
-                    .order_by("-post_count")[:3])
+        context["leaderboard"] = (
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(post_count=Count("post"))
+            .order_by("-post_count")[:3]
+        )
         return context
 
     @method_decorator(check_banned)
@@ -1223,13 +1223,13 @@ class UserProfileDetailView(
             source_node=self.object,
         ).count()
 
-        context["leaderboard"] = (UserProfile
-                    .objects
-                    .filter(experiment=self.experiment)
-                    .exclude(dorm_name__isnull=True)
-                    .values("dorm_name")
-                    .annotate(post_count=Count("post"))
-                    .order_by("-post_count")[:3])
+        context["leaderboard"] = (
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(post_count=Count("post"))
+            .order_by("-post_count")[:3]
+        )
 
         # Get pagination parameters
         previous_post_id = self.request.GET.get("previous_post_id", None)

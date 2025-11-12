@@ -32,6 +32,7 @@ from .forms import CustomSignupForm
 
 User = get_user_model()
 
+
 class UserDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailView):
     model = User
     slug_field = "id"
@@ -57,7 +58,7 @@ class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
         assert self.request.user.is_authenticated  # type guard
         return self.request.user.get_absolute_url()
 
-    def get_object(self, queryset: QuerySet | None=None) -> User:
+    def get_object(self, queryset: QuerySet | None = None) -> User:
         assert self.request.user.is_authenticated  # type guard
         return self.request.user
 
@@ -80,6 +81,7 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
     View for displaying a user's profile within a specific experiment context.
     This view requires both a user ID and an experiment identifier in the URL.
     """
+
     model = UserProfile
     template_name = "users/user_profile_detail.html"
     context_object_name = "viewed_profile"
@@ -111,22 +113,32 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         context["is_creator"] = self.object.user == self.experiment.creator
 
         # Add follower and following counts
-        context["follower_count"] = SocialNetwork.objects.filter(target_node=self.object).count()
-        context["following_count"] = SocialNetwork.objects.filter(source_node=self.object).count()
+        context["follower_count"] = SocialNetwork.objects.filter(
+            target_node=self.object
+        ).count()
+        context["following_count"] = SocialNetwork.objects.filter(
+            source_node=self.object
+        ).count()
 
         # Get pagination parameters
         previous_post_id = self.request.GET.get("previous_post_id", None)
-        page_size = self.request.GET.get("page_size", 10)  # Default to 10 posts per page
+        page_size = self.request.GET.get(
+            "page_size", 10
+        )  # Default to 10 posts per page
 
         # Get all posts by this user (not deleted, ordered by newest first)
         # Add select_related and prefetch_related for efficient queries
-        all_posts = Post.all_objects.filter(user_profile=self.object, is_deleted=False).select_related(
-            "user_profile",
-            "user_profile__user",
-            "parent_post",
-            "parent_post__user_profile",
-            "parent_post__user_profile__user",
-        ).prefetch_related("vote_set")
+        all_posts = (
+            Post.all_objects.filter(user_profile=self.object, is_deleted=False)
+            .select_related(
+                "user_profile",
+                "user_profile__user",
+                "parent_post",
+                "parent_post__user_profile",
+                "parent_post__user_profile__user",
+            )
+            .prefetch_related("vote_set")
+        )
 
         # Separate original posts and replies
         original_posts = all_posts.filter(parent_post__isnull=True)
@@ -136,28 +148,38 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         if previous_post_id:
             try:
                 previous_post = Post.objects.get(id=previous_post_id)
-                original_posts = original_posts.filter(created_date__lt=previous_post.created_date)
+                original_posts = original_posts.filter(
+                    created_date__lt=previous_post.created_date
+                )
                 replies = replies.filter(created_date__lt=previous_post.created_date)
             except Post.DoesNotExist:
                 pass
 
         # Order by newest first and limit to page size
-        context["user_original_posts"] = original_posts.order_by("-created_date")[:int(page_size)]
-        context["user_replies"] = replies.order_by("-created_date")[:int(page_size)]
+        context["user_original_posts"] = original_posts.order_by("-created_date")[
+            : int(page_size)
+        ]
+        context["user_replies"] = replies.order_by("-created_date")[: int(page_size)]
 
         # Add counts for the tabs
         context["original_posts_count"] = original_posts.count()
         context["replies_count"] = replies.count()
 
         # Keep the original user_posts for backward compatibility (all posts)
-        context["user_posts"] = all_posts.order_by("-created_date")[:int(page_size)]
+        context["user_posts"] = all_posts.order_by("-created_date")[: int(page_size)]
 
         # Annotate each post with comment_count and has_user_voted for template compatibility
         current_user = self.request.user
-        for post_list in [context["user_original_posts"], context["user_replies"], context["user_posts"]]:
+        for post_list in [
+            context["user_original_posts"],
+            context["user_replies"],
+            context["user_posts"],
+        ]:
             for post in post_list:
                 post.comment_count = post.get_comment_count()
-                post.has_user_voted = post.vote_set.filter(user_profile__user=current_user).exists()
+                post.has_user_voted = post.vote_set.filter(
+                    user_profile__user=current_user
+                ).exists()
 
         # If HTMX request, map user_posts to posts for template compatibility
         if self.request.headers.get("HX-Request"):
@@ -166,17 +188,23 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
         # Add whether the current user is following the viewed profile
         current_user_profile = context.get("current_user_profile")
         if current_user_profile:
-            context["is_following_viewed_profile"] = SocialNetwork.objects.filter(source_node=current_user_profile, target_node=self.object).exists()
+            context["is_following_viewed_profile"] = SocialNetwork.objects.filter(
+                source_node=current_user_profile, target_node=self.object
+            ).exists()
         else:
             context["is_following_viewed_profile"] = False
 
         # Followers: UserProfiles that follow this profile
         follower_links = SocialNetwork.objects.filter(target_node=self.object)
-        context["followers"] = UserProfile.objects.filter(id__in=follower_links.values_list("source_node", flat=True))
+        context["followers"] = UserProfile.objects.filter(
+            id__in=follower_links.values_list("source_node", flat=True)
+        )
 
         # Following: UserProfiles that this profile follows
         following_links = SocialNetwork.objects.filter(source_node=self.object)
-        context["following"] = UserProfile.objects.filter(id__in=following_links.values_list("target_node", flat=True))
+        context["following"] = UserProfile.objects.filter(
+            id__in=following_links.values_list("target_node", flat=True)
+        )
 
         return context
 
@@ -187,6 +215,7 @@ class UserProfileDetailView(LoginRequiredMixin, ExperimentContextMixin, DetailVi
             self.template_name = "partials/_post_list.html"
         return super().get(request, *args, **kwargs)
 
+
 user_profile_detail_view = UserProfileDetailView.as_view()
 
 
@@ -195,6 +224,7 @@ class UpdateProfileView(LoginRequiredMixin, ExperimentContextMixin, View):
     """
     View for handling profile updates via AJAX.
     """
+
     def post(self, request, *args, **kwargs):
         try:
             user_profile = request.user.userprofile_set.get(experiment=self.experiment)
@@ -204,14 +234,21 @@ class UpdateProfileView(LoginRequiredMixin, ExperimentContextMixin, View):
                 user_profile.display_name = request.POST["display_name"]
             if "username" in request.POST:
                 # Check if username is already taken in this experiment
-                if UserProfile.objects.filter(
-                    experiment=self.experiment,
-                    username=request.POST["username"],
-                ).exclude(id=user_profile.id).exists():
-                    return JsonResponse({
-                        "success": False,
-                        "error": "This username is already taken in this experiment",
-                    }, status=400)
+                if (
+                    UserProfile.objects.filter(
+                        experiment=self.experiment,
+                        username=request.POST["username"],
+                    )
+                    .exclude(id=user_profile.id)
+                    .exists()
+                ):
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": "This username is already taken in this experiment",
+                        },
+                        status=400,
+                    )
                 user_profile.username = request.POST["username"]
             if "bio" in request.POST:
                 user_profile.bio = request.POST["bio"]
@@ -226,18 +263,25 @@ class UpdateProfileView(LoginRequiredMixin, ExperimentContextMixin, View):
 
             user_profile.save()
 
-            return JsonResponse({
-                "success": True,
-                "message": "Profile updated successfully",
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Profile updated successfully",
+                }
+            )
 
         except Exception as e:
-            return JsonResponse({
-                "success": False,
-                "error": str(e),
-            }, status=400)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": str(e),
+                },
+                status=400,
+            )
+
 
 update_profile_view = UpdateProfileView.as_view()
+
 
 class CustomSignupView(SignupView):
     """
@@ -245,12 +289,15 @@ class CustomSignupView(SignupView):
     If accessed without experiment parameter, redirects to original signup.
     Email parameter is optional for initial signup from landing page.
     """
+
     form_class = CustomSignupForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         # Get experiment and email from URL parameters or POST data
-        experiment_identifier = self.request.GET.get("experiment") or self.request.POST.get("experiment")
+        experiment_identifier = self.request.GET.get(
+            "experiment"
+        ) or self.request.POST.get("experiment")
         email = self.request.GET.get("email") or self.request.POST.get("email")
 
         if experiment_identifier:
@@ -343,6 +390,7 @@ class CustomEmailVerificationSentView(EmailVerificationSentView):
     Custom view to handle email verification and redirect to create profile
     if there's a pending invitation.
     """
+
     def get(self, request, *args, **kwargs):
         response = super().get(request, *args, **kwargs)
 
@@ -353,10 +401,13 @@ class CustomEmailVerificationSentView(EmailVerificationSentView):
             del request.session["pending_invitation"]
 
             # Redirect to create profile
-            return redirect("create_profile",
-                          experiment_identifier=pending_invitation["experiment_identifier"])
+            return redirect(
+                "create_profile",
+                experiment_identifier=pending_invitation["experiment_identifier"],
+            )
 
         return response
+
 
 @login_required
 def update_name_view(request):

@@ -307,12 +307,13 @@ class Post(BaseModel):
         if not self.is_flagged:  # Only check if not already flagged
             self.is_flagged = check_profanity(self.content)
 
-
         # when an admin creates a post (not a comment), send a notification to all people in this experiment
-        if (self.user_profile.is_moderator or self.user_profile.is_collaborator) and self.depth == 0:
-            for user in UserProfile.objects.filter(experiment=self.experiment,
-                                                   is_banned=False,
-                                                   is_digital_twin=False).exclude(id=self.user_profile.id):
+        if (
+            self.user_profile.is_moderator or self.user_profile.is_collaborator
+        ) and self.depth == 0:
+            for user in UserProfile.objects.filter(
+                experiment=self.experiment, is_banned=False, is_digital_twin=False
+            ).exclude(id=self.user_profile.id):
                 send_notification_to_user(
                     user_profile=user,
                     title="Public Discourse Notification",
@@ -321,7 +322,6 @@ class Post(BaseModel):
 
         self.parse_hashtags()
         super().save(*args, **kwargs)
-
 
 
 class Vote(BaseModel):
