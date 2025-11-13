@@ -11,10 +11,12 @@ from public_discourse_sandbox.pds_app.models import UserProfile
 
 User = get_user_model()
 
+
 class Command(BaseCommand):
     """
     docker compose -f docker-compose.local.yml run --rm django python manage.py setup_digital_twins
     """
+
     help = "Sets up the bots for the application using persona files"
 
     def add_arguments(self, parser):
@@ -85,11 +87,14 @@ class Command(BaseCommand):
                 bot_number = os.path.splitext(os.path.basename(file_path))[0]
 
                 # Get bot configuration
-                bot_config = bot_configs.get(bot_number, {
-                    "username": f"bot{bot_number}",
-                    "display_name": f"Bot {bot_number}",
-                    "email": f"bot{bot_number}@example.com",
-                })
+                bot_config = bot_configs.get(
+                    bot_number,
+                    {
+                        "username": f"bot{bot_number}",
+                        "display_name": f"Bot {bot_number}",
+                        "email": f"bot{bot_number}@example.com",
+                    },
+                )
 
                 # Create or get user
                 user, created = User.objects.get_or_create(
@@ -124,7 +129,9 @@ class Command(BaseCommand):
                     profile.save()
 
                 if created:
-                    self.stdout.write(f"Created profile for {bot_config['display_name']}")
+                    self.stdout.write(
+                        f"Created profile for {bot_config['display_name']}"
+                    )
 
                 # Get bot token from settings
                 api_token = settings.OPENAI_API_KEY
@@ -137,9 +144,13 @@ class Command(BaseCommand):
                     is_active=file_path in active_files,  # Only activate selected bots
                     api_token=None,
                 )
-                self.stdout.write(f"Created digital twin: {bot_config['display_name']} (Active: {digital_twin.is_active})")
+                self.stdout.write(
+                    f"Created digital twin: {bot_config['display_name']} (Active: {digital_twin.is_active})"
+                )
 
             except Exception as e:
-                self.stderr.write(f"Error setting up digital twin from {file_path}: {e!s}")
+                self.stderr.write(
+                    f"Error setting up digital twin from {file_path}: {e!s}"
+                )
 
         self.stdout.write(self.style.SUCCESS("Successfully set up digital twins"))

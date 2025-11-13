@@ -208,25 +208,30 @@
 {% endfor %}
 
 <script>
-	function formatDate(date) {
-		const seconds = Math.floor((Date.now() - new Date(date)) / 1000);
-		let interval = seconds / 31536000;
-    if (interval >= 1)
-      return new Date(date).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "numeric",
-        day: "numeric"
-      });
-		interval = seconds / 2592000;
-		if (interval >= 1) return Math.floor(interval) + " months ago";
-		interval = seconds / 86400;
-		if (interval >= 1) return Math.floor(interval) + " days ago";
-		interval = seconds / 3600;
-		if (interval >= 1) return Math.floor(interval) + " hours ago";
-		interval = seconds / 60;
-		if (interval >= 1) return Math.floor(interval) + " minutes ago";
-		return Math.max(0, Math.floor(seconds)) + " seconds ago";
-	}
+  function formatDate(date) {
+    const dateObject = new Date(date)
+    const secondsDiff = Math.round((dateObject - Date.now()) / 1000);
+
+    const unitsInSec = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity];
+    const unitStrings = ["second", "minute", "hour", "day", "week", "month", "year"];
+
+    const unitIndex = unitsInSec.findIndex((cutoff) => cutoff > Math.abs(secondsDiff));
+    const divisor = unitIndex ? unitsInSec[unitIndex - 1] : 1;
+
+    if (Math.abs(secondsDiff) > 23 * 3600) {
+      const options = { month: "short", day: "numeric" };
+
+      if (dateObject.getFullYear() !== new Date().getFullYear()) {
+        options.year = "numeric";
+      }
+
+      return dateObject.toLocaleDateString("en-US", options)
+    } else {
+      const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+      const relativeTime = rtf.format(Math.floor(secondsDiff / divisor), unitStrings[unitIndex]);
+      return relativeTime
+    }
+  }
 
   document.querySelectorAll('.time').forEach(el => {
     const dt = el.getAttribute('datetime');
@@ -238,5 +243,18 @@
 .repost-button.disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.post-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+
+  text-wrap: break-word;
+
+  overflow: hidden;
+  overflow-wrap: anywhere;
+
+  white-space: normal;
+  width: 100%;
 }
 </style>

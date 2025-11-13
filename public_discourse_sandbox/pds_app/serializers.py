@@ -81,6 +81,34 @@ class PostSerializer(serializers.ModelSerializer):
         return obj.get_comment_count()
 
 
+class PostCommentsSerializer(serializers.ModelSerializer):
+    author = UserProfileSerializer(source="user_profile", read_only=True)
+    comments = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = ["id", "created_date", "content", "author", "comments"]
+
+    def get_comments(self, obj):
+        depth = int(self.context.get("depth", 0))
+        if depth <= 0:
+            return []
+
+        qs = (
+            Post.objects.filter(parent_post=obj, is_deleted=False)
+            .select_related("user_profile")
+            .order_by("created_date", "id")
+        )
+
+        limit = self.context.get("children_limit")
+        if isinstance(limit, int) and limit > 0:
+            qs = qs[:limit]
+
+        return PostCommentsSerializer(
+            qs, many=True, context={**self.context, "depth": depth - 1}
+        ).data
+
+
 class ExperimentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Experiment
