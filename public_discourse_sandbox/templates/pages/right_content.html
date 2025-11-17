@@ -14,11 +14,22 @@
             </div>
 
             <div class="trending-section">
-              <h2>Dorm Activity Leaderboard</h2>
+              <h5>Dorm Posts Leaderboard</h5>
 
               <ol>
-                {% for hall in leaderboard %}
+                {% for hall in post_leaderboard %}
                 <li>{{hall.dorm_name}} ({{hall.post_count}})</li>
+                {% empty %}
+                <p>No post activity has been added yet</p>
+                {% endfor %}
+              </ol>
+            </div>
+
+            <div class="trending-section">
+              <h5>Dorm Users Leaderboard</h5>
+              <ol>
+                {% for hall in user_leaderboard %}
+                <li>{{hall.dorm_name}} ({{hall.total_users}})</li>
                 {% empty %}
                 <p>No user activity has been added yet</p>
                 {% endfor %}
