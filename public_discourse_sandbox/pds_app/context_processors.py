@@ -1,12 +1,15 @@
-from .models import DigitalTwin
-from django.contrib.auth.models import User
-from public_discourse_sandbox.pds_app.models import Experiment
-from django.db.models import Count
-from .models import Hashtag, Notification
 from django.core.cache import cache
+from django.db.models import Count
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls.exceptions import Resolver404
+
+from public_discourse_sandbox.pds_app.models import Experiment
+
+from .models import DigitalTwin
+from .models import Hashtag
+from .models import Notification
 
 
 def active_bots(request):
@@ -23,7 +26,7 @@ def active_bots(request):
     try:
         if hasattr(request, "resolver_match") and request.resolver_match:
             experiment_identifier = request.resolver_match.kwargs.get(
-                "experiment_identifier"
+                "experiment_identifier",
             )
     except (AttributeError, Resolver404):
         pass
@@ -34,15 +37,15 @@ def active_bots(request):
     try:
         experiment = Experiment.objects.get(identifier=experiment_identifier)
         user_profile = request.user.userprofile_set.filter(
-            experiment=experiment
+            experiment=experiment,
         ).first()
         if not user_profile:
             return {"active_bots": []}
 
         return {
             "active_bots": DigitalTwin.objects.filter(
-                is_active=True, user_profile__experiment=experiment
-            )
+                is_active=True, user_profile__experiment=experiment,
+            ),
         }
     except Experiment.DoesNotExist:
         return {"active_bots": []}
@@ -57,18 +60,31 @@ def user_experiments(request):
         return {"user_experiments": [], "current_experiment_identifier": None}
 
     # Get all experiments where the user has a UserProfile
+    # experiments = (
+    #     Experiment.objects.filter(userprofile__user=request.user)
+    #     .distinct()
+    #     .order_by("name")
+    # )
+
     experiments = (
-        Experiment.objects.filter(userprofile__user=request.user)
-        .distinct()
-        .order_by("name")
-    )
+            Experiment.objects.filter(
+                    Q(creator=request.user)  # User is creator
+                |   Q(
+                    userprofile__user=request.user,
+                    userprofile__is_collaborator=True,
+                ),  # User is collaborator
+            )
+            .distinct()
+            .order_by("-created_date")
+    )  # Order by most recent first
+
 
     # Get the current experiment identifier from the URL
     current_experiment_identifier = None
     try:
         if hasattr(request, "resolver_match") and request.resolver_match:
             current_experiment_identifier = request.resolver_match.kwargs.get(
-                "experiment_identifier"
+                "experiment_identifier",
             )
     except (AttributeError, Resolver404):
         pass
@@ -92,7 +108,7 @@ def is_moderator(request):
     try:
         if hasattr(request, "resolver_match") and request.resolver_match:
             experiment_identifier = request.resolver_match.kwargs.get(
-                "experiment_identifier"
+                "experiment_identifier",
             )
     except (AttributeError, Resolver404):
         pass
@@ -103,7 +119,7 @@ def is_moderator(request):
     try:
         experiment = Experiment.objects.get(identifier=experiment_identifier)
         user_profile = request.user.userprofile_set.filter(
-            experiment=experiment
+            experiment=experiment,
         ).first()
 
         if not user_profile:
@@ -141,7 +157,7 @@ def trending_hashtags(request):
     try:
         if hasattr(request, "resolver_match") and request.resolver_match:
             experiment_identifier = request.resolver_match.kwargs.get(
-                "experiment_identifier"
+                "experiment_identifier",
             )
     except (AttributeError, Resolver404):
         pass
@@ -179,7 +195,7 @@ def trending_hashtags(request):
         return {"trending_hashtags": []}
     except Exception as e:
         # Log the error and return empty list
-        print(f"Error in trending_hashtags context processor: {str(e)}")
+        print(f"Error in trending_hashtags context processor: {e!s}")
         return {"trending_hashtags": []}
 
 
@@ -221,7 +237,7 @@ def unread_notifications(request):
     try:
         if hasattr(request, "resolver_match") and request.resolver_match:
             experiment_identifier = request.resolver_match.kwargs.get(
-                "experiment_identifier"
+                "experiment_identifier",
             )
     except (AttributeError, Resolver404):
         pass
@@ -232,7 +248,7 @@ def unread_notifications(request):
     try:
         experiment = Experiment.objects.get(identifier=experiment_identifier)
         user_profile = request.user.userprofile_set.filter(
-            experiment=experiment
+            experiment=experiment,
         ).first()
 
         if not user_profile:
@@ -240,7 +256,7 @@ def unread_notifications(request):
 
         # Count unread notifications for this user profile
         unread_count = Notification.objects.filter(
-            user_profile=user_profile, is_read=False
+            user_profile=user_profile, is_read=False,
         ).count()
 
         return {"unread_notifications_count": unread_count}
@@ -248,5 +264,5 @@ def unread_notifications(request):
         return {"unread_notifications_count": 0}
     except Exception as e:
         # Log the error and return 0
-        print(f"Error in unread_notifications context processor: {str(e)}")
+        print(f"Error in unread_notifications context processor: {e!s}")
         return {"unread_notifications_count": 0}

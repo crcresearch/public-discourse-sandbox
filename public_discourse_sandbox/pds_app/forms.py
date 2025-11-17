@@ -108,10 +108,15 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
+        help_texts = {
+            "phone_number": "Enter a valid phone number (e.g., 5742330311)"
+        }
         fields = [
             "display_name",
             "username",
             "bio",
+            "phone_number",
+            "dorm_name",
             "profile_picture",
             "banner_picture",
         ]
@@ -121,6 +126,48 @@ class UserProfileForm(forms.ModelForm):
             "bio": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "profile_picture": forms.FileInput(attrs={"class": "form-control"}),
             "banner_picture": forms.FileInput(attrs={"class": "form-control"}),
+            "phone_number": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "required": True,
+                    "minlength": 10,
+                },
+            ),
+            "dorm_name": forms.Select(choices=[
+            ("Alumni Hall", "Alumni Hall"),
+            ("Badin Hall", "Badin Hall"),
+            ("Baumer Hall", "Baumer Hall"),
+            ("Breen-Phillips Hall", "Breen-Phillips Hall"),
+            ("Carroll Hall", "Carroll Hall"),
+            ("Cavanaugh Hall", "Cavanaugh Hall"),
+            ("Dillon Hall", "Dillon Hall"),
+            ("Duncan Hall", "Duncan Hall"),
+            ("Dunne Hall", "Dunne Hall"),
+            ("Farley Hall", "Farley Hall"),
+            ("Flaherty Hall", "Flaherty Hall"),
+            ("Graham Family Hall", "Graham Family Hall"),
+            ("Howard Hall", "Howard Hall"),
+            ("Johnson Family Hall", "Johnson Family Hall"),
+            ("Keenan Hall", "Keenan Hall"),
+            ("Keough Hall", "Keough Hall"),
+            ("Knott Hall", "Knott Hall"),
+            ("Lewis Hall", "Lewis Hall"),
+            ("Lyons Hall", "Lyons Hall"),
+            ("McGlinn Hall", "McGlinn Hall"),
+            ("Morrissey Hall", "Morrissey Hall"),
+            ("O'Neill Family Hall", "O'Neill Family Hall"),
+            ("Pasquerilla East Hall", "Pasquerilla East Hall"),
+            ("Pasquerilla West Hall", "Pasquerilla West Hall"),
+            ("Ryan Hall", "Ryan Hall"),
+            ("Siegfried Hall", "Siegfried Hall"),
+            ("Sorin Hall", "Sorin Hall"),
+            ("St. Edward's Hall", "St. Edward's Hall"),
+            ("Stanford Hall", "Stanford Hall"),
+            ("Walsh Hall", "Walsh Hall"),
+            ("Welsh Family Hall", "Welsh Family Hall"),
+            ("Zahm Hall", "Zahm Hall"),
+        ],
+        attrs={"class": "form-control", "required": True })
         }
 
     def __init__(self, *args, **kwargs):

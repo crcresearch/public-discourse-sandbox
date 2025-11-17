@@ -14,7 +14,7 @@
             </div>
 
             <div class="trending-section">
-              <h5>Dorm Posts Leaderboard</h5>
+              <h5>Dorm Posts Activity</h5>
 
               <ol>
                 {% for hall in post_leaderboard %}
@@ -27,6 +27,7 @@
 
             <div class="trending-section">
               <h5>Dorm Users Leaderboard</h5>
+
               <ol>
                 {% for hall in user_leaderboard %}
                 <li>{{hall.dorm_name}} ({{hall.total_users}})</li>
@@ -136,6 +137,7 @@
                     }
 
                     // Update the user's last_accessed experiment
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                     fetch('{% url "update_last_accessed" %}', {
                         method: 'POST',
                         headers: {
