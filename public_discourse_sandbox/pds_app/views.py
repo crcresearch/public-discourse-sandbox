@@ -251,7 +251,7 @@ class HomeView(
             .exclude(dorm_name__isnull=True)
             .values("dorm_name")
             .annotate(post_count=Count("post"))
-            .order_by("-post_count")[:3]
+            .order_by("-post_count", "dorm_name")[:3]
         )
 
         context["user_leaderboard"] = (
@@ -259,7 +259,7 @@ class HomeView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users")[:3]
+                .order_by("-total_users", "dorm_name")[:3]
         )
 
         # Add flag for empty home feed to show guidance message
@@ -365,7 +365,7 @@ class ExploreView(
             .exclude(dorm_name__isnull=True)
             .values("dorm_name")
             .annotate(post_count=Count("post"))
-            .order_by("-post_count")[:3]
+            .order_by("-post_count", "dorm_name")[:3]
         )
 
         context["user_leaderboard"] = (
@@ -373,7 +373,7 @@ class ExploreView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users")[:3]
+                .order_by("-total_users", "dorm_name")[:3]
         )
         return context
 
@@ -474,6 +474,21 @@ class NotificationsView(
         # Add the current filter to the context
         context["current_filter"] = self.request.GET.get("filter", "all")
 
+        context["post_leaderboard"] = (
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(post_count=Count("post"))
+            .order_by("-post_count", "dorm_name")[:3]
+        )
+
+        context["user_leaderboard"] = (
+                UserProfile.objects.filter(experiment=self.experiment)
+                .exclude(dorm_name__isnull=True)
+                .values("dorm_name")
+                .annotate(total_users=Count("id"))
+                .order_by("-total_users", "dorm_name")[:3]
+        )
         return context
 
 

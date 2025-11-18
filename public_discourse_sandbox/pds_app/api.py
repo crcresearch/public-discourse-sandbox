@@ -45,14 +45,14 @@ def create_comment(request, experiment_identifier):
                 depth=parent_post.depth + 1,
                 # is_flagged will be automatically set in the save method via profanity check
             )
-            # Create a notification for the parent post author
-            Notification.objects.create(
-                user_profile=parent_post.user_profile,
-                event="post_replied",
-                content=f"@{user_profile.username} replied to your post",
-            )
 
             if parent_post.user_profile.username != user_profile.username:
+                # Create a notification for the parent post author
+                Notification.objects.create(
+                    user_profile=parent_post.user_profile,
+                    event="post_replied",
+                    content=f"@{user_profile.username} replied to your post",
+                )
                 send_notification_to_user(
                     user_profile=parent_post.user_profile,
                     title="Public Discourse Notification",
@@ -400,16 +400,17 @@ def handle_like(request, post_id):
         post.num_upvotes += 1
         post.save()
         # Create a notification for the post author
-        Notification.objects.create(
-            user_profile=post.user_profile,
-            event="post_liked",
-            content=f"@{user_profile.username} liked your post",
-        )
-        send_notification_to_user(
-            user_profile=post.user_profile,
-            title="Public Discourse Notification",
-            body=f"@{user_profile.username} liked to your post",
-        )
+        if user_profile.username != post.user_profile.username:
+            Notification.objects.create(
+                user_profile=post.user_profile,
+                event="post_liked",
+                content=f"@{user_profile.username} liked your post",
+            )
+            send_notification_to_user(
+                user_profile=post.user_profile,
+                title="Public Discourse Notification",
+                body=f"@{user_profile.username} liked to your post",
+            )
         return JsonResponse(
             {
                 "status": "success",

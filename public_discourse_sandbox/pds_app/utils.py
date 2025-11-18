@@ -67,13 +67,21 @@ def send_notification_to_user(
                     title=title,
                     body=html_content
                     if "twilio" not in target.description
-                    else f"You've received a new notification on https://publicdiscourse.crc.nd.edu. {body}. Sign in to view more details.",
+                    else (
+                        "You've received a new notification on "
+                        "https://publicdiscourse.crc.nd.edu. "
+                        f"{body}. Sign in to view more details."
+                    ),
                     status=status,
                     scheduled_delivery=timezone.now(),
                 )
                 logger.debug(
-                    f"Created notification for user {user_profile.username} "
-                    f"target {target.target_user_id}",
+                    "Created notification for user %(username)s "
+                    "target %(target_user_id)s",
+                    extra={
+                        "username": user_profile.username,
+                        "target_user_id": target.target_user_id,
+                    },
                 )
-            except Exception as e:
-                logger.exception(e)
+            except Exception:
+                logger.exception("An error occurred while creating a notification")
