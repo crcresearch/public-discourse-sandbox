@@ -259,7 +259,7 @@ class HomeView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")[:3]
+                .order_by("-total_users", "dorm_name")
         )
 
         # Add flag for empty home feed to show guidance message
@@ -373,7 +373,7 @@ class ExploreView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")[:3]
+                .order_by("-total_users", "dorm_name")
         )
         return context
 
@@ -487,7 +487,7 @@ class NotificationsView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")[:3]
+                .order_by("-total_users", "dorm_name")
         )
         return context
 
@@ -1267,7 +1267,7 @@ class UserProfileDetailView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users")[:3]
+                .order_by("-total_users")
         )
 
         # Get pagination parameters
