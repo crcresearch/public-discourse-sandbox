@@ -48,6 +48,8 @@ def create_comment(request, experiment_identifier):
 
             if parent_post.user_profile.username != user_profile.username:
                 # Create a notification for the parent post author
+                post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{comment.id}"
+
                 Notification.objects.create(
                     user_profile=parent_post.user_profile,
                     event="post_replied",
@@ -56,7 +58,7 @@ def create_comment(request, experiment_identifier):
                 send_notification_to_user(
                     user_profile=parent_post.user_profile,
                     title="Public Discourse Notification",
-                    body=f"@{user_profile.username} replied to your post",
+                    body=f"@{user_profile.username} replied to your post with {post_url}",
                 )
 
             response_data = {
@@ -67,7 +69,7 @@ def create_comment(request, experiment_identifier):
 
             # Include flag information if the comment was flagged
             if comment.is_flagged:
-                response_data["is_flagged"] = True
+                response_data["is_flagged"] = "true"
 
             return JsonResponse(response_data)
         except Post.DoesNotExist:

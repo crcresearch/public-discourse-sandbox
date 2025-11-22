@@ -86,7 +86,7 @@
 						</button>
 
 						<!--<button onclick="handleRepost(this, '{{ post.id }}')" data-post-id="{{ post.id }}"
-							class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}" 
+							class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}"
 							{% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}>
 							<i class="ri-repeat-line"></i><span>{{ post.num_shares }}</span>
 						</button>-->
@@ -210,31 +210,6 @@
 {% endif %}
 
 <script>
-	function formatDate(date) {
-		const dateObject = new Date(date)
-		const secondsDiff = Math.round((dateObject - Date.now()) / 1000);
-
-		const unitsInSec = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity];
-		const unitStrings = ["second", "minute", "hour", "day", "week", "month", "year"];
-
-		const unitIndex = unitsInSec.findIndex((cutoff) => cutoff > Math.abs(secondsDiff));
-		const divisor = unitIndex ? unitsInSec[unitIndex - 1] : 1;
-
-		if (Math.abs(secondsDiff) > 23 * 3600) {
-			const options = { month: "short", day: "numeric" };
-
-			if (dateObject.getFullYear() !== new Date().getFullYear()) {
-				options.year = "numeric";
-			}
-
-			return dateObject.toLocaleDateString("en-US", options)
-		} else {
-			const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-			const relativeTime = rtf.format(Math.floor(secondsDiff / divisor), unitStrings[unitIndex]);
-			return relativeTime
-		}
-	}
-
 	document.querySelectorAll('.time').forEach(el => {
 		const dt = el.getAttribute('datetime');
 		el.textContent = formatDate(dt)
