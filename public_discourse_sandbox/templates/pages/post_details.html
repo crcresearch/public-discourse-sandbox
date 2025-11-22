@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+{{ object.content }}
+{% endblock title %}
+
+
+{% block content %}
+{% csrf_token %}
+<!-- Left Sidebar -->
+{% include 'pages/left_nav.html' %}
+
+<div class="main-content">
+  <div class="post-heading">
+  {% if object.depth != 0 %}
+      <a href="{{object.parent_post.id}}" class="goback"><i class="ri-arrow-left-line"></i></a>
+  {% endif %}
+    <h5>Post</h5>
+  </div>
+	<div class="post-container">
+		<div class="post-box">
+			<div class="user-info">
+				<a href="{% url 'user_profile_detail' experiment.identifier object.user_profile.id %}" class="user-avatar">
+				{% if post.user_profile.profile_picture %}
+				<img src="{{ object.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+				{% else %}
+				<div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+				{% endif %}
+			</a>
+				<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}"
+					class="user-handle">
+					@{{ object.user_profile.username }}
+				</a>
+				<span class="dot">·</span>
+				<time class="time" datetime="{{ object.created_date|date:'c' }}">
+					{{ object.created_date|date:"DATETIME_FORMAT"|default:object.created_date }}
+				</time>
+			</div>
+			<div class="post-menu">
+				<button class="menu-button" onclick="togglePostMenu('{{ object.id }}')" title="More">
+					<i class="ri-more-fill"></i>
+				</button>
+				<div id="post-menu-{{ object.id }}" class="post-menu-dropdown" style="display: none;">
+					{% if object.user_profile.user == request.user or is_moderator %}
+					<button onclick="handleDeletePost('{{ object.id }}')" class="post-menu-item">
+						<i class="ri-delete-bin-line"></i> Delete
+					</button>
+					{% endif %}
+					{% if object.user_profile.user != request.user %}
+					<button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
+						{% if object.is_following %}
+						<i class="ri-user-unfollow-line"></i> Unfollow
+						{% else %}
+						<i class="ri-user-follow-line"></i> Follow
+						{% endif %}
+					</button>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+		<p class="post-text">{{ object.content }} </p>
+
+		<div class="post-actions">
+			<button class="action-button comment-button" data-post-id="{{ object.id }}" data-authenticated="true">
+				<i class="ri-chat-1-line"></i><span>{{ replies|length }}</span>
+			</button>
+
+			<button onclick="handleRepost(this, '{{ object.id }}')" data-post-id="{{ object.id }}"
+				class="action-button repost-button {% if object.user_profile.user == request.user or object.repost_source %}disabled{% endif %}"
+				{% if object.user_profile.user == request.user or object.repost_source %}disabled{% endif %}>
+				<i class="ri-repeat-line"></i><span>{{ post.num_shares }}</span>
+			</button>
+
+			<button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}"
+				data-post-id="{{ object.id }}" onclick="handleLike(this, '{{ object.id }}')">
+				<i class="{% if object.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+				<span>{{ object.num_upvotes }}</span>
+			</button>
+		</div>
+
+		<div>
+			{% if not current_user_profile.is_banned %}
+			<form class="reply-form" method="post">
+				{% csrf_token %}
+				<input type="hidden" name="parent_post_id" value="{{object.id}}">
+				<div class="comment-input-container">
+					<textarea name="content" placeholder="Write your reply" required class="borderless-input"
+						id="reply-form-textarea"></textarea>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="post-button" disabled>Reply</button>
+				</div>
+			</form>
+			{% else %}
+			<div class="compose-area banned-message">
+				<p>Your account has been suspended. You cannot reply to posts at this time.</p>
+			</div>
+			{% endif %}
+		</div>
+
+	</div>
+	<div>
+		{% for reply in replies %}
+		<div class="reply">
+			<div class="post-box">
+
+				<div class="user-info">
+					<a href="{% url 'user_profile_detail' experiment.identifier reply.user_profile.id %}"
+					class="user-avatar">
+						{% if reply.user_profile.profile_picture %}
+						<img src="{{ reply.user_profile.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+						{% else %}
+						<div class="avatar-placeholder"><i class="ri-user-line"></i></div>
+						{% endif %}
+					</a>
+					<a href="{% url 'user_profile_detail' experiment.identifier reply.user_profile.id %}"
+						class="user-handle">
+						@{{ reply.user_profile.username }}
+					</a>
+					<span class="dot">·</span>
+					<time class="time" datetime="{{ reply.created_date|date:'c' }}">
+						{{ reply.created_date|date:"DATETIME_FORMAT"|default:reply.created_date }}
+					</time>
+				</div>
+
+				<div class="post-menu">
+				<button class="menu-button" onclick="togglePostMenu('{{ reply.id }}')" title="More">
+					<i class="ri-more-fill"></i>
+				</button>
+				<div id="post-menu-{{ reply.id }}" class="post-menu-dropdown" style="display: none;">
+					{% if reply.user_profile.user == request.user or is_moderator %}
+					<button onclick="handleDeletePost('{{ reply.id }}')" class="post-menu-item">
+						<i class="ri-delete-bin-line"></i> Delete
+					</button>
+					{% endif %}
+					{% if reply.user_profile.user != request.user %}
+					<button onclick="handleFollow('{{ post.user_profile.id }}')" class="post-menu-item">
+						{% if reply.is_following %}
+						<i class="ri-user-unfollow-line"></i> Unfollow
+						{% else %}
+						<i class="ri-user-follow-line"></i> Follow
+						{% endif %}
+					</button>
+					{% endif %}
+				</div>
+			</div>
+			</div>
+			<p class="reply-post-text">
+				<a href="{{reply.id}}" class="post-text">{{reply.content}}</a>
+			</p>
+			<div class="post-actions">
+				<button class="action-button comment-button" data-post-id="{{ reply.id }}" data-authenticated="true">
+					<i class="ri-chat-1-line"></i><span>{{ reply.num_comments }}</span>
+				</button>
+
+				<button onclick="handleRepost(this, '{{ reply.id }}')" data-post-id="{{ reply.id }}"
+					class="action-button repost-button {% if reply.user_profile.user == request.user or reply.repost_source %}disabled{% endif %}"
+					{% if reply.user_profile.user == request.user or reply.repost_source %}disabled{% endif %}>
+					<i class="ri-repeat-line"></i><span>{{ reply.num_shares }}</span>
+				</button>
+
+				<button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}"
+					data-post-id="{{ reply.id }}" onclick="handleLike(this, '{{ reply.id }}')">
+					<i class="{% if reply.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
+					<span>{{ reply.num_upvotes }}</span>
+				</button>
+			</div>
+		</div>
+		{% empty %}
+		<p class="no-reply">No reply for this post</p>
+		{% endfor %}
+	</div>
+</div>
+
+
+
+<!-- Right Sidebar -->
+{% include 'pages/right_content.html' %}
+
+<!-- Ban/Unban Confirmation Modal -->
+{% include 'components/ban_modal.html' %}
+
+<style>
+
+  .post-heading {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding-left: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-bottom: var(--border-color) 2px solid;
+  }
+
+  .goback {
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    color: #000;
+    font-size: 20px;
+    text-decoration: none;
+    border-radius: 50%;
+  }
+
+  .goback:hover {
+    background-color: #dbdbdb;
+    color: #000;
+  }
+
+	.no-reply {
+		padding: 1rem 2rem;
+	}
+
+	.reply-post-text a {
+		text-decoration: none;
+	}
+
+	.reply-post-text a:hover {
+		color: #000;
+	}
+
+	.reply {
+		padding-top: 10px;
+		padding-bottom: 10px;
+		padding-left: 20px;
+	}
+
+	.reply:hover {
+		background-color: rgb(249, 247, 247);
+	}
+
+	.post-container {
+		padding: 12px 12px;
+		border-bottom: 2px solid var(--border-color);
+	}
+
+	.post-box {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.repost-button.disabled {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+
+	.post-text {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+
+		text-wrap: break-word;
+
+		overflow: hidden;
+		overflow-wrap: anywhere;
+
+		white-space: normal;
+		width: 100%;
+	}
+</style>
+<script src="{% static 'js/shared.js' %}"></script>
+<script>
+	let CURRENT_ROOT_POST_ID = null
+	const form = document.querySelector(".reply-form")
+	const isBanned = form.querySelector('.banned-message') !== null;
+	form.addEventListener('submit', handleReplySubmit);
+
+	const textarea = form.querySelector('#reply-form-textarea');
+	const submitButton = form.querySelector('button[type="submit"]');
+	submitButton.disabled = true;
+
+	textarea.addEventListener('input', function () {
+		submitButton.disabled = !this.value.trim();
+	});
+
+	async function handleReplySubmit(e) {
+		e.preventDefault();
+		const form = e.target;
+		const formData = new FormData(form);
+
+		CURRENT_ROOT_POST_ID = formData.get("parent_post_id")
+
+		try {
+			const response = await fetch('{% url "create_comment_with_experiment" experiment_identifier=experiment.identifier %}', {
+				method: 'POST',
+				body: formData,
+				headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+			});
+
+			if (response.ok) {
+				form.reset();
+				form.querySelector('button[type="submit"]').disabled = true;
+
+				const repliesResponse = await fetch(`/get-replies/${CURRENT_ROOT_POST_ID}/`);
+				if (repliesResponse.ok) {
+					const data = await repliesResponse.json();
+
+					if (form.classList.contains('nested-reply-form')) {
+						const container = form.closest('.nested-reply-container');
+						if (container) container.innerHTML = '';
+					}
+					window.location.reload()
+				}
+			} else {
+				const errorData = await response.json();
+				console.log(errorData)
+				alert(`Error: ${errorData.message || 'Failed to post comment'}`);
+			}
+		} catch (error) {
+			console.error('Error:', error);
+			alert('An error occurred while posting your comment. Please try again.');
+		}
+	}
+
+
+	function handleLike(button, postId) {
+		makeRequest(
+			'{% url "like_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId),
+			'POST'
+		)
+			.then(data => {
+				// Update the like count
+				const countSpan = button.querySelector('span');
+				countSpan.textContent = data.upvotes;
+
+				// Toggle the like button style
+				const icon = button.querySelector('i');
+				if (data.is_liked) {
+					icon.classList.remove('ri-heart-line');
+					icon.classList.add('ri-heart-fill');
+					button.classList.add('liked');
+				} else {
+					icon.classList.remove('ri-heart-fill');
+					icon.classList.add('ri-heart-line');
+					button.classList.remove('liked');
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				alert('An error occurred while liking the post');
+			});
+	}
+
+	function togglePostMenu(postId) {
+		const menu = document.getElementById(`post-menu-${postId}`);
+		const allMenus = document.querySelectorAll('.post-menu-dropdown');
+
+    // Close all other menus
+    allMenus.forEach(m => {
+        if (m.id !== `post-menu-${postId}`) {
+            m.style.display = 'none';
+        }
+    });
+
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+
+    // Close menu when clicking outside
+    const closeMenu = (e) => {
+        if (!e.target.closest('.post-menu')) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+
+    if (menu.style.display === 'block') {
+        // Add event listener with a slight delay to avoid immediate triggering
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 0);
+    }
+}
+
+async function handleDeletePost(postId){
+	try {
+            // Replace the UUID placeholder with the actual identifier
+            const response = await makeRequest('{% url "delete_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId), 'DELETE');
+
+            if (response.status === 'success') {
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+}
+
+  document.querySelectorAll('.time').forEach(el => {
+		const dt = el.getAttribute('datetime');
+		el.textContent = formatDate(dt)
+	});
+</script>
+
+{% endblock content %}

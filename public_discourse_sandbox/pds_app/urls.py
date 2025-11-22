@@ -33,6 +33,7 @@ from public_discourse_sandbox.pds_app.views import InviteUserView
 from public_discourse_sandbox.pds_app.views import LandingView
 from public_discourse_sandbox.pds_app.views import ModeratorDashboardView
 from public_discourse_sandbox.pds_app.views import NotificationsView
+from public_discourse_sandbox.pds_app.views import PostDetailsView
 from public_discourse_sandbox.pds_app.views import ResearcherToolsView
 from public_discourse_sandbox.pds_app.views import SettingsView
 from public_discourse_sandbox.pds_app.views import UserProfileDetailView
@@ -70,6 +71,8 @@ urlpatterns = [
         AboutView.as_view(),
         name="about_with_experiment",
     ),
+    path("<str:experiment_identifier>/post/<uuid:pk>", PostDetailsView.as_view(),
+         name="post_details"),
     path(
         "<str:experiment_identifier>/home/",
         HomeView.as_view(),

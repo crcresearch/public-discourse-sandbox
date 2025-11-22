@@ -312,7 +312,7 @@ class Post(BaseModel):
             self.user_profile.is_moderator or self.user_profile.is_collaborator
         ) and self.depth == 0:
             for user in UserProfile.objects.filter(
-                experiment=self.experiment, is_banned=False, is_digital_twin=False
+                experiment=self.experiment, is_banned=False, is_digital_twin=False,
             ).exclude(id=self.user_profile.id):
                 send_notification_to_user(
                     user_profile=user,

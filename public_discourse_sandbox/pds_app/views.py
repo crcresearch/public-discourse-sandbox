@@ -212,6 +212,54 @@ class LandingView(View):
             # If default experiment doesn't exist, just render without it
             return render(request, "pages/landing.html")
 
+class PostDetailsView(
+        LoginRequiredMixin,
+        ExperimentContextMixin,
+        ProfileRequiredMixin,
+DetailView):
+    model = Post
+    template_name = "pages/post_details.html"
+    context_object_name = "post"
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        experiment_identifier = kwargs.get("experiment_identifier")
+
+        experiment = Experiment.objects.get(identifier=experiment_identifier)
+
+        if self.object.experiment.name != experiment.name:
+            raise PermissionDenied("You do not have access to this experiment")
+
+        if self.object.is_deleted:
+            raise PermissionDenied("Post not found")
+
+        context =  self.get_context_data(object=self.object)
+        return self.render_to_response(context)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["post_leaderboard"] = (
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(post_count=Count("post"))
+            .order_by("-post_count", "dorm_name")[:3]
+        )
+
+        context["user_leaderboard"] = (
+                UserProfile.objects.filter(experiment=self.experiment)
+                .exclude(dorm_name__isnull=True)
+                .values("dorm_name")
+                .annotate(total_users=Count("id"))
+                .order_by("-total_users", "dorm_name")
+        )
+
+        context["replies"] = Post.all_objects.filter(parent_post=self.object,
+                                          depth=self.object.depth+1,
+                                                     is_deleted=False).order_by("-created_date")
+
+        return context
 
 class HomeView(
     LoginRequiredMixin,
@@ -259,7 +307,7 @@ class HomeView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")[:3]
+                .order_by("-total_users", "dorm_name")
         )
 
         # Add flag for empty home feed to show guidance message
@@ -373,7 +421,7 @@ class ExploreView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")[:3]
+                .order_by("-total_users", "dorm_name")
         )
         return context
 
@@ -487,7 +535,7 @@ class NotificationsView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")[:3]
+                .order_by("-total_users", "dorm_name")
         )
         return context
 
@@ -1267,7 +1315,7 @@ class UserProfileDetailView(
                 .exclude(dorm_name__isnull=True)
                 .values("dorm_name")
                 .annotate(total_users=Count("id"))
-                .order_by("-total_users")[:3]
+                .order_by("-total_users")
         )
 
         # Get pagination parameters
