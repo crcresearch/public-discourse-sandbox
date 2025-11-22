@@ -46,6 +46,9 @@ def create_comment(request, experiment_identifier):
                 # is_flagged will be automatically set in the save method via profanity check
             )
 
+            parent_post.num_comments += 1
+            parent_post.save()
+
             if parent_post.user_profile.username != user_profile.username:
                 # Create a notification for the parent post author
                 post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{comment.id}"
@@ -408,10 +411,12 @@ def handle_like(request, post_id):
                 event="post_liked",
                 content=f"@{user_profile.username} liked your post",
             )
+            post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{post.id}"
+
             send_notification_to_user(
                 user_profile=post.user_profile,
                 title="Public Discourse Notification",
-                body=f"@{user_profile.username} liked to your post",
+                body=f"@{user_profile.username} liked to your post {post_url}",
             )
         return JsonResponse(
             {
@@ -518,10 +523,11 @@ def repost(request, post_id):
             event="post_reposted",
             content=f"@{user_profile.username} reposted your post",
         )
+        post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{original_post.id}"
         send_notification_to_user(
             user_profile=original_post.user_profile,
             title="Public Discourse Notification",
-            body=f"@{user_profile.username} liked to your post",
+            body=f"@{user_profile.username} reposted to your post {post_url}",
         )
 
         return JsonResponse(

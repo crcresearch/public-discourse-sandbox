@@ -77,7 +77,9 @@
 						</span>
 					</div>
 
-					<div class="post-text">{{ post.content }}</div>
+					<div class="post-text post-item-text">
+						<a href="{{request.scheme}}://{{request.get_host}}/{{experiment.identifier}}/post/{{post.id}}" class="post-text">{{post.content}}</a>
+					</div>
 
 					<div class="post-actions">
 						<button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true"
@@ -177,13 +179,18 @@
 											<time class="time" datetime="{{ post.repost_source.created_date|date:'c' }}"></time>
 										</div>
 									</div>
-									<div class="post-text">{{ post.repost_source.content }}</div>
+									<div class="post-text post-item-text">
+										<a href="{{request.scheme}}://{{request.get_host}}/{{experiment.identifier}}/post/{{post.id}}" class="post-text">{{post.repost_source.content}}</a>
+									</div>
+									<!--<div class="post-text">{{ post.repost_source.content }}</div>-->
 								</div>
 							</div>
 						</article>
 					</div>
 					{% else %}
-					<div class="post-text">{{ post.content }}</div>
+					<div class="post-text post-item-text">
+						<a href="{{request.scheme}}://{{request.get_host}}/{{experiment.identifier}}/post/{{post.id}}" class="post-text">{{post.content}}</a>
+					</div>
 					{% endif %}
 
 					<div class="post-actions">
@@ -209,13 +216,6 @@
 	{% endfor %}
 {% endif %}
 
-<script>
-	document.querySelectorAll('.time').forEach(el => {
-		const dt = el.getAttribute('datetime');
-		el.textContent = formatDate(dt)
-	});
-</script>
-
 <style>
 	.repost-button.disabled {
 		opacity: 0.5;
@@ -233,5 +233,16 @@
 
 		white-space: normal;
 		width: 100%;
+	}
+	.post-item-text a {
+		text-decoration: none;
+	}
+
+	.post-item-text a:hover {
+		color: #000;
+	}
+
+	.post:hover {
+		background-color: rgb(249, 247, 247);
 	}
 </style>

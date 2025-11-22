@@ -3,7 +3,11 @@
 {% load static %}
 
 {% block title %}
-{{ object.content }}
+ {%if object.repost_source %}
+   {{ object.repost_source.content }}
+ {% else %}
+   {{ object.content }}
+  {% endif %}
 {% endblock title %}
 
 
@@ -60,10 +64,16 @@
 				</div>
 			</div>
 		</div>
-		<p class="post-text">{{ object.content }} </p>
+
+		 {%if object.repost_source %}
+   			<p class="post-text">{{ object.repost_source.content }}</p>
+ 		{% else %}
+   			<p class="post-text">{{ object.content }}</p>
+  		{% endif %}
+		
 
 		<div class="post-actions">
-			<button class="action-button comment-button" data-post-id="{{ object.id }}" data-authenticated="true">
+			<button class="action-button comment-button" onclick="handleParentPost()" data-post-id="{{ object.id }}" data-authenticated="true">
 				<i class="ri-chat-1-line"></i><span>{{ replies|length }}</span>
 			</button>
 
@@ -87,7 +97,7 @@
 				<input type="hidden" name="parent_post_id" value="{{object.id}}">
 				<div class="comment-input-container">
 					<textarea name="content" placeholder="Write your reply" required class="borderless-input"
-						id="reply-form-textarea"></textarea>
+						id="parent-form-textarea"></textarea>
 				</div>
 				<div class="form-actions">
 					<button type="submit" class="post-button" disabled>Reply</button>
@@ -103,9 +113,8 @@
 	</div>
 	<div>
 		{% for reply in replies %}
-		<div class="reply">
+		<article class="reply" data-post-id="{{reply.id}}">
 			<div class="post-box">
-
 				<div class="user-info">
 					<a href="{% url 'user_profile_detail' experiment.identifier reply.user_profile.id %}"
 					class="user-avatar">
@@ -116,7 +125,7 @@
 						{% endif %}
 					</a>
 					<a href="{% url 'user_profile_detail' experiment.identifier reply.user_profile.id %}"
-						class="user-handle">
+						class="user-handle user-name">
 						@{{ reply.user_profile.username }}
 					</a>
 					<span class="dot">·</span>
@@ -151,7 +160,8 @@
 				<a href="{{reply.id}}" class="post-text">{{reply.content}}</a>
 			</p>
 			<div class="post-actions">
-				<button class="action-button comment-button" data-post-id="{{ reply.id }}" data-authenticated="true">
+				<button class="action-button comment-button" data-post-id="{{ reply.id }}"
+          data-authenticated="true" onclick="showCommentPopup('{{ reply.id }}')">
 					<i class="ri-chat-1-line"></i><span>{{ reply.num_comments }}</span>
 				</button>
 
@@ -167,17 +177,37 @@
 					<span>{{ reply.num_upvotes }}</span>
 				</button>
 			</div>
-		</div>
+		</article>
 		{% empty %}
 		<p class="no-reply">No reply for this post</p>
 		{% endfor %}
 	</div>
 </div>
 
+<template id="replyFormTemplate">
+    {% if not current_user_profile.is_banned %}
+    <form class="reply-form" method="post" hx-post="{% url 'create_comment_with_experiment' experiment_identifier=experiment.identifier %}" hx-swap="none">
+        {% csrf_token %}
+        <input type="hidden" name="parent_post_id" value="{{ obj.id }}">
+        <div class="comment-input-container">
+            <textarea name="content" placeholder="Write your reply" required class="borderless-input"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="post-button" disabled>Reply</button>
+        </div>
+    </form>
+    {% else %}
+    <div class="compose-area banned-message">
+        <p>Your account has been suspended. You cannot reply to posts at this time.</p>
+    </div>
+    {% endif %}
+</template>
 
 
 <!-- Right Sidebar -->
 {% include 'pages/right_content.html' %}
+
+{% include 'components/comment_modal.html' %}
 
 <!-- Ban/Unban Confirmation Modal -->
 {% include 'components/ban_modal.html' %}
@@ -227,6 +257,7 @@
 		padding-top: 10px;
 		padding-bottom: 10px;
 		padding-left: 20px;
+		border-bottom: var(--border-color) 2px solid;
 	}
 
 	.reply:hover {
@@ -264,12 +295,11 @@
 </style>
 <script src="{% static 'js/shared.js' %}"></script>
 <script>
-	let CURRENT_ROOT_POST_ID = null
 	const form = document.querySelector(".reply-form")
 	const isBanned = form.querySelector('.banned-message') !== null;
 	form.addEventListener('submit', handleReplySubmit);
 
-	const textarea = form.querySelector('#reply-form-textarea');
+	const textarea = form.querySelector('#parent-form-textarea');
 	const submitButton = form.querySelector('button[type="submit"]');
 	submitButton.disabled = true;
 
@@ -387,10 +417,65 @@ async function handleDeletePost(postId){
         }
 }
 
+  async function showReplyForm(replyId){
+    const container = document.getElementById(`replyForm-${replyId}`);
+    console.log(container)
+  }
+
+  function handleParentPost(){
+	document.getElementById("parent-form-textarea").focus()
+  }
+
+
   document.querySelectorAll('.time').forEach(el => {
 		const dt = el.getAttribute('datetime');
 		el.textContent = formatDate(dt)
 	});
+
+
+	function handleRepost(button, postId) {
+    // Check if this is the user's own post
+    if (button.dataset.isOwnPost === 'true') {
+        console.log("You cannot repost your own content");
+        return;
+    }
+
+    // Check if the post is already a repost
+    if (button.dataset.isRepost === 'true') {
+        console.log("You cannot repost a repost");
+        return;
+    }
+
+    // Check for user confirmation
+    if (confirm('Repost this post?')) {
+        makeRequest(
+            '{% url "repost_post" post_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', postId),
+            'POST'
+        )
+        .then(data => {
+            if (data.success) {
+                // Update the share count
+                const countSpan = button.querySelector('span');
+                countSpan.textContent = data.shares_count;
+
+                // Show success message
+                alert('Post has been reposted successfully!');
+
+                // Refresh the page to show the new post
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            if (error.response && error.response.status === 403) {
+                // alert('You cannot repost your own content');
+                console.log('You cannot repost your own content');
+            } else {
+                console.error('Error:', error);
+                alert('An error occurred while reposting');
+            }
+        });
+    }
+}
 </script>
 
 {% endblock content %}
