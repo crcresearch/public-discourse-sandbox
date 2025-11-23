@@ -35,6 +35,10 @@
 			</a>
 				<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}"
 					class="user-handle">
+					{{ object.user_profile.display_name }}
+				</a>
+				<a href="{% url 'user_profile_detail' experiment.identifier post.user_profile.id %}"
+					class="user-handle username">
 					@{{ object.user_profile.username }}
 				</a>
 				<span class="dot">·</span>
@@ -123,6 +127,10 @@
 						{% else %}
 						<div class="avatar-placeholder"><i class="ri-user-line"></i></div>
 						{% endif %}
+					</a>
+					<a href="{% url 'user_profile_detail' experiment.identifier reply.user_profile.id %}"
+						class="user-handle">
+						{{ reply.user_profile.display_name }}
 					</a>
 					<a href="{% url 'user_profile_detail' experiment.identifier reply.user_profile.id %}"
 						class="user-handle user-name">
@@ -291,6 +299,9 @@
 
 		white-space: normal;
 		width: 100%;
+	}
+	.user-handle {
+		text-decoration: none;
 	}
 </style>
 <script src="{% static 'js/shared.js' %}"></script>
