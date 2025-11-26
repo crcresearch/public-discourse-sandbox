@@ -46,8 +46,13 @@ def create_comment(request, experiment_identifier):
                 # is_flagged will be automatically set in the save method via profanity check
             )
 
+            parent_post.num_comments += 1
+            parent_post.save()
+
             if parent_post.user_profile.username != user_profile.username:
                 # Create a notification for the parent post author
+                post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{parent_id.id}"
+
                 Notification.objects.create(
                     user_profile=parent_post.user_profile,
                     event="post_replied",
@@ -56,7 +61,7 @@ def create_comment(request, experiment_identifier):
                 send_notification_to_user(
                     user_profile=parent_post.user_profile,
                     title="Public Discourse Notification",
-                    body=f"@{user_profile.username} replied to your post",
+                    body=f"@{user_profile.username} replied to your post {post_url}",
                 )
 
             response_data = {
@@ -67,7 +72,7 @@ def create_comment(request, experiment_identifier):
 
             # Include flag information if the comment was flagged
             if comment.is_flagged:
-                response_data["is_flagged"] = True
+                response_data["is_flagged"] = "true"
 
             return JsonResponse(response_data)
         except Post.DoesNotExist:
@@ -406,10 +411,12 @@ def handle_like(request, post_id):
                 event="post_liked",
                 content=f"@{user_profile.username} liked your post",
             )
+            post_url = f"{request.build_absolute_uri().rsplit("/",4)[0]}/{post.experiment.identifier}/post/{post.id}"
+
             send_notification_to_user(
                 user_profile=post.user_profile,
                 title="Public Discourse Notification",
-                body=f"@{user_profile.username} liked to your post",
+                body=f"@{user_profile.username} liked to your post {post_url}",
             )
         return JsonResponse(
             {
@@ -516,10 +523,11 @@ def repost(request, post_id):
             event="post_reposted",
             content=f"@{user_profile.username} reposted your post",
         )
+        post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{original_post.id}"
         send_notification_to_user(
             user_profile=original_post.user_profile,
             title="Public Discourse Notification",
-            body=f"@{user_profile.username} liked to your post",
+            body=f"@{user_profile.username} reposted to your post {post_url}",
         )
 
         return JsonResponse(

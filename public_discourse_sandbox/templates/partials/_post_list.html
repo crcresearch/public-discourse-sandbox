@@ -77,7 +77,9 @@
 						</span>
 					</div>
 
-					<div class="post-text">{{ post.content }}</div>
+					<div class="post-text post-item-text">
+						<a href="{{request.scheme}}://{{request.get_host}}/{{experiment.identifier}}/post/{{post.id}}" class="post-text">{{post.content}}</a>
+					</div>
 
 					<div class="post-actions">
 						<button class="action-button comment-button" data-post-id="{{ post.id }}" data-authenticated="true"
@@ -86,7 +88,7 @@
 						</button>
 
 						<!--<button onclick="handleRepost(this, '{{ post.id }}')" data-post-id="{{ post.id }}"
-							class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}" 
+							class="action-button repost-button {% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}"
 							{% if post.user_profile.user == request.user or post.repost_source %}disabled{% endif %}>
 							<i class="ri-repeat-line"></i><span>{{ post.num_shares }}</span>
 						</button>-->
@@ -177,13 +179,18 @@
 											<time class="time" datetime="{{ post.repost_source.created_date|date:'c' }}"></time>
 										</div>
 									</div>
-									<div class="post-text">{{ post.repost_source.content }}</div>
+									<div class="post-text post-item-text">
+										<a href="{{request.scheme}}://{{request.get_host}}/{{experiment.identifier}}/post/{{post.id}}" class="post-text">{{post.repost_source.content}}</a>
+									</div>
+									<!--<div class="post-text">{{ post.repost_source.content }}</div>-->
 								</div>
 							</div>
 						</article>
 					</div>
 					{% else %}
-					<div class="post-text">{{ post.content }}</div>
+					<div class="post-text post-item-text">
+						<a href="{{request.scheme}}://{{request.get_host}}/{{experiment.identifier}}/post/{{post.id}}" class="post-text">{{post.content}}</a>
+					</div>
 					{% endif %}
 
 					<div class="post-actions">
@@ -209,38 +216,6 @@
 	{% endfor %}
 {% endif %}
 
-<script>
-	function formatDate(date) {
-		const dateObject = new Date(date)
-		const secondsDiff = Math.round((dateObject - Date.now()) / 1000);
-
-		const unitsInSec = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity];
-		const unitStrings = ["second", "minute", "hour", "day", "week", "month", "year"];
-
-		const unitIndex = unitsInSec.findIndex((cutoff) => cutoff > Math.abs(secondsDiff));
-		const divisor = unitIndex ? unitsInSec[unitIndex - 1] : 1;
-
-		if (Math.abs(secondsDiff) > 23 * 3600) {
-			const options = { month: "short", day: "numeric" };
-
-			if (dateObject.getFullYear() !== new Date().getFullYear()) {
-				options.year = "numeric";
-			}
-
-			return dateObject.toLocaleDateString("en-US", options)
-		} else {
-			const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-			const relativeTime = rtf.format(Math.floor(secondsDiff / divisor), unitStrings[unitIndex]);
-			return relativeTime
-		}
-	}
-
-	document.querySelectorAll('.time').forEach(el => {
-		const dt = el.getAttribute('datetime');
-		el.textContent = formatDate(dt)
-	});
-</script>
-
 <style>
 	.repost-button.disabled {
 		opacity: 0.5;
@@ -258,5 +233,16 @@
 
 		white-space: normal;
 		width: 100%;
+	}
+	.post-item-text a {
+		text-decoration: none;
+	}
+
+	.post-item-text a:hover {
+		color: #000;
+	}
+
+	.post:hover {
+		background-color: rgb(249, 247, 247);
 	}
 </style>

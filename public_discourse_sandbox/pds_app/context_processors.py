@@ -1,6 +1,5 @@
 from django.core.cache import cache
 from django.db.models import Count
-from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls.exceptions import Resolver404
@@ -60,23 +59,11 @@ def user_experiments(request):
         return {"user_experiments": [], "current_experiment_identifier": None}
 
     # Get all experiments where the user has a UserProfile
-    # experiments = (
-    #     Experiment.objects.filter(userprofile__user=request.user)
-    #     .distinct()
-    #     .order_by("name")
-    # )
-
     experiments = (
-            Experiment.objects.filter(
-                    Q(creator=request.user)  # User is creator
-                |   Q(
-                    userprofile__user=request.user,
-                    userprofile__is_collaborator=True,
-                ),  # User is collaborator
-            )
-            .distinct()
-            .order_by("-created_date")
-    )  # Order by most recent first
+        Experiment.objects.filter(userprofile__user=request.user)
+        .distinct()
+        .order_by("name")
+    )
 
 
     # Get the current experiment identifier from the URL
