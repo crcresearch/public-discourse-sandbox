@@ -10,10 +10,10 @@
     </div>
     <div class="modal-body">
       <div id="edit-form-errors" class="alert alert-danger" style="display: none; margin-bottom: 15px;"></div>
-      
+
       <form id="editProfileForm" enctype="multipart/form-data" class="profile-edit-form">
         {% csrf_token %}
-        
+
         <!-- Profile Picture Section -->
         <div class="profile-picture-section">
           <div class="current-picture">
@@ -61,13 +61,14 @@
             <input type="text" id="display_name" name="display_name" value="{{ viewed_profile.display_name }}" required class="form-control">
             <div class="invalid-feedback" id="error-display_name"></div>
           </div>
-          
+
+          <!--
           <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" value="{{ viewed_profile.username }}" required class="form-control">
             <div class="invalid-feedback" id="error-username" style="color: #dc3545; margin-top: 5px; display: none;"></div>
           </div>
-          
+          -->
           <div class="form-group">
             <label for="bio">Bio</label>
             <textarea id="bio" name="bio" rows="4" class="form-control">{{ viewed_profile.bio }}</textarea>
@@ -95,30 +96,30 @@
     document.getElementById('editProfileModal').style.display = 'none';
     clearFormErrors();
   }
-  
+
   function clearFormErrors() {
     const errorContainer = document.getElementById('edit-form-errors');
     errorContainer.style.display = 'none';
     errorContainer.textContent = '';
-    
+
     const errorElements = document.querySelectorAll('.invalid-feedback');
     errorElements.forEach(element => {
         element.textContent = '';
         element.style.display = 'none';
     });
-    
+
     const inputs = document.querySelectorAll('.form-control');
     inputs.forEach(input => {
         input.classList.remove('is-invalid');
     });
   }
-  
+
   function showErrorMessage(message) {
     const errorContainer = document.getElementById('edit-form-errors');
     errorContainer.textContent = message;
     errorContainer.style.display = 'block';
   }
-  
+
   function showFieldError(field, message) {
     const errorElement = document.getElementById(`error-${field}`);
     if (errorElement) {
@@ -126,7 +127,7 @@
         errorElement.style.display = 'block';
         errorElement.style.color = '#dc3545';
         errorElement.style.marginTop = '5px';
-        
+
         const input = document.querySelector(`[name="${field}"]`);
         if (input) {
             input.classList.add('is-invalid');
@@ -187,13 +188,13 @@
     // Handle form submission
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
       clearFormErrors();
       const formData = new FormData(form);
-      
+
       try {
         console.log('Submitting profile update');
-        
+
         const response = await fetch('{% url "users:update_profile" experiment.identifier %}', {
           method: 'POST',
           body: formData,
@@ -202,12 +203,12 @@
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
           }
         });
-        
+
         console.log('Response status:', response.status);
-        
+
         const contentType = response.headers.get('content-type');
         console.log('Response content type:', contentType);
-        
+
         // Try to get response data
         let responseData = {};
         if (contentType && contentType.includes('application/json')) {
@@ -224,14 +225,14 @@
                       showFieldError('username', responseData.error);
                       return;
                   }
-                  
+
                   // Parse the errors JSON string into an object if it's a string
-                  const errors = typeof responseData.error === 'string' && responseData.error.startsWith('{') 
-                      ? JSON.parse(responseData.error) 
+                  const errors = typeof responseData.error === 'string' && responseData.error.startsWith('{')
+                      ? JSON.parse(responseData.error)
                       : responseData.error;
-                  
+
                   console.log('Parsed errors:', errors);
-                  
+
                   // Handle different error formats
                   if (typeof errors === 'string') {
                       // Simple string error - check if it's related to username
@@ -243,11 +244,11 @@
                   } else {
                       // Process field errors
                       let hasDisplayedErrors = false;
-                      
+
                       // Try to iterate through fields
                       for (const field in errors) {
                           let errorText = '';
-                          
+
                           // Handle array of error objects
                           if (Array.isArray(errors[field])) {
                               errors[field].forEach(error => {
@@ -257,18 +258,18 @@
                                       errorText += error + ' ';
                                   }
                               });
-                          } 
+                          }
                           // Handle string error
                           else if (typeof errors[field] === 'string') {
                               errorText = errors[field];
                           }
-                          
+
                           if (errorText) {
                               showFieldError(field, errorText.trim());
                               hasDisplayedErrors = true;
                           }
                       }
-                      
+
                       // If we couldn't process any specific errors, show generic message
                       if (!hasDisplayedErrors) {
                           showErrorMessage("Form validation failed. Please check your inputs.");
@@ -276,7 +277,7 @@
                   }
               } catch (parseError) {
                   console.error('Error parsing error response:', parseError);
-                  
+
                   // Check if the error string contains username information
                   if (responseData.error && responseData.error.toLowerCase().includes('username is already taken')) {
                       showFieldError('username', responseData.error);
@@ -299,4 +300,4 @@
       }
     });
   });
-</script> 
+</script>
