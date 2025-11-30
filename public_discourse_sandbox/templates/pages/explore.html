@@ -9,7 +9,15 @@
     <!-- Main Content -->
     <div class="main-content">
         <header class="main-header">
-            <h1>Explore</h1>
+          <form id="searchUserForm" class="hideSearchForm">
+            {% csrf_token %}
+            <input class="form-control" id="searchField" aria-describedby="search for a username"
+            placeholder="Search for a user"/>
+            <div class="searchResult hideSearchRes" id="searchResult">
+                <ul id="suggestionsList"></ul>
+            </div>
+          </form>
+
             {% if current_hashtag %}
                 <div class="hashtag-filter">
                     <span>Showing posts with hashtag: </span>
@@ -28,12 +36,87 @@
 
     <!-- Comment Modal - placed outside main content for proper z-index -->
     {% include 'components/comment_modal.html' %}
+
+<style>
+  .searchUserForm {
+    position: relative;
+  }
+
+  .searchUserForm input {
+    user-select: none;
+  }
+
+ .searchResult{
+   position: absolute;
+   max-height: 10rem;
+   width: 41rem;
+   z-index: 100;
+   top: 4rem;
+   background: #fff;
+   border: 1px solid #ccc;
+   padding-top: 1rem;
+ }
+ .searchResult ul {
+   list-style-type: none;
+ }
+ .searchResult ul li {
+  padding-bottom: 0.5rem;
+ }
+
+.searchResult ul li a {
+  text-decoration: none;
+ }
+
+ .hideSearchRes {
+   display: none;
+ }
+</style>
 {% endblock %}
 
 {% block inline_javascript %}
 <script>
-function closeComposePopup() {
+  function closeComposePopup() {
     document.getElementById('compose-popup').style.display = 'none';
-}
+  }
+
+  const searchForm = document.getElementById("searchUserForm")
+  const searchInput = document.getElementById("searchField")
+  const suggestions = document.getElementById("suggestionsList")
+
+  searchInput.addEventListener('input', async (event) => {
+    event.preventDefault()
+    const value = event.target.value
+    suggestions.innerHTML = ''
+
+    if(value.length < 3) {
+      document.getElementById("searchResult").classList.add("hideSearchRes")
+      return
+    }
+
+    const response = await fetch(`{% url "search_user" experiment.identifier %}?q=${value}`, {
+      credentials: 'same-origin',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      }
+    })
+
+    if(!response.ok){
+      console.log("handle error")
+    }
+    const json = await response.json()
+
+    document.getElementById("searchResult").classList.remove("hideSearchRes")
+
+    if(json.data.length == 0){
+      suggestions.innerHTML = `<p>No user profile found for ${value}`
+    }
+
+    json.data.forEach(user => {
+      const listitem = document.createElement("li")
+      listitem.innerHTML = `<a href="{{request.scheme}}://{{request.get_host}}/{{experiment.identifier}}/profile/${user.id}">@${user.username} - ${user.display_name}</a>`
+
+      suggestions.appendChild(listitem)
+    })
+  })
 </script>
-{% endblock %} 
+{% endblock %}
