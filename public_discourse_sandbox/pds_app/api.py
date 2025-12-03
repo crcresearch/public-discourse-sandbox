@@ -1,9 +1,12 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
+
+from public_discourse_sandbox.pds_app.serializers import UserProfileSerializer
 
 from .decorators import check_banned
 from .models import Experiment
@@ -51,7 +54,7 @@ def create_comment(request, experiment_identifier):
 
             if parent_post.user_profile.username != user_profile.username:
                 # Create a notification for the parent post author
-                post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{parent_id.id}"
+                post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{parent_post.id}"
 
                 Notification.objects.create(
                     user_profile=parent_post.user_profile,
@@ -544,3 +547,29 @@ def repost(request, post_id):
         return JsonResponse({"error": "User profile not found"}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required
+@ensure_csrf_cookie
+def search_user(request, experiment_identifier):
+    if request.method != "GET":
+        return JsonResponse(
+            {"status": "error", "message": "Method not allowed"},
+            status=405,
+        )
+
+    try:
+        query = request.GET.get("q")
+        experiment = Experiment.objects.get(identifier=experiment_identifier)
+
+        user_profile = UserProfile.objects.filter(
+            Q(display_name__icontains=query) | Q(username__icontains=query),
+            experiment=experiment)
+
+        serializer = UserProfileSerializer(user_profile, many=True)
+
+        return JsonResponse({"data":  serializer.data})
+    except Experiment.DoesNotExist:
+        return JsonResponse({"error": "experiment not found"}, status=404)
+    except UserProfile.DoesNotExist:
+        return JsonResponse({"error": "userprofile not found"}, status=404)

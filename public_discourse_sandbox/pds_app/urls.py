@@ -7,6 +7,7 @@ from public_discourse_sandbox.pds_app.api import delete_post
 from public_discourse_sandbox.pds_app.api import get_post_replies
 from public_discourse_sandbox.pds_app.api import handle_like
 from public_discourse_sandbox.pds_app.api import repost
+from public_discourse_sandbox.pds_app.api import search_user
 from public_discourse_sandbox.pds_app.api import unban_user
 from public_discourse_sandbox.pds_app.api import update_last_accessed
 from public_discourse_sandbox.pds_app.external_api import api_create_comment
@@ -185,6 +186,7 @@ urlpatterns = [
     path("api/users/<uuid:user_profile_id>/unban/", unban_user, name="unban_user"),
     path("post/<uuid:post_id>/like/", handle_like, name="like_post"),
     path("post/<uuid:post_id>/repost/", repost, name="repost_post"),
+    path("<str:experiment_identifier>/users/search", search_user, name="search_user"),
     # External API Endposts
     path(
         "api/v1/<str:experiment_id>/posts/home-timeline/",
