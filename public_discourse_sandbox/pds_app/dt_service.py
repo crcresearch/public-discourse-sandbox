@@ -426,14 +426,6 @@ class DTService:
                 event="post_replied",
                 content=f"@{twin.user_profile.username} replied to your post",
             )
-
-            # Send notifications to all notification targets for the post author
-            send_notification_to_user(
-                user_profile=post.user_profile,
-                title="Public Discourse Notification",
-                body=f"@{twin.user_profile.username} replied to your post",
-            )
-
             logger.info(f"Created digital twin comment: {comment.content[:50]}...")
             responses.append(comment)
 

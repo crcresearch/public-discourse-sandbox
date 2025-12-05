@@ -16,6 +16,7 @@ from .serializers import PostCommentsSerializer
 from .serializers import PostCreateSerializer
 from .serializers import PostReplySerializer
 from .serializers import PostSerializer
+from .utils import send_notification_to_user
 from .views import get_home_feed_posts
 
 
@@ -230,7 +231,7 @@ def api_get_post_by_id(request, post_id):
 def api_get_post_comments_by_id(request, post_id):
     try:
         post = Post.objects.select_related("experiment", "user_profile").get(
-            id=post_id, is_deleted=False
+            id=post_id, is_deleted=False,
         )
     except Post.DoesNotExist:
         return Response(
@@ -321,6 +322,16 @@ def api_create_post(request, experiment_id):
         post = serializer.save()
 
         response_serializer = PostSerializer(post)
+        if (user_profile.is_moderator or user_profile.is_collaborator):
+                post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{post.id}"
+                for user in UserProfile.objects.filter(
+                        experiment=experiment, is_banned=False, is_digital_twin=False,
+                        ).exclude(id=user_profile.id):
+                    send_notification_to_user(
+                            user_profile=user,
+                            title="Public Discourse Notification",
+                            body=f"@{user_profile.username} posted a new post {post_url}")
+
         return Response(
             {
                 "data": response_serializer.data,

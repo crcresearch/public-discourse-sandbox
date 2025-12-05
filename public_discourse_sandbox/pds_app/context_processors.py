@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.db import models
 from django.db.models import Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -58,13 +59,13 @@ def user_experiments(request):
     if not request.user.is_authenticated:
         return {"user_experiments": [], "current_experiment_identifier": None}
 
-    # Get all experiments where the user has a UserProfile
+    # Get all experiments where the user has a UserProfile or is the creator
     experiments = (
-        Experiment.objects.filter(userprofile__user=request.user)
+        Experiment.objects.filter(models.Q(creator=request.user) |
+                                  models.Q(userprofile__user=request.user))
         .distinct()
         .order_by("name")
     )
-
 
     # Get the current experiment identifier from the URL
     current_experiment_identifier = None

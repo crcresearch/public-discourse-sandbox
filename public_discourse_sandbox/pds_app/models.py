@@ -9,7 +9,6 @@ from django_notification_system.models import NotificationTarget
 from django_notification_system.models import TargetUserRecord
 
 from .utils import check_profanity
-from .utils import send_notification_to_user
 
 User = get_user_model()
 
@@ -306,20 +305,6 @@ class Post(BaseModel):
         # Check for profanity in content
         if not self.is_flagged:  # Only check if not already flagged
             self.is_flagged = check_profanity(self.content)
-
-        # when an admin creates a post (not a comment), send a notification to all people in this experiment
-        if (
-            self.user_profile.is_moderator or self.user_profile.is_collaborator
-        ) and self.depth == 0:
-            for user in UserProfile.objects.filter(
-                experiment=self.experiment, is_banned=False, is_digital_twin=False,
-            ).exclude(id=self.user_profile.id):
-                send_notification_to_user(
-                    user_profile=user,
-                    title="Public Discourse Notification",
-                    body=f"@{self.user_profile.username} posted a new post",
-                )
-
         self.parse_hashtags()
         super().save(*args, **kwargs)
 
