@@ -344,27 +344,36 @@ class HomeView(
         """Handle post creation."""
         # Get the user's profile for this experiment
         user_profile = request.user.userprofile_set.filter(
-            experiment=self.experiment,
-        ).first()
+                experiment=self.experiment,
+                ).first()
         if not user_profile:
             raise PermissionDenied("You do not have a profile in this experiment")
 
         form = PostForm(request.POST)
         if form.is_valid():
             post = Post(
-                user_profile=user_profile,
-                content=form.cleaned_data["content"],
-                experiment=self.experiment,
-                depth=0,
-                parent_post=None,
-            )
+                    user_profile=user_profile,
+                    content=form.cleaned_data["content"],
+                    experiment=self.experiment,
+                    depth=0,
+                    parent_post=None,
+                    )
             post.save()
-            # Redirect to the appropriate URL based on whether we have an experiment identifier
+            # when an admin creates a post (not a comment), send a notification to all people in this experiment
+            if (user_profile.is_moderator or user_profile.is_collaborator):
+                post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{post.id}"
+                for user in UserProfile.objects.filter(
+                        experiment=self.experiment, is_banned=False, is_digital_twin=False,
+                        ).exclude(id=user_profile.id):
+                    send_notification_to_user(
+                            user_profile=user,
+                            title="Public Discourse Notification",
+                            body=f"@{self.user_profile.username} posted a new post {post_url}")
             if "experiment_identifier" in kwargs:
                 return redirect(
-                    "home_with_experiment",
-                    experiment_identifier=self.experiment.identifier,
-                )
+                        "home_with_experiment",
+                        experiment_identifier=self.experiment.identifier,
+                        )
             return redirect("home")
 
         # If form is invalid, show form with errors

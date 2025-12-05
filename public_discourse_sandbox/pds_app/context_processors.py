@@ -64,6 +64,7 @@ def user_experiments(request):
         .distinct()
         .order_by("name")
     )
+    print(experiments, request.user)
 
 
     # Get the current experiment identifier from the URL

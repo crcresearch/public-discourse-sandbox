@@ -17,6 +17,7 @@ from .serializers import PostCreateSerializer
 from .serializers import PostReplySerializer
 from .serializers import PostSerializer
 from .views import get_home_feed_posts
+from .utils import send_notification_to_user
 
 
 class CustomPagination(PageNumberPagination):
@@ -321,6 +322,8 @@ def api_create_post(request, experiment_id):
         post = serializer.save()
 
         response_serializer = PostSerializer(post)
+        # TODO: Add notification sending here
+
         return Response(
             {
                 "data": response_serializer.data,
