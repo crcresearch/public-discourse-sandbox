@@ -9,7 +9,6 @@ from django_notification_system.models import NotificationTarget
 from django_notification_system.models import TargetUserRecord
 
 from .utils import check_profanity
-from .utils import send_notification_to_user
 
 User = get_user_model()
 

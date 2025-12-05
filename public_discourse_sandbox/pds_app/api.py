@@ -125,7 +125,7 @@ def get_post_replies(request, post_id):
             level = list(
                 Post.objects.filter(base_filters, parent_post_id__in=parent_ids)
                 .select_related("user_profile", "user_profile__user")
-                .exclude(user_profile__user__groups__name="Banned"),
+                .exclude(user_profile__user__groups__name="Banned").order_by("-created_date"),
             )
             all_replies.extend(level)
 
@@ -133,6 +133,7 @@ def get_post_replies(request, post_id):
             return JsonResponse({"status": "success", "replies": []})
 
         all_replies.sort(key=lambda r: (getattr(r, "depth", 0), r.created_date))
+        all_replies.sort(key=lambda r: r.created_date, reverse=True)
 
         is_moderator = request.user.groups.filter(name="Moderators").exists()
 
