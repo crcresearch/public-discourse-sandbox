@@ -278,3 +278,5 @@ public_discourse_sandbox/media/
 .envs/*
 # !.envs/.local/
 .envs/.local/.django
+
+/docs/_site/
