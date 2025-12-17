@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Lora', serif;
+            font-weight: bold;
+            padding-bottom: 1rem;
+            padding-top: 1rem;
+        }
+        .section-title {
+            @apply text-3xl font-bold text-gray-800 mb-6 pb-2 border-b-2 border-blue-500;
+        }
+        .subsection-title {
+            @apply text-2xl font-semibold text-gray-700 mt-6 mb-4;
+        }
+        .content-text {
+            @apply text-gray-700 leading-relaxed;
+        }
+        .card {
+            @apply bg-white shadow-lg rounded-lg p-6 transition-shadow duration-300 hover:shadow-xl;
+        }
+        .list-item {
+            list-style-type: none;
+        }
+        .list-item::before {
+            content: "✓"; /* Checkmark character */
+            color: #3b82f6; /* Tailwind blue-500 */
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+        /* Code block support */
+        pre {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        code {
+            font-family: 'Courier New', monospace;
+            background-color: #edf2f7;
+            color: #2d3748;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        /* Documentation site styles */
+        .api-endpoint {
+            @apply bg-blue-100 text-blue-800 px-3 py-1 rounded-md font-mono text-sm inline-block;
+        }
+        .parameter {
+            @apply font-semibold text-gray-800;
+        }
+        .parameter-type {
+            @apply text-gray-600 italic;
+        }
+        table {
+            @apply w-full table-auto bg-white shadow-md rounded-lg overflow-hidden;
+        }
+        th {
+            @apply bg-gray-200 text-gray-700 px-4 py-2 text-left font-semibold;
+        }
+        td {
+            @apply px-4 py-2 border-b border-gray-200;
+        }
+        .doc-section {
+            @apply mb-8;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+	{{ content | safe }}
+    <footer class="bg-gray-800 text-gray-300 py-8 text-center">
+        <div class="container mx-auto">
+            <p>&copy; <span id="currentYear"></span> Public Discourse Sandbox (PDS) Project. All Rights Reserved.</p>
+            <p class="text-sm mt-1">An initiative by researchers at the University of Notre Dame.</p>
+        </div>
+    </footer>
+    <script>
+        // Simple script for mobile navigation toggle
+        const navToggle = document.getElementById('nav-toggle');
+        const navContent = document.getElementById('nav-content');
+        if (navToggle && navContent) {
+            navToggle.addEventListener('click', function() {
+                navContent.classList.toggle('hidden');
+            });
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    // If on mobile, close the nav menu after clicking a link
+                    if (navContent && !navContent.classList.contains('hidden') && navToggle && window.innerWidth < 768) {
+                         navContent.classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+</body>
+</html>
