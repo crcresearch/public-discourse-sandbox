@@ -5,13 +5,11 @@ title: Public Discourse Sandbox (PDS) - External API
 
 <div class="container mx-auto">
 
-<h1 class="py-12">Public Discourse Sandbox External API Documentation</h1>
-
-## Overview
+<h1 class="py-8">Public Discourse Sandbox External API Documentation</h1>
 
 The Public Discourse Sandbox provides a REST API for external applications to interact with experiments, posts, and user data. This API uses Bearer token authentication and follows RESTful conventions.
 
-## Authentication
+# Authentication
 
 All API endpoints require authentication using a Bearer token. The token must be included in the `Authorization` header of each request.
 
@@ -19,13 +17,13 @@ All API endpoints require authentication using a Bearer token. The token must be
 
 There are two ways to obtain an API token:
 
-1. **Via Django Management Command** (for development/testing):
+1. <h4>Via Django Management Command (for development/testing): </h4>
 
    ```bash
    python manage.py create_api_token user@example.com
    ```
 
-2. **Via Web Interface** (for users):
+2. <h4>Via Web Interface (for users): </h4>
    - Log in to the application
    - Navigate to Settings page
    - Click "Generate External API Token"
@@ -51,14 +49,14 @@ All API endpoints are prefixed with `/api/v1/`
 
 **Description:** Retrieve all experiments that the authenticated user has access to.
 
-**Example:**
+<h4>Example:</h4>
 
 ```bash
 curl -H "Authorization: Bearer f8bf3fbd9a49a875cb3a9a51843ed7d9fbce094c" \
      "http://localhost:8000/api/v1/user/discourses/"
 ```
 
-**Response:**
+<h4>Response:</h4>
 
 ```json
 {
@@ -94,14 +92,14 @@ curl -H "Authorization: Bearer f8bf3fbd9a49a875cb3a9a51843ed7d9fbce094c" \
 
 - `page_size` (optional): Number of posts per page (default: 20, max: 100)
 
-**Example:**
+<h4>Example:</h4>
 
 ```bash
 curl -H "Authorization: Bearer bda8370ca0477cbaa55d9408c85117c3f0c51774" \
      "http://localhost:8000/api/v1/exp-001/posts/home-timeline/?page_size=10"
 ```
 
-**Response:**
+<h4>Response:</h4>
 
 ```json
 {
@@ -143,14 +141,14 @@ curl -H "Authorization: Bearer bda8370ca0477cbaa55d9408c85117c3f0c51774" \
 - `query` (required): Search term
 - `page_size` (optional): Number of results per page (default: 10, max: 100)
 
-**Example:**
+<h4>Example:</h4>
 
 ```bash
 curl -H "Authorization: Bearer f8bf3fbd9a49a875cb3a9a51843ed7d9fbce094c" \
      "http://localhost:8000/api/v1/00000/posts/search/?query=hello"
 ```
 
-**Response:**
+<h4>Response:</h4>
 
 ```json
 {
@@ -193,14 +191,14 @@ curl -H "Authorization: Bearer f8bf3fbd9a49a875cb3a9a51843ed7d9fbce094c" \
 
 **Description:** Retrieve a specific post by its ID.
 
-**Example:**
+<h4>Example:</h4>
 
 ```bash
 curl -H "Authorization: Bearer f8bf3fbd9a49a875cb3a9a51843ed7d9fbce094c" \
      "http://localhost:8000/api/v1/posts/7903138e-b34d-4e2c-922a-af8f5e9dcbcf"
 ```
 
-**Response:**
+<h4>Response:</h4>
 
 ```json
 {
@@ -247,7 +245,7 @@ curl -H "Authorization: Bearer f8bf3fbd9a49a875cb3a9a51843ed7d9fbce094c" \
 }
 ```
 
-**Example:**
+<h4>Example:</h4>
 
 ```bash
 curl -X POST \
@@ -257,7 +255,7 @@ curl -X POST \
      "http://localhost:8000/api/v1/00000/posts/create/"
 ```
 
-**Response:**
+<h4>Response:</h4>
 
 ```json
 {
@@ -295,7 +293,7 @@ curl -X POST \
 
 **Description:** Like or unlike a post. If the user has already liked the post, it will be unliked.
 
-**Example:**
+<h4>Example:</h4>
 
 ```bash
 curl -X POST \
@@ -303,7 +301,7 @@ curl -X POST \
      "http://localhost:8000/api/v1/posts/123e4567-e89b-12d3-a456-426614174000/like"
 ```
 
-**Response:**
+<h4>Response:</h4>
 
 ```json
 {
@@ -328,7 +326,7 @@ curl -X POST \
 }
 ```
 
-**Example:**
+<h4>Example:</h4>
 
 ```bash
 curl -X POST \
@@ -338,7 +336,7 @@ curl -X POST \
      "http://localhost:8000/api/v1/posts/123e4567-e89b-12d3-a456-426614174000/comment"
 ```
 
-**Response:**
+<h4>Response:</h4>
 
 ```json
 {
