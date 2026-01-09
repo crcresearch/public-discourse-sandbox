@@ -214,7 +214,7 @@ class LandingView(View):
 
 
 class PostDetailsView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView,
 ):
     model = Post
     template_name = "pages/post_details.html"
@@ -238,6 +238,7 @@ class PostDetailsView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        """
         context["post_leaderboard"] = (
             UserProfile.objects.filter(experiment=self.experiment)
             .exclude(dorm_name__isnull=True)
@@ -245,7 +246,9 @@ class PostDetailsView(
             .annotate(post_count=Count("post"))
             .order_by("-post_count", "dorm_name")[:3]
         )
+        """
 
+        """
         context["user_leaderboard"] = (
             UserProfile.objects.filter(experiment=self.experiment)
             .exclude(dorm_name__isnull=True)
@@ -253,9 +256,10 @@ class PostDetailsView(
             .annotate(total_users=Count("id"))
             .order_by("-total_users", "dorm_name")
         )
+        """
 
         context["replies"] = Post.all_objects.filter(
-            parent_post=self.object, depth=self.object.depth + 1, is_deleted=False
+            parent_post=self.object, depth=self.object.depth + 1, is_deleted=False,
         ).order_by("-created_date")
 
         return context
@@ -294,6 +298,7 @@ class HomeView(
         context = super().get_context_data(**kwargs)
         context["form"] = PostForm()
 
+        """
         context["post_leaderboard"] = (
             UserProfile.objects.filter(experiment=self.experiment)
             .exclude(dorm_name__isnull=True)
@@ -309,6 +314,7 @@ class HomeView(
             .annotate(total_users=Count("id"))
             .order_by("-total_users", "dorm_name")
         )
+        """
 
         # Add flag for empty home feed to show guidance message
         if not context["posts"] and not self.request.headers.get("HX-Request"):
@@ -422,21 +428,22 @@ class ExploreView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_hashtag"] = self.request.GET.get("hashtag")
-        context["post_leaderboard"] = (
-            UserProfile.objects.filter(experiment=self.experiment)
-            .exclude(dorm_name__isnull=True)
-            .values("dorm_name")
-            .annotate(post_count=Count("post"))
-            .order_by("-post_count", "dorm_name")[:3]
-        )
 
-        context["user_leaderboard"] = (
-            UserProfile.objects.filter(experiment=self.experiment)
-            .exclude(dorm_name__isnull=True)
-            .values("dorm_name")
-            .annotate(total_users=Count("id"))
-            .order_by("-total_users", "dorm_name")
-        )
+        # context["post_leaderboard"] = (
+        #     UserProfile.objects.filter(experiment=self.experiment)
+        #     .exclude(dorm_name__isnull=True)
+        #     .values("dorm_name")
+        #     .annotate(post_count=Count("post"))
+        #     .order_by("-post_count", "dorm_name")[:3]
+        # )
+
+        # context["user_leaderboard"] = (
+        #     UserProfile.objects.filter(experiment=self.experiment)
+        #     .exclude(dorm_name__isnull=True)
+        #     .values("dorm_name")
+        #     .annotate(total_users=Count("id"))
+        #     .order_by("-total_users", "dorm_name")
+        # )
         return context
 
     @method_decorator(check_banned)
@@ -536,21 +543,21 @@ class NotificationsView(
         # Add the current filter to the context
         context["current_filter"] = self.request.GET.get("filter", "all")
 
-        context["post_leaderboard"] = (
-            UserProfile.objects.filter(experiment=self.experiment)
-            .exclude(dorm_name__isnull=True)
-            .values("dorm_name")
-            .annotate(post_count=Count("post"))
-            .order_by("-post_count", "dorm_name")[:3]
-        )
+        # context["post_leaderboard"] = (
+        #     UserProfile.objects.filter(experiment=self.experiment)
+        #     .exclude(dorm_name__isnull=True)
+        #     .values("dorm_name")
+        #     .annotate(post_count=Count("post"))
+        #     .order_by("-post_count", "dorm_name")[:3]
+        # )
 
-        context["user_leaderboard"] = (
-            UserProfile.objects.filter(experiment=self.experiment)
-            .exclude(dorm_name__isnull=True)
-            .values("dorm_name")
-            .annotate(total_users=Count("id"))
-            .order_by("-total_users", "dorm_name")
-        )
+        # context["user_leaderboard"] = (
+        #     UserProfile.objects.filter(experiment=self.experiment)
+        #     .exclude(dorm_name__isnull=True)
+        #     .values("dorm_name")
+        #     .annotate(total_users=Count("id"))
+        #     .order_by("-total_users", "dorm_name")
+        # )
         return context
 
 
@@ -1324,13 +1331,13 @@ class UserProfileDetailView(
             .order_by("-post_count")[:3]
         )
 
-        context["user_leaderboard"] = (
-            UserProfile.objects.filter(experiment=self.experiment)
-            .exclude(dorm_name__isnull=True)
-            .values("dorm_name")
-            .annotate(total_users=Count("id"))
-            .order_by("-total_users")
-        )
+        # context["user_leaderboard"] = (
+        #     UserProfile.objects.filter(experiment=self.experiment)
+        #     .exclude(dorm_name__isnull=True)
+        #     .values("dorm_name")
+        #     .annotate(total_users=Count("id"))
+        #     .order_by("-total_users")
+        # )
 
         # Get pagination parameters
         previous_post_id = self.request.GET.get("previous_post_id", None)
