@@ -214,7 +214,10 @@ class LandingView(View):
 
 
 class PostDetailsView(
-    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView,
+    LoginRequiredMixin,
+    ExperimentContextMixin,
+    ProfileRequiredMixin,
+    DetailView,
 ):
     model = Post
     template_name = "pages/post_details.html"
@@ -259,7 +262,9 @@ class PostDetailsView(
         """
 
         context["replies"] = Post.all_objects.filter(
-            parent_post=self.object, depth=self.object.depth + 1, is_deleted=False,
+            parent_post=self.object,
+            depth=self.object.depth + 1,
+            is_deleted=False,
         ).order_by("-created_date")
 
         return context
