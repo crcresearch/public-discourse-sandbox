@@ -72,8 +72,11 @@ urlpatterns = [
         AboutView.as_view(),
         name="about_with_experiment",
     ),
-    path("<str:experiment_identifier>/post/<uuid:pk>", PostDetailsView.as_view(),
-         name="post_details"),
+    path(
+        "<str:experiment_identifier>/post/<uuid:pk>",
+        PostDetailsView.as_view(),
+        name="post_details",
+    ),
     path(
         "<str:experiment_identifier>/home/",
         HomeView.as_view(),

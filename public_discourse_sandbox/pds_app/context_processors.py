@@ -44,7 +44,8 @@ def active_bots(request):
 
         return {
             "active_bots": DigitalTwin.objects.filter(
-                is_active=True, user_profile__experiment=experiment,
+                is_active=True,
+                user_profile__experiment=experiment,
             ),
         }
     except Experiment.DoesNotExist:
@@ -61,8 +62,9 @@ def user_experiments(request):
 
     # Get all experiments where the user has a UserProfile or is the creator
     experiments = (
-        Experiment.objects.filter(models.Q(creator=request.user) |
-                                  models.Q(userprofile__user=request.user))
+        Experiment.objects.filter(
+            models.Q(creator=request.user) | models.Q(userprofile__user=request.user)
+        )
         .distinct()
         .order_by("name")
     )
@@ -244,7 +246,8 @@ def unread_notifications(request):
 
         # Count unread notifications for this user profile
         unread_count = Notification.objects.filter(
-            user_profile=user_profile, is_read=False,
+            user_profile=user_profile,
+            is_read=False,
         ).count()
 
         return {"unread_notifications_count": unread_count}

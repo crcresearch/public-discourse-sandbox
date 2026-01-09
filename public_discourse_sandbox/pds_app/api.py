@@ -125,7 +125,8 @@ def get_post_replies(request, post_id):
             level = list(
                 Post.objects.filter(base_filters, parent_post_id__in=parent_ids)
                 .select_related("user_profile", "user_profile__user")
-                .exclude(user_profile__user__groups__name="Banned").order_by("-created_date"),
+                .exclude(user_profile__user__groups__name="Banned")
+                .order_by("-created_date"),
             )
             all_replies.extend(level)
 
@@ -527,7 +528,9 @@ def repost(request, post_id):
             event="post_reposted",
             content=f"@{user_profile.username} reposted your post",
         )
-        post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{original_post.id}"
+        post_url = (
+            f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{original_post.id}"
+        )
         send_notification_to_user(
             user_profile=original_post.user_profile,
             title="Public Discourse Notification",
@@ -565,11 +568,12 @@ def search_user(request, experiment_identifier):
 
         user_profile = UserProfile.objects.filter(
             Q(display_name__icontains=query) | Q(username__icontains=query),
-            experiment=experiment)
+            experiment=experiment,
+        )
 
         serializer = UserProfileSerializer(user_profile, many=True)
 
-        return JsonResponse({"data":  serializer.data})
+        return JsonResponse({"data": serializer.data})
     except Experiment.DoesNotExist:
         return JsonResponse({"error": "experiment not found"}, status=404)
     except UserProfile.DoesNotExist:

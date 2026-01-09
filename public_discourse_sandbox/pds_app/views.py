@@ -212,11 +212,10 @@ class LandingView(View):
             # If default experiment doesn't exist, just render without it
             return render(request, "pages/landing.html")
 
+
 class PostDetailsView(
-        LoginRequiredMixin,
-        ExperimentContextMixin,
-        ProfileRequiredMixin,
-DetailView):
+    LoginRequiredMixin, ExperimentContextMixin, ProfileRequiredMixin, DetailView
+):
     model = Post
     template_name = "pages/post_details.html"
     context_object_name = "post"
@@ -233,7 +232,7 @@ DetailView):
         if self.object.is_deleted:
             raise PermissionDenied("Post not found")
 
-        context =  self.get_context_data(object=self.object)
+        context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
 
     def get_context_data(self, **kwargs):
@@ -248,18 +247,19 @@ DetailView):
         )
 
         context["user_leaderboard"] = (
-                UserProfile.objects.filter(experiment=self.experiment)
-                .exclude(dorm_name__isnull=True)
-                .values("dorm_name")
-                .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(total_users=Count("id"))
+            .order_by("-total_users", "dorm_name")
         )
 
-        context["replies"] = Post.all_objects.filter(parent_post=self.object,
-                                          depth=self.object.depth+1,
-                                                     is_deleted=False).order_by("-created_date")
+        context["replies"] = Post.all_objects.filter(
+            parent_post=self.object, depth=self.object.depth + 1, is_deleted=False
+        ).order_by("-created_date")
 
         return context
+
 
 class HomeView(
     LoginRequiredMixin,
@@ -303,11 +303,11 @@ class HomeView(
         )
 
         context["user_leaderboard"] = (
-                UserProfile.objects.filter(experiment=self.experiment)
-                .exclude(dorm_name__isnull=True)
-                .values("dorm_name")
-                .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(total_users=Count("id"))
+            .order_by("-total_users", "dorm_name")
         )
 
         # Add flag for empty home feed to show guidance message
@@ -344,36 +344,41 @@ class HomeView(
         """Handle post creation."""
         # Get the user's profile for this experiment
         user_profile = request.user.userprofile_set.filter(
-                experiment=self.experiment,
-                ).first()
+            experiment=self.experiment,
+        ).first()
         if not user_profile:
             raise PermissionDenied("You do not have a profile in this experiment")
 
         form = PostForm(request.POST)
         if form.is_valid():
             post = Post(
-                    user_profile=user_profile,
-                    content=form.cleaned_data["content"],
-                    experiment=self.experiment,
-                    depth=0,
-                    parent_post=None,
-                    )
+                user_profile=user_profile,
+                content=form.cleaned_data["content"],
+                experiment=self.experiment,
+                depth=0,
+                parent_post=None,
+            )
             post.save()
             # when an admin creates a post (not a comment), send a notification to all people in this experiment
-            if (user_profile.is_moderator or user_profile.is_collaborator):
-                post_url = f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{post.id}"
+            if user_profile.is_moderator or user_profile.is_collaborator:
+                post_url = (
+                    f"{request.build_absolute_uri().rsplit("/",2)[0]}/post/{post.id}"
+                )
                 for user in UserProfile.objects.filter(
-                        experiment=self.experiment, is_banned=False, is_digital_twin=False,
-                        ).exclude(id=user_profile.id):
+                    experiment=self.experiment,
+                    is_banned=False,
+                    is_digital_twin=False,
+                ).exclude(id=user_profile.id):
                     send_notification_to_user(
-                            user_profile=user,
-                            title="Public Discourse Notification",
-                            body=f"@{self.user_profile.username} posted a new post {post_url}")
+                        user_profile=user,
+                        title="Public Discourse Notification",
+                        body=f"@{self.user_profile.username} posted a new post {post_url}",
+                    )
             if "experiment_identifier" in kwargs:
                 return redirect(
-                        "home_with_experiment",
-                        experiment_identifier=self.experiment.identifier,
-                        )
+                    "home_with_experiment",
+                    experiment_identifier=self.experiment.identifier,
+                )
             return redirect("home")
 
         # If form is invalid, show form with errors
@@ -426,11 +431,11 @@ class ExploreView(
         )
 
         context["user_leaderboard"] = (
-                UserProfile.objects.filter(experiment=self.experiment)
-                .exclude(dorm_name__isnull=True)
-                .values("dorm_name")
-                .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(total_users=Count("id"))
+            .order_by("-total_users", "dorm_name")
         )
         return context
 
@@ -540,11 +545,11 @@ class NotificationsView(
         )
 
         context["user_leaderboard"] = (
-                UserProfile.objects.filter(experiment=self.experiment)
-                .exclude(dorm_name__isnull=True)
-                .values("dorm_name")
-                .annotate(total_users=Count("id"))
-                .order_by("-total_users", "dorm_name")
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(total_users=Count("id"))
+            .order_by("-total_users", "dorm_name")
         )
         return context
 
@@ -1320,11 +1325,11 @@ class UserProfileDetailView(
         )
 
         context["user_leaderboard"] = (
-                UserProfile.objects.filter(experiment=self.experiment)
-                .exclude(dorm_name__isnull=True)
-                .values("dorm_name")
-                .annotate(total_users=Count("id"))
-                .order_by("-total_users")
+            UserProfile.objects.filter(experiment=self.experiment)
+            .exclude(dorm_name__isnull=True)
+            .values("dorm_name")
+            .annotate(total_users=Count("id"))
+            .order_by("-total_users")
         )
 
         # Get pagination parameters
