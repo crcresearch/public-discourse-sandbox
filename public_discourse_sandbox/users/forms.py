@@ -80,7 +80,7 @@ class CustomSignupForm(SignupForm):
         widget=forms.TextInput(attrs={"class": "form-control"}),
         help_text="Enter a valid phone number (e.g., 5742330311)",
     )
-
+    """
     dorm_name = forms.ChoiceField(
         choices=[
             ("Alumni Hall", "Alumni Hall"),
@@ -119,7 +119,7 @@ class CustomSignupForm(SignupForm):
         widget=forms.Select,
         required=True,
     )
-
+    """
     bio = forms.CharField(
         max_length=1000,
         required=False,
@@ -192,7 +192,7 @@ class CustomSignupForm(SignupForm):
                 # For the default experiment, we should ensure it exists
                 if experiment_id == "00000":
                     raise forms.ValidationError(
-                        'Default experiment "00000" not found in database'
+                        'Default experiment "00000" not found in database',
                     )
                 raise forms.ValidationError("Invalid experiment identifier")
 
@@ -208,7 +208,8 @@ class CustomSignupForm(SignupForm):
                 ).exists()
             ):
                 self.add_error(
-                    "user_name", "This username is already taken in this experiment."
+                    "user_name",
+                    "This username is already taken in this experiment.",
                 )
 
         pnumber = cleaned_data.get("phone_number")
