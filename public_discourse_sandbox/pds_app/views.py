@@ -225,6 +225,9 @@ class PostDetailsView(
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
+        self.object.has_user_voted = self.object.vote_set.filter(
+             user_profile=self.object.user_profile,
+             ).exists()
         experiment_identifier = kwargs.get("experiment_identifier")
 
         experiment = Experiment.objects.get(identifier=experiment_identifier)
@@ -261,11 +264,18 @@ class PostDetailsView(
         )
         """
 
-        context["replies"] = Post.all_objects.filter(
+        posts = Post.all_objects.filter(
             parent_post=self.object,
             depth=self.object.depth + 1,
             is_deleted=False,
         ).order_by("-created_date")
+
+        for post in posts:
+            post.has_user_voted = post.vote_set.filter(
+             user_profile=post.user_profile,
+             ).exists()
+
+        context["replies"] = posts
 
         return context
 

@@ -74,7 +74,7 @@
  		{% else %}
    			<p class="post-text">{{ object.content }}</p>
   		{% endif %}
-		
+
 
 		<div class="post-actions">
 			<button class="action-button comment-button" onclick="handleParentPost()" data-post-id="{{ object.id }}" data-authenticated="true">
@@ -179,7 +179,7 @@
 					<i class="ri-repeat-line"></i><span>{{ reply.num_shares }}</span>
 				</button>
 
-				<button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}"
+				<button class="action-button like-button {% if reply.has_user_voted %}liked{% endif %}"
 					data-post-id="{{ reply.id }}" onclick="handleLike(this, '{{ reply.id }}')">
 					<i class="{% if reply.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
 					<span>{{ reply.num_upvotes }}</span>
