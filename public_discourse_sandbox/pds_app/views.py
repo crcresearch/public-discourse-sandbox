@@ -1,3 +1,5 @@
+import math
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -8,7 +10,6 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import models
 from django.db import transaction
-from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import redirect
@@ -134,6 +135,7 @@ def get_active_posts(
         post.has_user_voted = post.vote_set.filter(
             user_profile__user=request.user,
         ).exists()
+        post.formated_date = format_date(post.created_date)
 
         # Add follow state for each post
         if current_user_profile and post.user_profile.user != request.user:
@@ -228,6 +230,7 @@ class PostDetailsView(
         self.object.has_user_voted = self.object.vote_set.filter(
              user_profile=self.object.user_profile,
              ).exists()
+        self.object.formated_date = format_date(self.object.created_date)
         experiment_identifier = kwargs.get("experiment_identifier")
 
         experiment = Experiment.objects.get(identifier=experiment_identifier)
@@ -274,6 +277,7 @@ class PostDetailsView(
             post.has_user_voted = post.vote_set.filter(
              user_profile=post.user_profile,
              ).exists()
+            post.formated_date = format_date(post.created_date)
 
         context["replies"] = posts
 
@@ -1300,6 +1304,64 @@ class AcceptInvitationView(View):
                 },
             )
 
+from datetime import datetime, timezone
+
+def format_date(date):
+    if isinstance(date, str):
+        date_obj = datetime.fromisoformat(date.replace("Z", "+00:00"))
+    elif isinstance(date, datetime):
+        date_obj = date
+    else:
+        return ""
+
+    now = datetime.now(timezone.utc)
+
+    if date_obj.tzinfo is None:
+        date_obj = date_obj.replace(tzinfo=timezone.utc)
+
+    seconds_diff = round((date_obj-now).total_seconds())
+
+    unit_in_sec = [
+        60,
+        3600,
+        86400,
+        86400 * 7,
+        86400 * 30,
+        86400 * 365,
+        float("inf"),
+    ]
+
+    unit_strings = [
+        "second",
+        "minute",
+        "hour",
+        "day",
+        "week",
+        "month",
+        "year",
+    ]
+
+    unit_index = next(
+            i for i, cutoff in enumerate(unit_in_sec)
+            if cutoff > abs(seconds_diff)
+            )
+
+    divisor = unit_in_sec[unit_index-1] if unit_index else 1
+
+    if abs(seconds_diff) > 23*3600:
+        if date_obj.year != now.year:
+            return date_obj.strftime("%b %d, %Y")
+        return date_obj.strftime("%b %d")
+
+    value = math.floor(seconds_diff/divisor)
+    unit = unit_strings[unit_index]
+
+    if value == 0:
+        return "now"
+    if value > 0:
+        return f"in {value} {unit}{'' if abs(value) == 1 else 's'}"
+    return f"{abs(value)} {unit}{'' if abs(value) == 1 else 's'} ago"
+
 
 class UserProfileDetailView(
     LoginRequiredMixin,
@@ -1338,13 +1400,13 @@ class UserProfileDetailView(
             source_node=self.object,
         ).count()
 
-        context["post_leaderboard"] = (
-            UserProfile.objects.filter(experiment=self.experiment)
-            .exclude(dorm_name__isnull=True)
-            .values("dorm_name")
-            .annotate(post_count=Count("post"))
-            .order_by("-post_count")[:3]
-        )
+        # context["post_leaderboard"] = (
+        #     UserProfile.objects.filter(experiment=self.experiment)
+        #     .exclude(dorm_name__isnull=True)
+        #     .values("dorm_name")
+        #     .annotate(post_count=Count("post"))
+        #     .order_by("-post_count")[:3]
+        # )
 
         # context["user_leaderboard"] = (
         #     UserProfile.objects.filter(experiment=self.experiment)
@@ -1428,6 +1490,7 @@ class UserProfileDetailView(
                 post.has_user_voted = post.vote_set.filter(
                     user_profile__user=current_user,
                 ).exists()
+                post.formated_date = format_date(post.created_date)
 
                 # Add follow state for each post
                 if current_user_profile and post.user_profile.user != current_user:

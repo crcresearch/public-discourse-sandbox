@@ -17,12 +17,7 @@
 {% include 'components/ban_modal.html' %}
 
 <script src="{% static 'js/shared.js' %}"></script>
-<script>
-	document.querySelectorAll('.time').forEach(el => {
-		const dt = el.getAttribute('datetime');
-		el.textContent = formatDate(dt)
-	});
-	
+<script>	
 function togglePostMenu(postId) {
     const menu = document.getElementById(`post-menu-${postId}`);
     const allMenus = document.querySelectorAll('.post-menu-dropdown');
