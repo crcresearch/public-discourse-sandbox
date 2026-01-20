@@ -154,6 +154,7 @@ def get_post_replies(request, post_id):
                 else None,
                 "is_author": reply.user_profile.user == request.user,
                 "is_moderator": is_moderator,
+                "has_user_voted": reply.vote_set.filter(user_profile=reply.user_profile).exists(),  # noqa: E501
                 "formated_date": format_date(reply.created_date),
                 "depth": int(getattr(reply, "depth", 0)),
                 "replies": [],
