@@ -1304,7 +1304,9 @@ class AcceptInvitationView(View):
                 },
             )
 
-from datetime import datetime, timezone
+from datetime import UTC
+from datetime import datetime
+
 
 def format_date(date):
     if isinstance(date, str):
@@ -1314,10 +1316,10 @@ def format_date(date):
     else:
         return ""
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     if date_obj.tzinfo is None:
-        date_obj = date_obj.replace(tzinfo=timezone.utc)
+        date_obj = date_obj.replace(tzinfo=UTC)
 
     seconds_diff = round((date_obj-now).total_seconds())
 
@@ -1663,8 +1665,8 @@ def generate_external_api_token_view(request):
     if request.method == "POST":
         token = AuthApiToken.objects.create(user=request.user)
         token_msg = mark_safe(
-            f"Token: {token} has been generated.<br/>"
-            "Keep it in safe environment as you won't be able to see it again.",
+                f"Here is your new generated api key: {token}<br/>"
+            "Keep it in a safe environment as you won't be able to see it again.",
         )
         messages.success(request, token_msg)
 

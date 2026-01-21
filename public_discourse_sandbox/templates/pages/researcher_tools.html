@@ -15,8 +15,8 @@
                 <h1>{% translate "Researcher Tools" %}</h1>
             </div>
         </header>
-        
-        <div class="experiments-list">
+
+        <div class="experiments-list" style="padding-left: 1.3rem;padding-right: 1.3rem">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; margin-top: 1rem;">
                 <h5>{% translate "Your Discourses" %}</h5>
                 <a href="{% url 'create_experiment' %}" class="post-button" style="text-decoration: none; color: white;">
@@ -24,7 +24,7 @@
                     {% translate "Create Discourse" %}
                 </a>
             </div>
-            
+
             {% if experiments %}
                 <div class="table-container">
                     <div>
@@ -53,7 +53,7 @@
                                         <td class="experiment-twins">{{ experiment.total_digital_twins }}</td>
                                         {% comment %}
                                         <td class="experiment-actions">
-                                            <button class="menu-button" 
+                                            <button class="menu-button"
                                                 title="More"
                                                 onclick="event.stopPropagation();showGlobalExperimentMenu(event)"
                                                 data-experiment-id="{{ experiment.identifier }}"
@@ -150,4 +150,4 @@ document.querySelectorAll('.experiment-row').forEach(row => {
     });
 });
 </script>
-{% endblock inline_javascript %} 
+{% endblock inline_javascript %}
