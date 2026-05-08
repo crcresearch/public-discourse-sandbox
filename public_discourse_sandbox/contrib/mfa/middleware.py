@@ -1,6 +1,7 @@
 """
 Middleware to enforce MFA for all users.
 """
+
 from allauth.mfa.utils import is_mfa_enabled
 from django.conf import settings
 from django.contrib import messages
@@ -86,4 +87,4 @@ class AllUserRequire2FAMiddleware(MiddlewareMixin):
             return None
 
         # The request required 2FA but it isn't configured!
-        return self.on_require_2fa(request) 
+        return self.on_require_2fa(request)

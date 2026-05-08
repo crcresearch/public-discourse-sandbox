@@ -31,7 +31,7 @@ certificatesResolvers:
 http:
   routers:
     web-secure-router:
-      rule: 'Host(`pds.crc.nd.edu`)'
+      rule: 'Host(`publicdiscourse.crc.nd.edu`)'
       entryPoints:
         - web-secure
       middlewares:
@@ -42,7 +42,7 @@ http:
         certResolver: letsencrypt
 
     flower-secure-router:
-      rule: 'Host(`pds.crc.nd.edu`)'
+      rule: 'Host(`publicdiscourse.crc.nd.edu`)'
       entryPoints:
         - flower
       service: flower
@@ -51,7 +51,7 @@ http:
         certResolver: letsencrypt
 
     web-media-router:
-      rule: 'Host(`pds.crc.nd.edu`) && PathPrefix(`/media/`)'
+      rule: 'Host(`publicdiscourse.crc.nd.edu`) && PathPrefix(`/media/`)'
       entryPoints:
         - web-secure
       middlewares:

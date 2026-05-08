@@ -2,8 +2,8 @@
 """Base settings to build other settings files upon."""
 
 import ssl
+from datetime import timedelta
 from pathlib import Path
-import os
 
 import environ
 
@@ -19,9 +19,9 @@ if READ_DOT_ENV_FILE:
 
 # OpenAI API settings
 # No default value so that Django will raise an error if the variable is not set
-OPENAI_API_KEY = env.str('OPENAI_API_KEY')
-OPENAI_BASE_URL = env.str('OPENAI_BASE_URL')
-LLM_MODEL = env.str('LLM_MODEL')
+OPENAI_API_KEY = env.str("OPENAI_API_KEY")
+OPENAI_BASE_URL = env.str("OPENAI_BASE_URL")
+LLM_MODEL = env.str("LLM_MODEL")
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -90,6 +90,7 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
+    "django_notification_system",
 ]
 
 LOCAL_APPS = [
@@ -247,7 +248,11 @@ EMAIL_TIMEOUT = 5
 # Django Admin URL.
 ADMIN_URL = "admin/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = [("""Kristina Radivojevic""", "kradivo2@nd.edu")]
+ADMINS = [
+    ("""Kristina Radivojevic""", "kradivo2@nd.edu"),
+    ("""Caleb Reinking""", "creinkin@nd.edu"),
+    ("""Shaun Whitfield""", "swhitfie@nd.edu"),
+]
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
 # https://cookiecutter-django.readthedocs.io/en/latest/settings.html#other-environment-settings
@@ -311,7 +316,7 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TASK_TIME_LIMIT = 5 * 60
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#task-soft-time-limit
 # TODO: set to whatever value is adequate in your circumstances
-CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_TASK_SOFT_TIME_LIMIT = 120
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#beat-scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
@@ -320,15 +325,19 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 CELERY_TASK_SEND_SENT_EVENT = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-hijack-root-logger
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_BEAT_SCHEDULE = {
+    "run-every-10-seconds": {
+        "task": "public_discourse_sandbox.pds_app.tasks.process_email_notifications",
+        "schedule": timedelta(seconds=10),  # run every 10 seconds
+    },
+}
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_LOGIN_METHODS = {"email"}
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_REQUIRED = True
-# https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 # https://docs.allauth.org/en/latest/account/configuration.html
@@ -350,11 +359,19 @@ ACCOUNT_ADAPTER = "public_discourse_sandbox.users.adapters.AccountAdapter"
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "public_discourse_sandbox.pds_app.authentication.BearerAuthentication",
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
@@ -371,3 +388,18 @@ SPECTACULAR_SETTINGS = {
 }
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+NOTIFICATION_SYSTEM_TARGETS = {
+    # Twilio Required settings, if you're not planning on using Twilio these can be set
+    # to empty strings
+    "twilio_sms": {
+        "account_sid": env.str("TWILIO_ACCOUNT_SID"),
+        "auth_token": env.str("TWILIO_AUTH_TOKEN"),
+        "sender": env.str(
+            "TWILIO_PHONE_NUMBER"
+        ),  # This is the phone number associated with the Twilio account
+    },
+    "email": {
+        "from_email": "pds@crc.nd.edu",  # Sending email address
+    },
+}

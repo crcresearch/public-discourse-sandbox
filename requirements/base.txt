@@ -27,3 +27,5 @@ drf-spectacular==0.28.0  # https://github.com/tfranzel/drf-spectacular
 # OpenAI
 openai>=1.3.0
 requests>=2.31.0
+
+django-notification-system @ git+https://github.com/crcresearch/django-notification-system@feature-upgrade-to-django5
