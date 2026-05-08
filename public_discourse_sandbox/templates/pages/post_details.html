@@ -42,9 +42,7 @@
 					@{{ object.user_profile.username }}
 				</a>
 				<span class="dot">·</span>
-				<time class="time" datetime="{{ object.created_date|date:'c' }}">
-					{{ object.created_date|date:"DATETIME_FORMAT"|default:object.created_date }}
-				</time>
+				<span class="time">{{object.formated_date}}</span>
 			</div>
 			<div class="post-menu">
 				<button class="menu-button" onclick="togglePostMenu('{{ object.id }}')" title="More">
@@ -74,7 +72,7 @@
  		{% else %}
    			<p class="post-text">{{ object.content }}</p>
   		{% endif %}
-		
+
 
 		<div class="post-actions">
 			<button class="action-button comment-button" onclick="handleParentPost()" data-post-id="{{ object.id }}" data-authenticated="true">
@@ -137,9 +135,7 @@
 						@{{ reply.user_profile.username }}
 					</a>
 					<span class="dot">·</span>
-					<time class="time" datetime="{{ reply.created_date|date:'c' }}">
-						{{ reply.created_date|date:"DATETIME_FORMAT"|default:reply.created_date }}
-					</time>
+					<span class="time">{{reply.formated_date}}</span>
 				</div>
 
 				<div class="post-menu">
@@ -179,7 +175,7 @@
 					<i class="ri-repeat-line"></i><span>{{ reply.num_shares }}</span>
 				</button>
 
-				<button class="action-button like-button {% if post.has_user_voted %}liked{% endif %}"
+				<button class="action-button like-button {% if reply.has_user_voted %}liked{% endif %}"
 					data-post-id="{{ reply.id }}" onclick="handleLike(this, '{{ reply.id }}')">
 					<i class="{% if reply.has_user_voted %}ri-heart-fill{% else %}ri-heart-line{% endif %}"></i>
 					<span>{{ reply.num_upvotes }}</span>
@@ -436,13 +432,6 @@ async function handleDeletePost(postId){
   function handleParentPost(){
 	document.getElementById("parent-form-textarea").focus()
   }
-
-
-  document.querySelectorAll('.time').forEach(el => {
-		const dt = el.getAttribute('datetime');
-		el.textContent = formatDate(dt)
-	});
-
 
 	function handleRepost(button, postId) {
     // Check if this is the user's own post

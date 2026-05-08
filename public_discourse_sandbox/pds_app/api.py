@@ -15,6 +15,7 @@ from .models import Post
 from .models import UserProfile
 from .models import Vote
 from .utils import send_notification_to_user
+from .views import format_date
 
 
 @login_required
@@ -153,6 +154,8 @@ def get_post_replies(request, post_id):
                 else None,
                 "is_author": reply.user_profile.user == request.user,
                 "is_moderator": is_moderator,
+                "has_user_voted": reply.vote_set.filter(user_profile=reply.user_profile).exists(),  # noqa: E501
+                "formated_date": format_date(reply.created_date),
                 "depth": int(getattr(reply, "depth", 0)),
                 "replies": [],
             }

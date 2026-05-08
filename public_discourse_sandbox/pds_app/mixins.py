@@ -1,7 +1,9 @@
-from django.shortcuts import get_object_or_404, redirect
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
 from django.urls import reverse
-from .models import Experiment, UserProfile, ExperimentInvitation
+
+from .models import Experiment
+from .models import ExperimentInvitation
 
 
 class ExperimentContextMixin:
@@ -85,7 +87,7 @@ class ExperimentContextMixin:
             if "experiment_identifier" in kwargs:
                 try:
                     self.experiment = Experiment.objects.get(
-                        identifier=kwargs["experiment_identifier"]
+                        identifier=kwargs["experiment_identifier"],
                     )
                 except Experiment.DoesNotExist:
                     self.experiment = None
@@ -93,7 +95,7 @@ class ExperimentContextMixin:
             # If not found, try last_accessed (but only if not deleted)
             if not self.experiment:
                 self.experiment = get_valid_experiment(
-                    getattr(request.user, "last_accessed", None)
+                    getattr(request.user, "last_accessed", None),
                 )
                 if self.experiment:
                     self.should_redirect = True
@@ -101,7 +103,7 @@ class ExperimentContextMixin:
             # If still not found, try first available experiment
             if not self.experiment:
                 user_profile = request.user.userprofile_set.filter(
-                    experiment__is_deleted=False
+                    experiment__is_deleted=False,
                 ).first()
                 if user_profile:
                     self.experiment = user_profile.experiment
@@ -114,7 +116,7 @@ class ExperimentContextMixin:
 
             # Get user's profile for this experiment
             self.user_profile = request.user.userprofile_set.filter(
-                experiment=self.experiment
+                experiment=self.experiment,
             ).first()
 
             # Update user's last_accessed experiment if needed
@@ -143,7 +145,7 @@ class ExperimentContextMixin:
         """
         if not self.is_moderator(self.request.user, self.experiment):
             raise PermissionDenied(
-                "You do not have moderator permissions for this experiment."
+                "You do not have moderator permissions for this experiment.",
             )
 
     def get_context_data(self, **kwargs):
@@ -155,7 +157,7 @@ class ExperimentContextMixin:
             context["experiment"] = self.experiment
             context["current_user_profile"] = self.user_profile
             context["is_moderator"] = self.is_moderator(
-                self.request.user, self.experiment
+                self.request.user, self.experiment,
             )
         return context
 
@@ -250,7 +252,7 @@ class ModeratorPermissionMixin:
         """
         if not self.is_moderator(self.request.user, self.experiment):
             raise PermissionDenied(
-                "You do not have moderator permissions for this experiment."
+                "You do not have moderator permissions for this experiment.",
             )
 
     def get_context_data(self, **kwargs):
@@ -292,7 +294,7 @@ class ProfileRequiredMixin:
 
         if needs_profile:
             return redirect(
-                "create_profile", experiment_identifier=self.experiment.identifier
+                "create_profile", experiment_identifier=self.experiment.identifier,
             )
 
         return super().dispatch(request, *args, **kwargs)
